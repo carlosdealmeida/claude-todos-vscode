@@ -30,12 +30,18 @@ async function main(): Promise<void> {
     const bridgePath = path.join(bridgeDir, 'sessions.json');
     fs.mkdirSync(bridgeDir, { recursive: true });
 
-    let records: unknown[] = [];
+    type Record = { cwd: string; sessionId: string; terminalPid: number | null; startedAt: number };
+    let records: Record[] = [];
     if (fs.existsSync(bridgePath)) {
       try {
         const parsed = JSON.parse(fs.readFileSync(bridgePath, 'utf-8'));
         if (Array.isArray(parsed)) records = parsed;
       } catch { /* corrupt — overwrite */ }
+    }
+
+    const exists = records.some(r => r.sessionId === input.session_id && r.cwd === input.cwd);
+    if (exists) {
+      process.exit(0);
     }
 
     records.push({

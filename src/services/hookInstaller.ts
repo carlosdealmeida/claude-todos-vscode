@@ -12,24 +12,23 @@ interface HookMatcher {
 }
 
 interface Settings {
-  hooks?: {
-    SessionStart?: HookMatcher[];
-    [key: string]: HookMatcher[] | undefined;
-  };
+  hooks?: Record<string, HookMatcher[] | undefined>;
   [key: string]: unknown;
 }
+
+export type HookEvent = 'SessionStart' | 'UserPromptSubmit' | 'PreToolUse' | 'PostToolUse' | 'SessionEnd' | string;
 
 export class HookInstaller {
   constructor(private readonly settingsPath: string) {}
 
-  install(command: string): void {
+  install(event: HookEvent, command: string): void {
     const settings = this.read();
     settings.hooks ??= {};
-    settings.hooks.SessionStart ??= [];
+    settings.hooks[event] ??= [];
 
-    if (this.findCommand(settings, command)) return;
+    if (this.findCommand(settings, event, command)) return;
 
-    settings.hooks.SessionStart.push({
+    settings.hooks[event]!.push({
       matcher: '*',
       hooks: [{ type: 'command', command }],
     });
@@ -37,29 +36,43 @@ export class HookInstaller {
     this.write(settings);
   }
 
-  uninstall(command: string): void {
-    const settings = this.read();
-    if (!settings.hooks?.SessionStart) return;
+  installAll(events: HookEvent[], command: string): void {
+    for (const event of events) this.install(event, command);
+  }
 
-    settings.hooks.SessionStart = settings.hooks.SessionStart
+  uninstall(event: HookEvent, command: string): void {
+    const settings = this.read();
+    const entries = settings.hooks?.[event];
+    if (!entries) return;
+
+    settings.hooks![event] = entries
       .map(entry => ({
         ...entry,
         hooks: entry.hooks.filter(h => h.command !== command),
       }))
       .filter(entry => entry.hooks.length > 0);
 
-    if (settings.hooks.SessionStart.length === 0) {
-      delete settings.hooks.SessionStart;
+    if (settings.hooks![event]!.length === 0) {
+      delete settings.hooks![event];
     }
     this.write(settings);
   }
 
-  isInstalled(command: string): boolean {
-    return Boolean(this.findCommand(this.read(), command));
+  uninstallAll(events: HookEvent[], command: string): void {
+    for (const event of events) this.uninstall(event, command);
   }
 
-  private findCommand(settings: Settings, command: string): HookEntry | undefined {
-    return settings.hooks?.SessionStart
+  isInstalled(event: HookEvent, command: string): boolean {
+    return Boolean(this.findCommand(this.read(), event, command));
+  }
+
+  areAllInstalled(events: HookEvent[], command: string): boolean {
+    const settings = this.read();
+    return events.every(e => this.findCommand(settings, e, command));
+  }
+
+  private findCommand(settings: Settings, event: HookEvent, command: string): HookEntry | undefined {
+    return settings.hooks?.[event]
       ?.flatMap(entry => entry.hooks)
       .find(h => h.command === command);
   }
