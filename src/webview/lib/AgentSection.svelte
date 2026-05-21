@@ -12,7 +12,7 @@
     inProgress: agent.todos.filter(t => t.status === 'in_progress').length,
   });
 
-  let title = $derived(agent.isMain ? 'Main agent' : `Sub-agent · ${agent.agentId.slice(0, 8)}`);
+  let title = $derived(agent.name);
 </script>
 
 <section class="agent" class:sub={!agent.isMain}>
@@ -20,6 +20,7 @@
     <span class="chevron" class:open={expanded}>▶</span>
     <span class="title">{title}</span>
     <span class="counts">
+      {#if agent.status === 'running'}<span class="badge">running</span>{/if}
       {counts.completed}/{counts.total}
       {#if counts.inProgress > 0}<span class="badge">{counts.inProgress} active</span>{/if}
     </span>
