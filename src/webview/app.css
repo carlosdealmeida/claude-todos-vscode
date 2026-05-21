@@ -1,0 +1,8 @@
+:root {
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+  background: transparent;
+}
+body { margin: 0; padding: 0; }
+* { box-sizing: border-box; }
