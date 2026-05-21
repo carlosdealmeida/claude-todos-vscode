@@ -77,13 +77,16 @@
     "build": "npm run build:ext && npm run build:hook && npm run build:webview",
     "watch": "npm run build -- --watch",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "vscode:prepublish": "npm run build",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^4.0.4",
     "@types/node": "^20.19.41",
-    "@types/vscode": "^1.120.0",
+    "@types/vscode": "~1.85.0",
     "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.9.1",
     "esbuild": "^0.20.2",
     "svelte": "^5.55.9",
     "svelte-check": "^3.8.6",
