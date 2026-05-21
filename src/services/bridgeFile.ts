@@ -24,7 +24,10 @@ export class BridgeFile {
   }
 
   latestForCwd(cwd: string): BridgeRecord | null {
-    const matches = this.readAll().filter(r => r.cwd === cwd);
+    const eq = (a: string, b: string) => process.platform === 'win32'
+      ? a.toLowerCase() === b.toLowerCase()
+      : a === b;
+    const matches = this.readAll().filter(r => eq(r.cwd, cwd));
     if (!matches.length) return null;
     return matches.reduce((a, b) => (a.startedAt > b.startedAt ? a : b));
   }

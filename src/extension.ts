@@ -17,12 +17,11 @@ export function activate(context: vscode.ExtensionContext): void {
   const claudeDir = resolveClaudeDir();
   const bridgePath = path.join(claudeDir, '.vscode-todos-bridge', 'sessions.json');
   const settingsPath = path.join(claudeDir, 'settings.json');
-  const todosDir = path.join(claudeDir, 'todos');
   const hookScriptPath = vscode.Uri.joinPath(context.extensionUri, 'dist', 'hooks', 'sessionStart.js').fsPath;
   const hookCommand = `node "${hookScriptPath}"`;
 
   const bridge = new BridgeFile(bridgePath);
-  const parser = new TodosParser(todosDir);
+  const parser = new TodosParser(claudeDir);
   const resolver = new SessionResolver(bridge, () => {
     const folders = vscode.workspace.workspaceFolders;
     return folders?.[0]?.uri.fsPath ?? null;

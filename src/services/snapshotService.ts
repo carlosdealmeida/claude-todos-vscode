@@ -14,7 +14,7 @@ export class SnapshotService {
     return {
       sessionId: record.sessionId,
       cwd: record.cwd,
-      agents: this.parser.listForSession(record.sessionId),
+      agents: this.parser.listForSession(record.sessionId, record.cwd),
     };
   }
 }

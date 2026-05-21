@@ -3,83 +3,114 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { TodosParser } from '../../src/services/todosParser';
+import { encodeCwdToProjectDir } from '../../src/services/projectDir';
 
 describe('TodosParser', () => {
-  let tmpDir: string;
+  let claudeDir: string;
   let parser: TodosParser;
+  const CWD = '/home/user/proj';
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'todos-test-'));
-    parser = new TodosParser(tmpDir);
+    claudeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'parser-test-'));
+    parser = new TodosParser(claudeDir);
   });
 
   afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    fs.rmSync(claudeDir, { recursive: true, force: true });
   });
 
-  function writeTodos(sessionId: string, agentId: string, todos: any[]) {
-    const file = path.join(tmpDir, `${sessionId}-agent-${agentId}.json`);
-    fs.writeFileSync(file, JSON.stringify(todos));
+  function writeTranscript(sessionId: string, cwd: string, lines: object[]): string {
+    const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(cwd));
+    fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, `${sessionId}.jsonl`);
+    fs.writeFileSync(file, lines.map(l => JSON.stringify(l)).join('\n'));
+    return file;
   }
 
-  it('returns empty array when no files match session', () => {
-    expect(parser.listForSession('nope')).toEqual([]);
+  function todoWriteEntry(todos: object[], opts: { isSidechain?: boolean } = {}): object {
+    return {
+      isSidechain: opts.isSidechain ?? false,
+      message: {
+        content: [
+          { type: 'tool_use', name: 'TodoWrite', input: { todos } },
+        ],
+      },
+    };
+  }
+
+  it('returns empty when no transcript file exists', () => {
+    expect(parser.listForSession('nope', CWD)).toEqual([]);
   });
 
-  it('parses main agent (agentId === sessionId)', () => {
-    writeTodos('s1', 's1', [
-      { content: 'task 1', status: 'in_progress', activeForm: 'Doing task 1' },
+  it('returns the last TodoWrite event from main thread', () => {
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'old', activeForm: 'Old', status: 'pending' }]),
+      todoWriteEntry([
+        { content: 'new1', activeForm: 'New 1', status: 'completed' },
+        { content: 'new2', activeForm: 'New 2', status: 'in_progress' },
+      ]),
     ]);
-    const agents = parser.listForSession('s1');
+    const agents = parser.listForSession('s1', CWD);
     expect(agents).toHaveLength(1);
     expect(agents[0].isMain).toBe(true);
-    expect(agents[0].todos[0].content).toBe('task 1');
+    expect(agents[0].todos).toHaveLength(2);
+    expect(agents[0].todos[0].content).toBe('new1');
   });
 
-  it('parses sub-agents alongside main', () => {
-    writeTodos('s1', 's1', [{ content: 'main', status: 'pending', activeForm: 'Main' }]);
-    writeTodos('s1', 'sub-a', [{ content: 'sub a', status: 'completed', activeForm: 'Sub a' }]);
-    writeTodos('s1', 'sub-b', [{ content: 'sub b', status: 'in_progress', activeForm: 'Sub b' }]);
-    const agents = parser.listForSession('s1');
-    expect(agents).toHaveLength(3);
-    expect(agents.filter(a => a.isMain)).toHaveLength(1);
-    expect(agents.filter(a => !a.isMain)).toHaveLength(2);
-  });
-
-  it('ignores files from other sessions', () => {
-    writeTodos('s1', 's1', []);
-    writeTodos('s2', 's2', []);
-    expect(parser.listForSession('s1')).toHaveLength(1);
-  });
-
-  it('skips invalid todo entries within a file', () => {
-    writeTodos('s1', 's1', [
-      { content: 'ok', status: 'pending', activeForm: 'Ok' },
-      { content: 'missing-status' },
-      null,
-      { content: 'bad-status', status: 'invalid', activeForm: 'x' },
+  it('ignores TodoWrite events from sidechains', () => {
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'pending' }]),
+      todoWriteEntry([{ content: 'subagent', activeForm: 'Sub', status: 'pending' }], { isSidechain: true }),
     ]);
-    const agents = parser.listForSession('s1');
+    const agents = parser.listForSession('s1', CWD);
+    expect(agents).toHaveLength(1);
+    expect(agents[0].todos[0].content).toBe('main');
+  });
+
+  it('returns empty when transcript has no TodoWrite events', () => {
+    writeTranscript('s1', CWD, [
+      { message: { content: [{ type: 'text', text: 'hello' }] } },
+    ]);
+    expect(parser.listForSession('s1', CWD)).toEqual([]);
+  });
+
+  it('skips invalid todos within an event', () => {
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([
+        { content: 'ok', activeForm: 'Ok', status: 'pending' },
+        { content: 'missing-status' },
+        null,
+        { content: 'bad-status', activeForm: 'x', status: 'invalid' },
+      ] as any),
+    ]);
+    const agents = parser.listForSession('s1', CWD);
     expect(agents[0].todos).toHaveLength(1);
     expect(agents[0].todos[0].content).toBe('ok');
   });
 
-  it('returns empty agent on corrupt file', () => {
-    fs.writeFileSync(path.join(tmpDir, 's1-agent-s1.json'), 'not json');
-    const agents = parser.listForSession('s1');
+  it('skips malformed JSONL lines', () => {
+    const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 's1.jsonl'),
+      'this is not json\n' +
+      JSON.stringify(todoWriteEntry([{ content: 'ok', activeForm: 'Ok', status: 'pending' }])),
+    );
+    const agents = parser.listForSession('s1', CWD);
     expect(agents).toHaveLength(1);
-    expect(agents[0].todos).toEqual([]);
+    expect(agents[0].todos[0].content).toBe('ok');
   });
 
-  it('orders agents: main first, then sub-agents by updatedAt asc', async () => {
-    writeTodos('s1', 'sub-a', []);
-    await new Promise(r => setTimeout(r, 10));
-    writeTodos('s1', 's1', []);
-    await new Promise(r => setTimeout(r, 10));
-    writeTodos('s1', 'sub-b', []);
-    const agents = parser.listForSession('s1');
-    expect(agents[0].isMain).toBe(true);
-    expect(agents[1].agentId).toBe('sub-a');
-    expect(agents[2].agentId).toBe('sub-b');
+  it('falls back to lowercase cwd dir on win32-style path', () => {
+    const upperCwd = 'C:\\@work\\proj';
+    const lowerCwd = 'c:\\@work\\proj';
+    // Write under lowercase encoded dir
+    writeTranscript('s1', lowerCwd, [
+      todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'pending' }]),
+    ]);
+    // Parser called with uppercase variant — should still find it on win32
+    if (process.platform === 'win32') {
+      const agents = parser.listForSession('s1', upperCwd);
+      expect(agents).toHaveLength(1);
+    }
   });
 });

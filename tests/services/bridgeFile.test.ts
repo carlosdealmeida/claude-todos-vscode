@@ -56,4 +56,11 @@ describe('BridgeFile', () => {
     fs.writeFileSync(bridgePath, 'not json{{{');
     expect(bridge.readAll()).toEqual([]);
   });
+
+  it('matches cwd case-insensitively on win32', () => {
+    if (process.platform !== 'win32') return;
+    bridge.append({ cwd: 'c:\\foo\\bar', sessionId: 's1', terminalPid: 1, startedAt: 1000 });
+    expect(bridge.latestForCwd('C:\\foo\\bar')?.sessionId).toBe('s1');
+    expect(bridge.latestForCwd('c:\\FOO\\BAR')?.sessionId).toBe('s1');
+  });
 });

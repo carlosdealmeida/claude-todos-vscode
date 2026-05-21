@@ -11,18 +11,22 @@ export class TodosWatcher implements vscode.Disposable {
   private debounceHandle: NodeJS.Timeout | null = null;
 
   constructor(claudeDir: string) {
-    const todosDir = path.join(claudeDir, 'todos');
+    const projectsDir = path.join(claudeDir, 'projects');
     const bridgeDir = path.join(claudeDir, '.vscode-todos-bridge');
 
-    for (const dir of [todosDir, bridgeDir]) {
-      try {
-        fs.mkdirSync(dir, { recursive: true });
-        const watcher = fs.watch(dir, { persistent: false }, () => this.scheduleEmit());
-        watcher.on('error', () => { /* ignore — watcher dies gracefully */ });
-        this.watchers.push(watcher);
-      } catch {
-        // If we can't watch (perms, OS quirk), continue — manual refresh still works.
-      }
+    this.tryWatch(projectsDir, { recursive: true });
+    this.tryWatch(bridgeDir, { recursive: false });
+  }
+
+  private tryWatch(dir: string, opts: { recursive: boolean }): void {
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      const watcher = fs.watch(dir, { persistent: false, recursive: opts.recursive }, () => this.scheduleEmit());
+      watcher.on('error', () => { /* ignore */ });
+      this.watchers.push(watcher);
+    } catch {
+      // Recursive watch unsupported on this platform — fall back to non-recursive
+      if (opts.recursive) this.tryWatch(dir, { recursive: false });
     }
   }
 

@@ -1,47 +1,78 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { encodeCwdToProjectDir } from './projectDir';
 import type { AgentTodos, Todo, TodoStatus } from '../types';
 
 const VALID_STATUSES: TodoStatus[] = ['pending', 'in_progress', 'completed'];
 
+interface TranscriptEntry {
+  isSidechain?: boolean;
+  message?: {
+    content?: Array<{
+      type?: string;
+      name?: string;
+      input?: { todos?: unknown };
+    }>;
+  };
+}
+
 export class TodosParser {
-  constructor(private readonly todosDir: string) {}
+  constructor(private readonly claudeDir: string) {}
 
-  listForSession(sessionId: string): AgentTodos[] {
-    if (!fs.existsSync(this.todosDir)) return [];
+  listForSession(sessionId: string, cwd: string): AgentTodos[] {
+    const transcriptPath = this.transcriptPath(sessionId, cwd);
+    if (!transcriptPath) return [];
 
-    const prefix = `${sessionId}-agent-`;
-    const entries = fs.readdirSync(this.todosDir)
-      .filter(f => f.startsWith(prefix) && f.endsWith('.json'));
+    const todos = this.readLastMainTodoWrite(transcriptPath);
+    if (!todos) return [];
 
-    const agents: AgentTodos[] = entries.map(filename => {
-      const agentId = filename.slice(prefix.length, -'.json'.length);
-      const filePath = path.join(this.todosDir, filename);
-      const stat = fs.statSync(filePath);
-      return {
-        sessionId,
-        agentId,
-        isMain: agentId === sessionId,
-        todos: this.readTodos(filePath),
-        updatedAt: stat.mtimeMs,
-      };
-    });
-
-    return agents.sort((a, b) => {
-      if (a.isMain !== b.isMain) return a.isMain ? -1 : 1;
-      return a.updatedAt - b.updatedAt;
-    });
+    const stat = fs.statSync(transcriptPath);
+    return [{
+      sessionId,
+      agentId: sessionId,
+      isMain: true,
+      todos,
+      updatedAt: stat.mtimeMs,
+    }];
   }
 
-  private readTodos(filePath: string): Todo[] {
-    try {
-      const raw = fs.readFileSync(filePath, 'utf-8');
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed.filter(this.isValidTodo);
-    } catch {
-      return [];
+  private transcriptPath(sessionId: string, cwd: string): string | null {
+    const candidates = process.platform === 'win32'
+      ? [cwd, cwd.toLowerCase(), cwd.charAt(0).toUpperCase() + cwd.slice(1).toLowerCase()]
+      : [cwd];
+    for (const candidate of new Set(candidates)) {
+      const p = path.join(this.claudeDir, 'projects', encodeCwdToProjectDir(candidate), `${sessionId}.jsonl`);
+      if (fs.existsSync(p)) return p;
     }
+    return null;
+  }
+
+  private readLastMainTodoWrite(transcriptPath: string): Todo[] | null {
+    let lines: string[];
+    try {
+      lines = fs.readFileSync(transcriptPath, 'utf-8').split('\n');
+    } catch {
+      return null;
+    }
+
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if (!line || line.indexOf('"name":"TodoWrite"') < 0) continue;
+      try {
+        const entry = JSON.parse(line) as TranscriptEntry;
+        if (entry.isSidechain) continue;
+        const content = entry.message?.content;
+        if (!Array.isArray(content)) continue;
+        for (let j = content.length - 1; j >= 0; j--) {
+          const block = content[j];
+          if (block?.type === 'tool_use' && block.name === 'TodoWrite') {
+            const raw = block.input?.todos;
+            if (Array.isArray(raw)) return raw.filter(this.isValidTodo);
+          }
+        }
+      } catch { /* skip malformed line */ }
+    }
+    return null;
   }
 
   private isValidTodo(item: unknown): item is Todo {

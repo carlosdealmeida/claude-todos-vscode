@@ -14,15 +14,15 @@ describe('SnapshotService', () => {
     const resolver = {
       resolve: () => ({ cwd: '/p', sessionId: 's1', terminalPid: 1, startedAt: 0 }),
     };
-    const parser = {
-      listForSession: () => [
-        { sessionId: 's1', agentId: 's1', isMain: true, todos: [], updatedAt: 0 },
-      ],
-    };
+    const listForSession = vi.fn(() => [
+      { sessionId: 's1', agentId: 's1', isMain: true, todos: [], updatedAt: 0 },
+    ]);
+    const parser = { listForSession };
     const svc = new SnapshotService(resolver as any, parser as any);
     const snap = svc.build()!;
     expect(snap.sessionId).toBe('s1');
     expect(snap.cwd).toBe('/p');
     expect(snap.agents).toHaveLength(1);
+    expect(listForSession).toHaveBeenCalledWith('s1', '/p');
   });
 });
