@@ -16,7 +16,7 @@ interface ContentBlock {
 interface TranscriptEntry {
   type?: string;
   isSidechain?: boolean;
-  toolUseResult?: { agentId?: unknown; status?: unknown };
+  toolUseResult?: { agentId?: unknown };
   message?: {
     role?: string;
     content?: ContentBlock[] | string;
