@@ -1,46 +1,28 @@
 # Releasing
 
-The release pipeline is automated via GitHub Actions
+The build is automated via GitHub Actions
 ([`.github/workflows/release.yml`](.github/workflows/release.yml)).
-A `git push` of a tag named `v<semver>` will run the full test+build,
-publish the extension to the VSCode Marketplace, and create a GitHub Release
-with the `.vsix` attached.
+A `git push` of a tag named `v<semver>` runs the full test+build, produces
+the `.vsix`, and creates a GitHub Release with it attached.
+
+**Publishing to the Marketplace is done manually** — you download the
+`.vsix` from the GitHub Release and upload it through the web UI. No
+Personal Access Token needed. (If you ever want fully automated publishing,
+see the commented-out step at the bottom of `release.yml`.)
 
 ## One-time setup
 
-### 1. Create a marketplace publisher
+### 1. Marketplace publisher / GitHub owner
 
-1. Open <https://aka.ms/vscode-create-publisher>.
-2. Sign in with a Microsoft account (creates an Azure DevOps org if you don't have one).
-3. Pick a unique publisher ID (must be globally unique — e.g. `your-handle`).
-4. Confirm.
+This repo is wired to:
+- Marketplace publisher: **`CarlosJunior1992`**
+- GitHub owner: **`carlosdealmeida`**
 
-### 2. Generate a Personal Access Token (PAT)
+The publisher already exists at <https://marketplace.visualstudio.com/manage>.
+If you fork or rename, search the repo for those values and update
+`package.json`, `README.md`, and this file.
 
-1. Sign in to <https://dev.azure.com/>.
-2. User Settings → Personal Access Tokens → "New Token".
-3. Settings:
-   - Name: `vscode-marketplace`
-   - Organization: `All accessible organizations`
-   - Expiration: 1 year (or "Custom defined" + max)
-   - Scopes: **Custom defined** → check **Marketplace > Manage** (only this).
-4. Copy the token. You'll see it once.
-
-### 3. Add the PAT as a GitHub secret
-
-1. Repo on GitHub → Settings → Secrets and variables → Actions → New repository secret.
-2. Name: `VSCE_PAT`
-3. Value: the token from step 2.
-
-### 4. Fill in the package.json placeholders
-
-Search for `TODO-PUBLISHER` and `TODO-OWNER` across the repo and replace with:
-- `TODO-PUBLISHER` → your marketplace publisher ID.
-- `TODO-OWNER` → your GitHub username/org.
-
-Files affected: `package.json`, `README.md`.
-
-### 5. Replace the marketplace icon
+### 2. Replace the marketplace icon
 
 `media/icon.png` is currently a 1×1 transparent placeholder. Replace it with a
 real 128×128 (or 256×256) PNG. See the icon brief in `media/README.md`.
@@ -65,15 +47,20 @@ The `Release` workflow will:
 1. Verify the tag matches `package.json` version.
 2. Run `npm test` + `npm run build`.
 3. `vsce package` → produces `claude-todos-X.Y.Z.vsix`.
-4. `vsce publish` → uploads to the marketplace.
-5. Create a GitHub Release with the `.vsix` attached and `CHANGELOG.md` as the body.
+4. Create a GitHub Release with the `.vsix` attached and `CHANGELOG.md` as the body.
 
-## Manual rollback
+## Publishing to the Marketplace (manual)
 
-If a release goes wrong, you can unpublish the version from the marketplace:
+1. Open the GitHub Release the workflow created and download `claude-todos-X.Y.Z.vsix`.
+2. Go to <https://marketplace.visualstudio.com/manage> and sign in.
+3. **First release:** `New extension → Visual Studio Code` → upload the `.vsix`.
+4. **Updates:** find the extension in the list → `...` menu → `Update` → upload the new `.vsix`.
+5. The Marketplace re-reads `README.md` and `CHANGELOG.md` from inside the
+   `.vsix` automatically — no extra steps for docs.
 
-```bash
-npx vsce unpublish TODO-PUBLISHER.claude-todos@X.Y.Z
-```
+Verification can take a few minutes. The listing goes live once it passes.
 
-(Only the most recent version can be unpublished. For older versions, the marketplace UI is needed.)
+## Removing a version
+
+From <https://marketplace.visualstudio.com/manage>, open the extension and
+use the `...` menu to unpublish or remove a specific version.

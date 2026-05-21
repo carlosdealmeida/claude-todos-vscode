@@ -5,17 +5,13 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to publish (must match package.json)'
-        required: true
 
 permissions:
   contents: write
 
 jobs:
   release:
-    name: Publish to Marketplace + GitHub Release
+    name: Build .vsix + GitHub Release
     runs-on: ubuntu-latest
 
     steps:
@@ -49,10 +45,11 @@ jobs:
           VSIX=$(ls *.vsix | head -n 1)
           echo "vsix=$VSIX" >> "$GITHUB_OUTPUT"
 
-      - name: Publish to VSCode Marketplace
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: npx vsce publish --packagePath "${{ steps.package.outputs.vsix }}"
+      - name: Upload .vsix as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: ${{ steps.package.outputs.vsix }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -62,3 +59,16 @@ jobs:
           body_path: CHANGELOG.md
           draft: false
           prerelease: false
+
+      # --- Optional: automatic Marketplace publish -------------------------
+      # The job above only builds the .vsix; publishing is done manually by
+      # uploading it at https://marketplace.visualstudio.com/manage
+      #
+      # To automate it instead: create a PAT (Azure DevOps, scope
+      # Marketplace > Manage), add it as the repo secret VSCE_PAT, and
+      # uncomment the step below.
+      #
+      # - name: Publish to VSCode Marketplace
+      #   env:
+      #     VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      #   run: npx vsce publish --packagePath "${{ steps.package.outputs.vsix }}"

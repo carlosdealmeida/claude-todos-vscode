@@ -50,11 +50,8 @@ Run `F5` from VSCode (or install the produced `.vsix`) and verify:
 
 ## Releasing
 
-1. Bump `version` in `package.json`.
-2. Add a section to [CHANGELOG.md](CHANGELOG.md).
-3. `npm test && npm run build`.
-4. `npx vsce package` to produce a `.vsix`.
-5. (Optional) `npx vsce publish` once a `publisher` is configured.
+See [RELEASING.md](RELEASING.md) for the full process — tag a `v*` release,
+the workflow builds the `.vsix`, then it's uploaded to the Marketplace manually.
 
 ## Code style
 
