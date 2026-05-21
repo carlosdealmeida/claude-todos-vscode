@@ -1,0 +1,94 @@
+{
+  "name": "claude-todos",
+  "displayName": "Claude Todos",
+  "description": "Live view of Claude Code TodoWrite tool for the current workspace",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "claudeTodos",
+          "title": "Claude Todos",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "claudeTodos": [
+        {
+          "type": "webview",
+          "id": "claudeTodos.view",
+          "name": "Todos",
+          "contextualTitle": "Claude Todos"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "claudeTodos.openPanel",
+        "title": "Claude Todos: Open in Editor"
+      },
+      {
+        "command": "claudeTodos.installHook",
+        "title": "Claude Todos: Install Session Hook"
+      },
+      {
+        "command": "claudeTodos.refresh",
+        "title": "Claude Todos: Refresh"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "claudeTodos.openPanel",
+        "key": "ctrl+alt+t",
+        "mac": "cmd+alt+t"
+      }
+    ],
+    "configuration": {
+      "title": "Claude Todos",
+      "properties": {
+        "claudeTodos.claudeDir": {
+          "type": "string",
+          "default": "",
+          "description": "Override ~/.claude path (empty = auto-detect)"
+        },
+        "claudeTodos.autoInstallHook": {
+          "type": "boolean",
+          "default": true,
+          "description": "Prompt to install session hook on first launch"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build:ext": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "build:hook": "esbuild src/hooks/sessionStart.ts --bundle --outfile=dist/hooks/sessionStart.js --format=cjs --platform=node",
+    "build:webview": "vite build",
+    "build": "npm run build:ext && npm run build:hook && npm run build:webview",
+    "watch": "npm run build -- --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "@types/node": "^20.19.41",
+    "@types/vscode": "^1.120.0",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.20.2",
+    "svelte": "^5.55.9",
+    "svelte-check": "^3.8.6",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "vitest": "^1.6.1"
+  }
+}
