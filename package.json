@@ -3,6 +3,15 @@
   "displayName": "Claude Todos",
   "description": "Live view of Claude Code TodoWrite tool for the current workspace",
   "version": "0.1.0",
+  "license": "MIT",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "todo",
+    "tasks",
+    "ai",
+    "anthropic"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },
