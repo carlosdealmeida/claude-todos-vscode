@@ -9,12 +9,15 @@ export class SnapshotService {
   ) {}
 
   build(): SessionSnapshot | null {
-    const record = this.resolver.resolve();
-    if (!record) return null;
-    return {
-      sessionId: record.sessionId,
-      cwd: record.cwd,
-      agents: this.parser.listForSession(record.sessionId, record.cwd),
-    };
+    const candidates = this.resolver.resolveCandidates();
+    for (const record of candidates) {
+      if (!this.parser.hasTranscript(record.sessionId, record.cwd)) continue;
+      return {
+        sessionId: record.sessionId,
+        cwd: record.cwd,
+        agents: this.parser.listForSession(record.sessionId, record.cwd),
+      };
+    }
+    return null;
   }
 }

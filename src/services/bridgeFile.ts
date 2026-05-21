@@ -24,12 +24,17 @@ export class BridgeFile {
   }
 
   latestForCwd(cwd: string): BridgeRecord | null {
+    const matches = this.allForCwd(cwd);
+    return matches[0] ?? null;
+  }
+
+  allForCwd(cwd: string): BridgeRecord[] {
     const eq = (a: string, b: string) => process.platform === 'win32'
       ? a.toLowerCase() === b.toLowerCase()
       : a === b;
-    const matches = this.readAll().filter(r => eq(r.cwd, cwd));
-    if (!matches.length) return null;
-    return matches.reduce((a, b) => (a.startedAt > b.startedAt ? a : b));
+    return this.readAll()
+      .filter(r => eq(r.cwd, cwd))
+      .sort((a, b) => b.startedAt - a.startedAt);
   }
 
   prune(maxAgeMs: number): void {

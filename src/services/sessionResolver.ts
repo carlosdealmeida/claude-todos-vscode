@@ -12,4 +12,10 @@ export class SessionResolver {
     if (!cwd) return null;
     return this.bridge.latestForCwd(cwd);
   }
+
+  resolveCandidates(): BridgeRecord[] {
+    const cwd = this.getWorkspaceCwd();
+    if (!cwd) return [];
+    return this.bridge.allForCwd(cwd);
+  }
 }

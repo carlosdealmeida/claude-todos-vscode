@@ -9,6 +9,8 @@ function fakeBridge(records: any[]): BridgeFile {
       const matches = records.filter(r => r.cwd === cwd);
       return matches.length ? matches.reduce((a, b) => a.startedAt > b.startedAt ? a : b) : null;
     },
+    allForCwd: (cwd: string) =>
+      records.filter(r => r.cwd === cwd).sort((a, b) => b.startedAt - a.startedAt),
     append: vi.fn(),
     prune: vi.fn(),
   } as unknown as BridgeFile;
@@ -32,5 +34,21 @@ describe('SessionResolver', () => {
   it('returns null when cwd has no record', () => {
     const resolver = new SessionResolver(fakeBridge([]), () => '/unknown');
     expect(resolver.resolve()).toBeNull();
+  });
+
+  it('resolveCandidates returns all matching cwd records, most recent first', () => {
+    const bridge = fakeBridge([
+      { cwd: '/proj', sessionId: 'a', terminalPid: 1, startedAt: 1000 },
+      { cwd: '/proj', sessionId: 'b', terminalPid: 2, startedAt: 3000 },
+      { cwd: '/proj', sessionId: 'c', terminalPid: 3, startedAt: 2000 },
+      { cwd: '/other', sessionId: 'd', terminalPid: 4, startedAt: 9000 },
+    ]);
+    const resolver = new SessionResolver(bridge, () => '/proj');
+    expect(resolver.resolveCandidates().map(r => r.sessionId)).toEqual(['b', 'c', 'a']);
+  });
+
+  it('resolveCandidates returns empty when no workspace', () => {
+    const resolver = new SessionResolver(fakeBridge([]), () => null);
+    expect(resolver.resolveCandidates()).toEqual([]);
   });
 });

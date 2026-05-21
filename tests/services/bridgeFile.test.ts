@@ -57,6 +57,15 @@ describe('BridgeFile', () => {
     expect(bridge.readAll()).toEqual([]);
   });
 
+  it('allForCwd returns records sorted by startedAt desc', () => {
+    bridge.append({ cwd: '/p', sessionId: 'mid', terminalPid: 1, startedAt: 2000 });
+    bridge.append({ cwd: '/p', sessionId: 'new', terminalPid: 2, startedAt: 3000 });
+    bridge.append({ cwd: '/p', sessionId: 'old', terminalPid: 3, startedAt: 1000 });
+    bridge.append({ cwd: '/q', sessionId: 'other', terminalPid: 4, startedAt: 4000 });
+    const list = bridge.allForCwd('/p');
+    expect(list.map(r => r.sessionId)).toEqual(['new', 'mid', 'old']);
+  });
+
   it('matches cwd case-insensitively on win32', () => {
     if (process.platform !== 'win32') return;
     bridge.append({ cwd: 'c:\\foo\\bar', sessionId: 's1', terminalPid: 1, startedAt: 1000 });
