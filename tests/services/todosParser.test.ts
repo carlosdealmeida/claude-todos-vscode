@@ -38,6 +38,62 @@ describe('TodosParser', () => {
     };
   }
 
+  function agentToolUse(toolUseId: string, name: string, prompt: string): object {
+    return {
+      type: 'assistant',
+      message: {
+        content: [
+          { type: 'tool_use', name: 'Agent', id: toolUseId, input: { name, prompt } },
+        ],
+      },
+    };
+  }
+
+  function agentResult(toolUseId: string, agentId: string): object {
+    return {
+      type: 'user',
+      toolUseResult: { agentId, status: 'completed' },
+      message: {
+        content: [
+          { type: 'tool_result', tool_use_id: toolUseId, content: 'done' },
+        ],
+      },
+    };
+  }
+
+  function agentRejection(toolUseId: string): object {
+    return {
+      type: 'user',
+      message: {
+        content: [
+          { type: 'tool_result', tool_use_id: toolUseId, content: 'The user rejected this tool use.' },
+        ],
+      },
+    };
+  }
+
+  function writeSubAgent(
+    sessionId: string,
+    cwd: string,
+    agentId: string,
+    prompt: string,
+    todos: object[] | null,
+  ): void {
+    const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(cwd), sessionId, 'subagents');
+    fs.mkdirSync(dir, { recursive: true });
+    const lines: object[] = [
+      { type: 'user', isSidechain: true, agentId, message: { role: 'user', content: prompt } },
+    ];
+    if (todos) {
+      lines.push({
+        isSidechain: true,
+        agentId,
+        message: { content: [{ type: 'tool_use', name: 'TodoWrite', input: { todos } }] },
+      });
+    }
+    fs.writeFileSync(path.join(dir, `agent-${agentId}.jsonl`), lines.map(l => JSON.stringify(l)).join('\n'));
+  }
+
   it('returns empty when no transcript file exists', () => {
     expect(parser.listForSession('nope', CWD)).toEqual([]);
   });
@@ -121,5 +177,75 @@ describe('TodosParser', () => {
       const agents = parser.listForSession('s1', upperCwd);
       expect(agents).toHaveLength(1);
     }
+  });
+
+  it('includes a completed sub-agent with its todos', () => {
+    const prompt = 'Audit the build config';
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'main task', activeForm: 'Main task', status: 'in_progress' }]),
+      agentToolUse('tool-1', 'audit-build', prompt),
+      agentResult('tool-1', 'aaa111'),
+    ]);
+    writeSubAgent('s1', CWD, 'aaa111', prompt, [
+      { content: 'sub task', activeForm: 'Sub task', status: 'completed' },
+    ]);
+    const agents = parser.listForSession('s1', CWD);
+    expect(agents).toHaveLength(2);
+    expect(agents[0].isMain).toBe(true);
+    expect(agents[1].isMain).toBe(false);
+    expect(agents[1].name).toBe('audit-build');
+    expect(agents[1].agentId).toBe('aaa111');
+    expect(agents[1].status).toBe('completed');
+    expect(agents[1].todos).toHaveLength(1);
+    expect(agents[1].todos[0].content).toBe('sub task');
+  });
+
+  it('marks a sub-agent with no result as running', () => {
+    const prompt = 'Audit security';
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+      agentToolUse('tool-1', 'audit-sec', prompt),
+    ]);
+    writeSubAgent('s1', CWD, 'bbb222', prompt, null);
+    const agents = parser.listForSession('s1', CWD);
+    expect(agents).toHaveLength(2);
+    expect(agents[1].status).toBe('running');
+    expect(agents[1].todos).toEqual([]);
+  });
+
+  it('returns sub-agents in main-transcript invocation order', () => {
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'm', activeForm: 'M', status: 'in_progress' }]),
+      agentToolUse('t1', 'first', 'prompt one'),
+      agentResult('t1', 'a1'),
+      agentToolUse('t2', 'second', 'prompt two'),
+      agentResult('t2', 'a2'),
+    ]);
+    writeSubAgent('s1', CWD, 'a2', 'prompt two', null);
+    writeSubAgent('s1', CWD, 'a1', 'prompt one', null);
+    const agents = parser.listForSession('s1', CWD);
+    expect(agents.map(a => a.name)).toEqual(['Main agent', 'first', 'second']);
+  });
+
+  it('excludes a rejected sub-agent invocation', () => {
+    const prompt = 'Rejected task';
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+      agentToolUse('tool-1', 'audit-x', prompt),
+      agentRejection('tool-1'),
+    ]);
+    writeSubAgent('s1', CWD, 'ccc333', prompt, null);
+    const agents = parser.listForSession('s1', CWD);
+    expect(agents).toHaveLength(1);
+    expect(agents[0].isMain).toBe(true);
+  });
+
+  it('excludes a sub-agent file with no matching invocation', () => {
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+    ]);
+    writeSubAgent('s1', CWD, 'ddd444', 'Orphan prompt', null);
+    const agents = parser.listForSession('s1', CWD);
+    expect(agents).toHaveLength(1);
   });
 });
