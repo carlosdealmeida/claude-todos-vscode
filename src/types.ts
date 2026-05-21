@@ -9,7 +9,9 @@ export interface Todo {
 export interface AgentTodos {
   sessionId: string;
   agentId: string;
+  name: string;
   isMain: boolean;
+  status?: 'running' | 'completed';
   todos: Todo[];
   updatedAt: number;
 }

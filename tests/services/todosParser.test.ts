@@ -57,6 +57,15 @@ describe('TodosParser', () => {
     expect(agents[0].todos[0].content).toBe('new1');
   });
 
+  it('labels the main agent', () => {
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'task', activeForm: 'Task', status: 'pending' }]),
+    ]);
+    const agents = parser.listForSession('s1', CWD);
+    expect(agents[0].name).toBe('Main agent');
+    expect(agents[0].isMain).toBe(true);
+  });
+
   it('ignores TodoWrite events from sidechains', () => {
     writeTranscript('s1', CWD, [
       todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'pending' }]),

@@ -34,6 +34,7 @@ export class TodosParser {
     return [{
       sessionId,
       agentId: sessionId,
+      name: 'Main agent',
       isMain: true,
       todos,
       updatedAt: stat.mtimeMs,
