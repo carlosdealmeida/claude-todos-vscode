@@ -4,6 +4,20 @@
   "description": "Live view of Claude Code TodoWrite tool for the current workspace",
   "version": "0.1.0",
   "license": "MIT",
+  "publisher": "TODO-PUBLISHER",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TODO-OWNER/claude-todos-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TODO-OWNER/claude-todos-vscode/issues"
+  },
+  "homepage": "https://github.com/TODO-OWNER/claude-todos-vscode#readme",
+  "galleryBanner": {
+    "color": "#1F1B16",
+    "theme": "dark"
+  },
   "keywords": [
     "claude",
     "claude-code",

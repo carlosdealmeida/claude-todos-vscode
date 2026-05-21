@@ -1,5 +1,14 @@
 # Claude Todos for VSCode
 
+<!--
+Marketplace badges. Replace TODO-PUBLISHER and TODO-OWNER once you've
+created the marketplace publisher and the GitHub repo.
+-->
+[![Marketplace](https://img.shields.io/visual-studio-marketplace/v/TODO-PUBLISHER.claude-todos?label=marketplace)](https://marketplace.visualstudio.com/items?itemName=TODO-PUBLISHER.claude-todos)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/TODO-PUBLISHER.claude-todos)](https://marketplace.visualstudio.com/items?itemName=TODO-PUBLISHER.claude-todos)
+[![CI](https://github.com/TODO-OWNER/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/TODO-OWNER/claude-todos-vscode/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Live view of [`TodoWrite`](https://docs.anthropic.com/en/docs/claude-code/sub-agents) from Claude Code, scoped to the workspace open in the current VSCode window. Two VSCode windows in different projects never see each other's todos.
 
 ## Install
