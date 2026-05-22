@@ -1,0 +1,26 @@
+name: Sugerir uma melhoria
+description: Proponha uma nova funcionalidade ou melhoria para a extensão
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual problema isso resolve?
+      description: Descreva a motivação ou a limitação atual.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solução proposta
+      description: Como você imagina que isso deveria funcionar?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: Outras abordagens que você avaliou, se houver.
+    validations:
+      required: false

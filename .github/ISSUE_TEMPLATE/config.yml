@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Relatar uma vulnerabilidade de segurança
+    url: https://github.com/carlosdealmeida/claude-todos-vscode/security/advisories/new
+    about: Falhas de segurança devem ser relatadas em privado, nunca como issue pública.

@@ -1,0 +1,65 @@
+name: Relatar um bug
+description: Reporte um comportamento incorreto da extensão Claude Todos
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar! Para falhas de **segurança**, não use este formulário —
+        siga a [política de segurança](https://github.com/carlosdealmeida/claude-todos-vscode/security/policy).
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição do bug
+      description: O que aconteceu e o que você esperava que acontecesse?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: ext-version
+    attributes:
+      label: Versão da extensão Claude Todos
+      placeholder: "0.2.0"
+    validations:
+      required: true
+  - type: input
+    id: vscode-version
+    attributes:
+      label: Versão do VSCode
+      placeholder: "1.95.0"
+    validations:
+      required: true
+  - type: input
+    id: claude-version
+    attributes:
+      label: Versão do Claude Code
+      placeholder: "2.x"
+    validations:
+      required: false
+  - type: dropdown
+    id: os
+    attributes:
+      label: Sistema operacional
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Logs, capturas de tela ou contexto adicional
+      description: Cole aqui mensagens de erro, prints ou qualquer informação útil.
+    validations:
+      required: false
