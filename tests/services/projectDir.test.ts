@@ -12,9 +12,14 @@ describe('encodeCwdToProjectDir', () => {
       .toBe('-home-user-proj');
   });
 
-  it('preserves alphanumerics, dots and hyphens', () => {
+  it('replaces dots with hyphens (matches Claude Code project-dir encoding)', () => {
     expect(encodeCwdToProjectDir('/a.b-c/d'))
-      .toBe('-a.b-c-d');
+      .toBe('-a-b-c-d');
+  });
+
+  it('encodes a Windows cwd with a dot in a folder name', () => {
+    expect(encodeCwdToProjectDir('c:\\@work\\WA\\WAConnect.Core'))
+      .toBe('c---work-WA-WAConnect-Core');
   });
 
   it('replaces drive letter colon', () => {
