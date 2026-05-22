@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-05-22
+
+### Added
+- Sub-agents are now rendered in the panel alongside the main agent, each with its own todo list and a `running` badge while active.
+- Session picker (QuickPick) to choose which Claude Code session the panel follows; the pinned choice is persisted per workspace.
+- Session title header and a divider separating the active session from history.
+- README available in Portuguese (primary), English and Spanish.
+
+### Changed
+- Build toolchain updated: Vite 7, Vitest 3, esbuild 0.25 and `@sveltejs/vite-plugin-svelte` 6. Clears all `npm audit` advisories — these were dev-only dependencies and were never bundled into the published `.vsix`.
+
+### Fixed
+- Parser: encode dots in `cwd` as hyphens to match Claude Code's project-directory encoding.
+- Parser: dedupe sub-agents by `agentId` to avoid a webview crash.
+- Security: the webview CSP nonce now uses `crypto.randomBytes` instead of `Math.random()`.
+- Security: `sessionId` is validated against a safe character set before being used to build filesystem paths, preventing path traversal.
+
 ## [0.1.0] - 2026-05-21
 
 Initial release.
