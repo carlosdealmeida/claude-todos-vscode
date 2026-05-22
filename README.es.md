@@ -2,8 +2,9 @@
 
 [Português](README.md) · [English](README.en.md) · **Español**
 
-[![Marketplace](https://img.shields.io/visual-studio-marketplace/v/CarlosJunior1992.claude-todos?label=marketplace)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/CarlosJunior1992.claude-todos)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CarlosJunior1992.claude-todos?label=VS%20Code%20Marketplace&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/CarlosJunior1992.claude-todos?label=installs)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/CarlosJunior1992.claude-todos?label=rating)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos&ssr=false#review-details)
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
