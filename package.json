@@ -105,16 +105,16 @@
     "package": "vsce package"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^4.0.4",
+    "@sveltejs/vite-plugin-svelte": "^6.0.0",
     "@types/node": "^20.19.41",
     "@types/vscode": "~1.85.0",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.1",
-    "esbuild": "^0.20.2",
+    "esbuild": "^0.25.0",
     "svelte": "^5.55.9",
     "svelte-check": "^3.8.6",
     "typescript": "^5.9.3",
-    "vite": "^5.4.21",
-    "vitest": "^1.6.1"
+    "vite": "^7.0.0",
+    "vitest": "^3.0.0"
   }
 }
