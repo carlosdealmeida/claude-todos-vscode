@@ -2,9 +2,7 @@
 
 **Português** · [English](README.en.md) · [Español](README.es.md)
 
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CarlosJunior1992.claude-todos?label=VS%20Code%20Marketplace&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/CarlosJunior1992.claude-todos?label=installs)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
-[![Rating](https://img.shields.io/visual-studio-marketplace/r/CarlosJunior1992.claude-todos?label=rating)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos&ssr=false#review-details)
+[![VS Code Marketplace](https://img.shields.io/badge/VS_Code_Marketplace-Claude_Todos-007ACC?logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
