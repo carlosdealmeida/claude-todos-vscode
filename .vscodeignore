@@ -20,5 +20,9 @@ vitest.config.mts
 .git/**
 *.vsix
 CONTRIBUTING.md
+CONTRIBUTING.en.md
+CONTRIBUTING.es.md
+README.en.md
+README.es.md
 RELEASING.md
 media/README.md
