@@ -1,81 +1,78 @@
-# Claude Todos for VSCode
+# Claude Todos para VSCode
 
-<!--
-Marketplace badges. Replace CarlosJunior1992 and carlosdealmeida once you've
-created the marketplace publisher and the GitHub repo.
--->
+**Português** · [English](README.en.md) · [Español](README.es.md)
+
 [![Marketplace](https://img.shields.io/visual-studio-marketplace/v/CarlosJunior1992.claude-todos?label=marketplace)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/CarlosJunior1992.claude-todos)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Live view of [`TodoWrite`](https://docs.anthropic.com/en/docs/claude-code/sub-agents) from Claude Code, scoped to the workspace open in the current VSCode window. Two VSCode windows in different projects never see each other's todos.
+Visualização ao vivo do `TodoWrite` do Claude Code, restrita ao workspace aberto na janela atual do VSCode. O painel mostra o agente principal e seus sub-agents lado a lado. Duas janelas do VSCode em projetos diferentes nunca veem os todos uma da outra.
 
-## Install
+## Instalação
 
-1. Install the extension (`.vsix` file or VSCode Marketplace once published).
-2. On first launch, accept the prompt to install hooks in `~/.claude/settings.json` — the extension adds two: `SessionStart` and `UserPromptSubmit`. Existing hooks are preserved.
-3. Open a folder and run `claude` in any terminal. The **Claude Todos** view (Activity Bar) populates as soon as Claude calls `TodoWrite`.
+1. Instale a extensão (arquivo `.vsix` ou pelo VSCode Marketplace, quando publicado).
+2. No primeiro uso, aceite o aviso para instalar os hooks em `~/.claude/settings.json` — a extensão adiciona dois: `SessionStart` e `UserPromptSubmit`. Hooks existentes são preservados.
+3. Abra uma pasta e execute `claude` em qualquer terminal. A visão **Claude Todos** (Barra de Atividades) é populada assim que o Claude chama `TodoWrite`.
 
-**Sessions that were already running** when you installed the hooks are picked up on the next message you send to them (that's what `UserPromptSubmit` is for). New sessions are tracked immediately.
+**Sessões que já estavam em execução** quando você instalou os hooks são detectadas na próxima mensagem que você enviar a elas (é para isso que serve o `UserPromptSubmit`). Sessões novas são rastreadas imediatamente.
 
-## Commands
+## Comandos
 
-| Command | Default keybinding |
+| Comando | Atalho padrão |
 |---|---|
 | Claude Todos: Open in Editor | `Ctrl+Alt+T` / `Cmd+Alt+T` |
 | Claude Todos: Refresh | — |
 | Claude Todos: Install Session Hook | — |
 
-## Settings
+## Configurações
 
-| Setting | Default | Effect |
+| Configuração | Padrão | Efeito |
 |---|---|---|
-| `claudeTodos.claudeDir` | `""` (auto-detect from `os.homedir()`) | Override the `~/.claude` location. |
-| `claudeTodos.autoInstallHook` | `true` | Show the first-run prompt asking to install the hooks. |
+| `claudeTodos.claudeDir` | `""` (detecção automática via `os.homedir()`) | Sobrescreve a localização de `~/.claude`. |
+| `claudeTodos.autoInstallHook` | `true` | Mostra o aviso de primeira execução pedindo para instalar os hooks. |
 
-## Privacy and data flow
+## Privacidade e fluxo de dados
 
-This extension is **fully local**. Nothing is sent to a server.
+Esta extensão é **totalmente local**. Nada é enviado para nenhum servidor.
 
-| File | Touched how | Why |
+| Arquivo | Como é acessado | Por quê |
 |---|---|---|
-| `~/.claude/settings.json` | Read + written (once, with permission) | Adds two hook commands under `hooks.SessionStart` and `hooks.UserPromptSubmit`. Other hooks and settings are preserved. |
-| `~/.claude/.vscode-todos-bridge/sessions.json` | Written by the bundled hook script | Records `{cwd, sessionId, terminalPid, startedAt}` so the extension knows which Claude session belongs to which VSCode window. Capped at 200 entries. |
-| `~/.claude/projects/{cwd-encoded}/{sessionId}.jsonl` | Read only | Claude Code's own session transcript. The extension scans it from the end to find the latest `TodoWrite` event. |
-| `~/.claude/todos/` | Not touched | Legacy location from Claude Code 1.x. Ignored. |
+| `~/.claude/settings.json` | Lido + escrito (uma vez, com permissão) | Adiciona dois comandos de hook em `hooks.SessionStart` e `hooks.UserPromptSubmit`. Outros hooks e configurações são preservados. |
+| `~/.claude/.vscode-todos-bridge/sessions.json` | Escrito pelo script de hook embarcado | Registra `{cwd, sessionId, terminalPid, startedAt}` para a extensão saber qual sessão do Claude pertence a qual janela do VSCode. Limitado a 200 entradas. |
+| `~/.claude/projects/{cwd-encoded}/{sessionId}.jsonl` | Apenas leitura | Transcript da sessão do próprio Claude Code. A extensão o percorre do fim para o início para achar o último evento `TodoWrite`. |
+| `~/.claude/todos/` | Não é tocado | Localização legada do Claude Code 1.x. Ignorada. |
 
-The extension never modifies your transcripts and never deletes anything.
+A extensão nunca modifica seus transcripts e nunca apaga nada.
 
-## Requirements
+## Requisitos
 
-- VSCode 1.85 or newer
-- Claude Code 2.x (anything that writes transcripts to `~/.claude/projects/`)
-- Node.js 20+ on `PATH` (the hook script is a small Node program)
+- VSCode 1.85 ou mais recente
+- Claude Code 2.x (qualquer versão que escreva transcripts em `~/.claude/projects/`)
+- Node.js 20+ no `PATH` (o script de hook é um pequeno programa Node)
 
-## Building from source
+## Compilando a partir do código-fonte
 
 ```bash
 git clone <repo-url>
 cd claude-todos-vscode
 npm install
-npm test         # vitest — 36 tests across 6 service suites
-npm run build    # esbuild for the extension + hook, vite for the Svelte webview
-npx vsce package # produces claude-todos-<version>.vsix
+npm test         # vitest — 51 testes em 6 suítes de serviço
+npm run build    # esbuild para a extensão + hook, vite para o webview Svelte
+npx vsce package # gera claude-todos-<versão>.vsix
 ```
 
-To run the extension in a development host: open the folder in VSCode and press F5 (uses `.vscode/launch.json`).
+Para rodar a extensão em um host de desenvolvimento: abra a pasta no VSCode e pressione F5 (usa `.vscode/launch.json`).
 
-## Known limitations
+## Limitações conhecidas
 
-- Sub-agent (`isSidechain`) todos are recognized in the transcript but not yet rendered — only the main thread's `TodoWrite` is shown.
-- Multi-root workspaces use only the first folder.
-- The hook script must be reachable from the path stored in `~/.claude/settings.json`. If you delete the extension manually without uninstalling, those hook commands stay behind as no-ops — remove them by hand or reinstall and use `Claude Todos: Install Session Hook` again.
+- Workspaces multi-root usam apenas a primeira pasta.
+- O script de hook precisa estar acessível pelo caminho armazenado em `~/.claude/settings.json`. Se você apagar a extensão manualmente sem desinstalá-la, esses comandos de hook permanecem como no-ops — remova-os à mão ou reinstale e use `Claude Todos: Install Session Hook` novamente.
 
-## Contributing
+## Contribuindo
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the smoke-test checklist and the manual test plan.
+Veja [CONTRIBUTING.md](CONTRIBUTING.md) para o checklist de smoke-test e o plano de testes manuais.
 
-## License
+## Licença
 
 [MIT](LICENSE)
