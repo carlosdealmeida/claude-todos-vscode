@@ -3,7 +3,7 @@
   import type { AgentTodos } from '../../types';
   import TodoItem from './TodoItem.svelte';
 
-  let { agent, defaultExpanded = true }: { agent: AgentTodos; defaultExpanded?: boolean } = $props();
+  let { agent, defaultExpanded = true, history = false }: { agent: AgentTodos; defaultExpanded?: boolean; history?: boolean } = $props();
   let expanded = $state(defaultExpanded);
 
   let counts = $derived({
@@ -15,7 +15,7 @@
   let title = $derived(agent.name);
 </script>
 
-<section class="agent" class:sub={!agent.isMain}>
+<section class="agent" class:sub={!agent.isMain} class:hist={history}>
   <button class="header" onclick={() => expanded = !expanded} aria-expanded={expanded}>
     <span class="chevron" class:open={expanded}>▶</span>
     <span class="title">{title}</span>
@@ -46,6 +46,7 @@
     overflow: hidden;
   }
   .agent.sub { margin-left: 1rem; }
+  .agent.hist { opacity: 0.5; }
   .header {
     width: 100%;
     display: flex;

@@ -46,6 +46,10 @@ class TodosStore {
   openPanel(): void {
     this.post({ type: 'openPanel' });
   }
+
+  pickSession(): void {
+    this.post({ type: 'pickSession' });
+  }
 }
 
 export const todosStore = new TodosStore();

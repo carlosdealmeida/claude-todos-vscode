@@ -2,6 +2,15 @@
   import { todosStore } from './stores.svelte';
   import AgentSection from './lib/AgentSection.svelte';
   import EmptyState from './lib/EmptyState.svelte';
+  import type { AgentTodos } from '../types';
+
+  function isHistory(agent: AgentTodos): boolean {
+    return !agent.isMain && agent.status !== 'running' && agent.todos.length === 0;
+  }
+
+  function isFirstHistory(agents: AgentTodos[], i: number): boolean {
+    return isHistory(agents[i]) && (i === 0 || !isHistory(agents[i - 1]));
+  }
 
   let snapshot = $derived(todosStore.snapshot);
 </script>
@@ -17,14 +26,23 @@
     <EmptyState reason="no-session" />
   {:else}
     <header class="top">
-      <div class="session-id" title={snapshot.sessionId}>
-        Session · {snapshot.sessionId.slice(0, 8)}
-      </div>
+      <button
+        class="session-btn"
+        onclick={() => todosStore.pickSession()}
+        title={`${snapshot.title}\n${snapshot.sessionId}`}
+      >
+        {#if snapshot.pinned}<span class="pin">📌</span>{/if}
+        <span class="session-title">{snapshot.title}</span>
+        <span class="caret">▾</span>
+      </button>
       <button class="ghost" onclick={() => todosStore.refresh()} title="Refresh">↻</button>
     </header>
     <div class="agents">
-      {#each snapshot.agents as agent (agent.agentId)}
-        <AgentSection {agent} defaultExpanded={agent.isMain} />
+      {#each snapshot.agents as agent, i (agent.agentId)}
+        {#if isFirstHistory(snapshot.agents, i)}
+          <div class="history-divider">histórico</div>
+        {/if}
+        <AgentSection {agent} defaultExpanded={agent.isMain} history={isHistory(agent)} />
       {/each}
     </div>
   {/if}
@@ -44,8 +62,35 @@
     font-size: 0.85em;
     opacity: 0.8;
   }
-  .session-id {
-    font-family: var(--vscode-editor-font-family);
+  .session-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 4px;
+    color: inherit;
+    font: inherit;
+    padding: 0.15rem 0.5rem;
+    cursor: pointer;
+  }
+  .session-btn:hover { background: var(--vscode-list-hoverBackground); }
+  .session-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pin, .caret { flex: none; }
+  .caret { opacity: 0.7; }
+  .history-divider {
+    text-transform: uppercase;
+    font-size: 0.7em;
+    letter-spacing: 0.5px;
+    color: var(--vscode-descriptionForeground);
+    text-align: center;
+    margin: 0.5rem 0 0.25rem;
   }
   .ghost {
     background: transparent;
