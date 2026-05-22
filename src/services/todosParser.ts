@@ -59,6 +59,38 @@ export class TodosParser {
     return result;
   }
 
+  transcriptMtime(sessionId: string, cwd: string): number | null {
+    const transcriptPath = this.transcriptPath(sessionId, cwd);
+    if (!transcriptPath) return null;
+    try {
+      return fs.statSync(transcriptPath).mtimeMs;
+    } catch {
+      return null;
+    }
+  }
+
+  readSessionTitle(sessionId: string, cwd: string): string | null {
+    const transcriptPath = this.transcriptPath(sessionId, cwd);
+    if (!transcriptPath) return null;
+    let lines: string[];
+    try {
+      lines = fs.readFileSync(transcriptPath, 'utf-8').split('\n');
+    } catch {
+      return null;
+    }
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if (!line || line.indexOf('"type":"ai-title"') < 0) continue;
+      try {
+        const entry = JSON.parse(line) as { type?: string; aiTitle?: unknown };
+        if (entry.type === 'ai-title' && typeof entry.aiTitle === 'string') {
+          return entry.aiTitle;
+        }
+      } catch { /* skip malformed line */ }
+    }
+    return null;
+  }
+
   private listSubAgents(sessionId: string, cwd: string, mainTranscriptPath: string): AgentTodos[] {
     const dir = this.subAgentsDir(sessionId, cwd);
     if (!dir) return [];

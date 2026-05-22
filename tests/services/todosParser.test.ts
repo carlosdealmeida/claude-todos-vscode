@@ -276,4 +276,28 @@ describe('TodosParser', () => {
       'Main agent', 'is-running', 'has-todos', 'empty-new', 'empty-old',
     ]);
   });
+
+  it('returns the transcript mtime, or null when absent', () => {
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'x', activeForm: 'X', status: 'pending' }]),
+    ]);
+    expect(typeof parser.transcriptMtime('s1', CWD)).toBe('number');
+    expect(parser.transcriptMtime('nope', CWD)).toBeNull();
+  });
+
+  it('reads the latest ai-title from the transcript', () => {
+    writeTranscript('s1', CWD, [
+      { type: 'ai-title', aiTitle: 'Primeiro título', sessionId: 's1' },
+      todoWriteEntry([{ content: 'x', activeForm: 'X', status: 'pending' }]),
+      { type: 'ai-title', aiTitle: 'Título atual', sessionId: 's1' },
+    ]);
+    expect(parser.readSessionTitle('s1', CWD)).toBe('Título atual');
+  });
+
+  it('returns null when the transcript has no ai-title', () => {
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'x', activeForm: 'X', status: 'pending' }]),
+    ]);
+    expect(parser.readSessionTitle('s1', CWD)).toBeNull();
+  });
 });
