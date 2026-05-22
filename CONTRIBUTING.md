@@ -1,4 +1,6 @@
-# Contributing
+# Contribuindo
+
+**Português** · [English](CONTRIBUTING.en.md) · [Español](CONTRIBUTING.es.md)
 
 ## Setup
 
@@ -8,53 +10,52 @@ npm test
 npm run build
 ```
 
-Tests use [Vitest](https://vitest.dev/). Build uses esbuild (extension + hook) and Vite (Svelte webview).
+Os testes usam [Vitest](https://vitest.dev/). O build usa esbuild (extensão + hook) e Vite (webview Svelte).
 
-## Project layout
+## Estrutura do projeto
 
 ```
 src/
-  extension.ts             # entry point — wires services, providers, commands
-  hooks/sessionStart.ts    # standalone hook script, bundled separately
+  extension.ts             # ponto de entrada — conecta serviços, providers, comandos
+  hooks/sessionStart.ts    # script de hook independente, empacotado à parte
   services/
-    bridgeFile.ts          # ~/.claude/.vscode-todos-bridge/sessions.json reader/writer
-    todosParser.ts         # reads TodoWrite from ~/.claude/projects/*.jsonl
-    sessionResolver.ts     # workspace cwd -> session candidates from bridge
-    snapshotService.ts     # composes resolver + parser, skips ghost sessions
-    todosWatcher.ts        # fs.watch on bridge + projects dirs
-    hookInstaller.ts       # idempotent edits to ~/.claude/settings.json
-    projectDir.ts          # encodes cwd to Claude Code's project dir name
+    bridgeFile.ts          # leitura/escrita de ~/.claude/.vscode-todos-bridge/sessions.json
+    todosParser.ts         # lê TodoWrite de ~/.claude/projects/*.jsonl
+    sessionResolver.ts     # cwd do workspace -> sessões candidatas do bridge
+    snapshotService.ts     # compõe resolver + parser, ignora sessões fantasma
+    todosWatcher.ts        # fs.watch nos diretórios bridge + projects
+    hookInstaller.ts       # edições idempotentes em ~/.claude/settings.json
+    projectDir.ts          # codifica o cwd para o nome de diretório de projeto do Claude Code
   providers/
-    todosViewProvider.ts   # Activity Bar WebviewView
-    todosPanelProvider.ts  # Editor WebviewPanel
-  webview/                 # Svelte 5 webview (Vite build)
-tests/services/            # unit tests, one per service
+    todosViewProvider.ts   # WebviewView da Barra de Atividades
+    todosPanelProvider.ts  # WebviewPanel do editor
+  webview/                 # webview Svelte 5 (build com Vite)
+tests/services/            # testes unitários, um por serviço
 ```
 
-## Manual smoke test checklist
+## Checklist de smoke test manual
 
-Run `F5` from VSCode (or install the produced `.vsix`) and verify:
+Rode `F5` no VSCode (ou instale o `.vsix` gerado) e verifique:
 
-- [ ] Activity Bar shows the Claude Todos icon
-- [ ] Clicking opens the view
-- [ ] First launch prompts to install hooks
-- [ ] After accepting, `~/.claude/settings.json` contains both `SessionStart` and `UserPromptSubmit` entries pointing at this extension's `sessionStart.js`
-- [ ] In a fresh extension host window, run `claude` in a terminal — bridge file gets a new record
-- [ ] Use `TodoWrite` in the Claude Code session — view updates within ~500ms
-- [ ] `Ctrl+Alt+T` opens the editor panel; both view and panel update in sync
-- [ ] Toggle VSCode theme dark↔light → colors swap correctly
-- [ ] Close folder → view shows empty state
-- [ ] Open a different folder with no Claude session → "Waiting for a Claude Code session"
-- [ ] Two VSCode windows, two different folders, two `claude` sessions → each sees only its own todos
-- [ ] Ghost session in bridge (entry whose transcript doesn't exist) is skipped, the next valid one is used
+- [ ] A Barra de Atividades mostra o ícone do Claude Todos
+- [ ] Clicar abre a visão
+- [ ] O primeiro uso pede para instalar os hooks
+- [ ] Após aceitar, `~/.claude/settings.json` contém as entradas `SessionStart` e `UserPromptSubmit` apontando para o `sessionStart.js` desta extensão
+- [ ] Numa janela nova de host de extensão, execute `claude` num terminal — o arquivo bridge ganha um novo registro
+- [ ] Use `TodoWrite` na sessão do Claude Code — a visão atualiza em ~500ms
+- [ ] `Ctrl+Alt+T` abre o painel no editor; visão e painel atualizam em sincronia
+- [ ] Alternar o tema do VSCode entre escuro↔claro → as cores trocam corretamente
+- [ ] Fechar a pasta → a visão mostra o estado vazio
+- [ ] Abrir outra pasta sem sessão do Claude → "Waiting for a Claude Code session"
+- [ ] Duas janelas do VSCode, duas pastas diferentes, duas sessões `claude` → cada uma vê apenas os próprios todos
+- [ ] Sessão fantasma no bridge (registro cujo transcript não existe) é ignorada, e a próxima válida é usada
 
-## Releasing
+## Release
 
-See [RELEASING.md](RELEASING.md) for the full process — tag a `v*` release,
-the workflow builds the `.vsix`, then it's uploaded to the Marketplace manually.
+Veja [RELEASING.md](RELEASING.md) para o processo completo — marque um release `v*`, o workflow gera o `.vsix`, e ele é enviado ao Marketplace manualmente.
 
-## Code style
+## Estilo de código
 
-- Default to no comments. Only add one when the *why* is non-obvious.
-- Prefer tight, dependency-free services. The reason the codebase has no test framework helpers (factories, fixtures, etc.) is that each service is small enough to test directly.
-- TDD when adding a service: write the failing test, then the implementation, then the green check.
+- Por padrão, sem comentários. Só adicione um quando o *porquê* não for óbvio.
+- Prefira serviços enxutos e sem dependências. O motivo de não haver helpers de framework de teste (factories, fixtures, etc.) é que cada serviço é pequeno o bastante para ser testado diretamente.
+- TDD ao adicionar um serviço: escreva o teste que falha, depois a implementação, depois o check verde.

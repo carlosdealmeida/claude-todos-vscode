@@ -71,7 +71,7 @@ To run the extension in a development host: open the folder in VSCode and press 
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the smoke-test checklist and the manual test plan.
+See [CONTRIBUTING.en.md](CONTRIBUTING.en.md) for the smoke-test checklist and the manual test plan.
 
 ## License
 

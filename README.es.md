@@ -71,7 +71,7 @@ Para ejecutar la extensión en un host de desarrollo: abre la carpeta en VSCode 
 
 ## Contribuir
 
-Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para el checklist de smoke-test y el plan de pruebas manuales.
+Consulta [CONTRIBUTING.es.md](CONTRIBUTING.es.md) para el checklist de smoke-test y el plan de pruebas manuales.
 
 ## Licencia
 
