@@ -114,9 +114,12 @@ export class TodosParser {
     }
 
     const out: AgentTodos[] = [];
+    const seenAgentIds = new Set<string>();
     for (const inv of invocations) {
       const match = byPrompt.get(inv.prompt);
       if (!match) continue;
+      if (seenAgentIds.has(match.agentId)) continue;
+      seenAgentIds.add(match.agentId);
       out.push({
         sessionId,
         agentId: match.agentId,

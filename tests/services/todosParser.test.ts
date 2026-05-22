@@ -300,4 +300,19 @@ describe('TodosParser', () => {
     ]);
     expect(parser.readSessionTitle('s1', CWD)).toBeNull();
   });
+
+  it('does not emit duplicate sub-agent agentIds when prompts collide', () => {
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+      agentToolUse('t1', 'dup', 'same prompt'),
+      agentResult('t1', 'aaa'),
+      agentToolUse('t2', 'dup', 'same prompt'),
+      agentResult('t2', 'bbb'),
+    ]);
+    writeSubAgent('s1', CWD, 'aaa', 'same prompt', null);
+    writeSubAgent('s1', CWD, 'bbb', 'same prompt', null);
+    const agents = parser.listForSession('s1', CWD);
+    const ids = agents.map(a => a.agentId);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });
