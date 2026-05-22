@@ -22,6 +22,9 @@ vitest.config.mts
 CONTRIBUTING.md
 CONTRIBUTING.en.md
 CONTRIBUTING.es.md
+SECURITY.md
+SECURITY.en.md
+SECURITY.es.md
 README.en.md
 README.es.md
 RELEASING.md
