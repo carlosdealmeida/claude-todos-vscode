@@ -6,8 +6,8 @@ function makeParser(opts: {
   titles?: Record<string, string | null>;
 }) {
   return {
-    transcriptMtime: (sessionId: string) => opts.mtimes[sessionId] ?? null,
-    readSessionTitle: (sessionId: string) => opts.titles?.[sessionId] ?? null,
+    transcriptMtime: (sessionId: string, _cwd: string) => opts.mtimes[sessionId] ?? null,
+    readSessionTitle: (sessionId: string, _cwd: string) => opts.titles?.[sessionId] ?? null,
     listForSession: (sessionId: string) => [
       { sessionId, agentId: sessionId, name: 'Main agent', isMain: true, todos: [], updatedAt: 0 },
     ],
