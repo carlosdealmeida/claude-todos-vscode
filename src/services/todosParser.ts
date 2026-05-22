@@ -5,6 +5,11 @@ import type { AgentTodos, Todo, TodoStatus } from '../types';
 
 const VALID_STATUSES: TodoStatus[] = ['pending', 'in_progress', 'completed'];
 
+// Session ids are used to build filesystem paths. Restrict them to a safe
+// character set so a crafted id (e.g. containing `..` or path separators)
+// cannot traverse outside the Claude projects directory.
+const SAFE_SESSION_ID = /^[A-Za-z0-9_-]+$/;
+
 interface ContentBlock {
   type?: string;
   name?: string;
@@ -202,6 +207,7 @@ export class TodosParser {
   }
 
   private transcriptPath(sessionId: string, cwd: string): string | null {
+    if (!SAFE_SESSION_ID.test(sessionId)) return null;
     for (const candidate of this.cwdCandidates(cwd)) {
       const p = path.join(this.claudeDir, 'projects', encodeCwdToProjectDir(candidate), `${sessionId}.jsonl`);
       if (fs.existsSync(p)) return p;
@@ -210,6 +216,7 @@ export class TodosParser {
   }
 
   private subAgentsDir(sessionId: string, cwd: string): string | null {
+    if (!SAFE_SESSION_ID.test(sessionId)) return null;
     for (const candidate of this.cwdCandidates(cwd)) {
       const d = path.join(this.claudeDir, 'projects', encodeCwdToProjectDir(candidate), sessionId, 'subagents');
       if (fs.existsSync(d)) return d;

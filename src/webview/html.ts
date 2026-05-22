@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { randomBytes } from 'crypto';
 
 export function buildWebviewHtml(
   webview: vscode.Webview,
@@ -33,6 +34,6 @@ export function buildWebviewHtml(
 }
 
 function generateNonce(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  return Array.from({ length: 32 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  // Cryptographically secure: a CSP nonce must be unpredictable.
+  return randomBytes(16).toString('hex');
 }
