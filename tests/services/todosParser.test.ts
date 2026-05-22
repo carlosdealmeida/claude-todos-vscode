@@ -78,6 +78,7 @@ describe('TodosParser', () => {
     agentId: string,
     prompt: string,
     todos: object[] | null,
+    mtimeMs?: number,
   ): void {
     const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(cwd), sessionId, 'subagents');
     fs.mkdirSync(dir, { recursive: true });
@@ -91,7 +92,11 @@ describe('TodosParser', () => {
         message: { content: [{ type: 'tool_use', name: 'TodoWrite', input: { todos } }] },
       });
     }
-    fs.writeFileSync(path.join(dir, `agent-${agentId}.jsonl`), lines.map(l => JSON.stringify(l)).join('\n'));
+    const filePath = path.join(dir, `agent-${agentId}.jsonl`);
+    fs.writeFileSync(filePath, lines.map(l => JSON.stringify(l)).join('\n'));
+    if (mtimeMs !== undefined) {
+      fs.utimesSync(filePath, new Date(mtimeMs), new Date(mtimeMs));
+    }
   }
 
   it('returns empty when no transcript file exists', () => {
@@ -247,5 +252,28 @@ describe('TodosParser', () => {
     writeSubAgent('s1', CWD, 'ddd444', 'Orphan prompt', null);
     const agents = parser.listForSession('s1', CWD);
     expect(agents).toHaveLength(1);
+  });
+
+  it('sorts sub-agents: running, then with todos, then empty; recent first', () => {
+    const todo = [{ content: 'x', activeForm: 'X', status: 'pending' }];
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+      agentToolUse('t-empty-old', 'empty-old', 'p empty old'),
+      agentResult('t-empty-old', 'a-empty-old'),
+      agentToolUse('t-empty-new', 'empty-new', 'p empty new'),
+      agentResult('t-empty-new', 'a-empty-new'),
+      agentToolUse('t-todos', 'has-todos', 'p todos'),
+      agentResult('t-todos', 'a-todos'),
+      agentToolUse('t-running', 'is-running', 'p running'),
+    ]);
+    writeSubAgent('s1', CWD, 'a-empty-old', 'p empty old', null, 1000);
+    writeSubAgent('s1', CWD, 'a-empty-new', 'p empty new', null, 2000);
+    writeSubAgent('s1', CWD, 'a-todos', 'p todos', todo, 1500);
+    writeSubAgent('s1', CWD, 'a-running', 'p running', null, 1200);
+
+    const agents = parser.listForSession('s1', CWD);
+    expect(agents.map(a => a.name)).toEqual([
+      'Main agent', 'is-running', 'has-todos', 'empty-new', 'empty-old',
+    ]);
   });
 });

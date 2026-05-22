@@ -99,7 +99,19 @@ export class TodosParser {
         updatedAt: match.updatedAt,
       });
     }
+    out.sort((a, b) => {
+      const ga = this.subAgentGroup(a);
+      const gb = this.subAgentGroup(b);
+      if (ga !== gb) return ga - gb;
+      return b.updatedAt - a.updatedAt;
+    });
     return out;
+  }
+
+  private subAgentGroup(agent: AgentTodos): number {
+    if (agent.status === 'running') return 0;
+    if (agent.todos.length > 0) return 1;
+    return 2;
   }
 
   private readAgentInvocations(mainTranscriptPath: string): AgentInvocation[] {
