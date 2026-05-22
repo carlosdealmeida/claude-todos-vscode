@@ -1,6 +1,9 @@
 .vscode/**
 .vscode-test/**
 .github/**
+.claude/**
+.superpowers/**
+docs/**
 src/**
 tests/**
 out/**
