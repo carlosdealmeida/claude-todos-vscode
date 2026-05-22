@@ -32,10 +32,6 @@ interface AgentInvocation {
 export class TodosParser {
   constructor(private readonly claudeDir: string) {}
 
-  hasTranscript(sessionId: string, cwd: string): boolean {
-    return this.transcriptPath(sessionId, cwd) !== null;
-  }
-
   listForSession(sessionId: string, cwd: string): AgentTodos[] {
     const transcriptPath = this.transcriptPath(sessionId, cwd);
     if (!transcriptPath) return [];

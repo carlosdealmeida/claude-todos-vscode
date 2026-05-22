@@ -19,7 +19,16 @@ export interface AgentTodos {
 export interface SessionSnapshot {
   sessionId: string;
   cwd: string;
+  title: string;
+  pinned: boolean;
   agents: AgentTodos[];
+}
+
+export interface SessionSummary {
+  sessionId: string;
+  cwd: string;
+  title: string;
+  updatedAt: number;
 }
 
 export interface BridgeRecord {
@@ -37,4 +46,5 @@ export type ExtensionMessage =
 export type WebviewMessage =
   | { type: 'ready' }
   | { type: 'refresh' }
-  | { type: 'openPanel' };
+  | { type: 'openPanel' }
+  | { type: 'pickSession' };

@@ -1,47 +1,101 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { SnapshotService } from '../../src/services/snapshotService';
 
-describe('SnapshotService', () => {
-  it('returns null when there are no candidates', () => {
-    const resolver = { resolveCandidates: () => [] };
-    const parser = { hasTranscript: vi.fn(), listForSession: vi.fn() };
-    const svc = new SnapshotService(resolver as any, parser as any);
-    expect(svc.build()).toBeNull();
-    expect(parser.hasTranscript).not.toHaveBeenCalled();
-  });
+function makeParser(opts: {
+  mtimes: Record<string, number | null>;
+  titles?: Record<string, string | null>;
+}) {
+  return {
+    transcriptMtime: (sessionId: string) => opts.mtimes[sessionId] ?? null,
+    readSessionTitle: (sessionId: string) => opts.titles?.[sessionId] ?? null,
+    listForSession: (sessionId: string) => [
+      { sessionId, agentId: sessionId, name: 'Main agent', isMain: true, todos: [], updatedAt: 0 },
+    ],
+  };
+}
 
-  it('picks the most recent candidate that has a transcript', () => {
+describe('SnapshotService', () => {
+  it('returns null when no session has a transcript', () => {
     const resolver = {
       resolveCandidates: () => [
-        { cwd: '/p', sessionId: 'ghost', terminalPid: 1, startedAt: 3000 },
-        { cwd: '/p', sessionId: 'real', terminalPid: 2, startedAt: 2000 },
-        { cwd: '/p', sessionId: 'older', terminalPid: 3, startedAt: 1000 },
+        { cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 },
       ],
     };
-    const parser = {
-      hasTranscript: (sessionId: string) => sessionId !== 'ghost',
-      listForSession: (sessionId: string, cwd: string) =>
-        [{ sessionId, agentId: sessionId, isMain: true, todos: [], updatedAt: 0 }],
+    const parser = makeParser({ mtimes: { a: null } });
+    const svc = new SnapshotService(resolver as any, parser as any);
+    expect(svc.build()).toBeNull();
+  });
+
+  it('picks the session with the most recent transcript mtime', () => {
+    const resolver = {
+      resolveCandidates: () => [
+        { cwd: '/p', sessionId: 'old', terminalPid: null, startedAt: 9 },
+        { cwd: '/p', sessionId: 'new', terminalPid: null, startedAt: 1 },
+      ],
     };
+    const parser = makeParser({ mtimes: { old: 1000, new: 5000 } });
     const svc = new SnapshotService(resolver as any, parser as any);
     const snap = svc.build()!;
-    expect(snap.sessionId).toBe('real');
-    expect(snap.cwd).toBe('/p');
+    expect(snap.sessionId).toBe('new');
+    expect(snap.pinned).toBe(false);
   });
 
-  it('returns null when no candidate has a transcript', () => {
+  it('honors a pinned session that still has a transcript', () => {
     const resolver = {
       resolveCandidates: () => [
-        { cwd: '/p', sessionId: 'a', terminalPid: 1, startedAt: 2000 },
-        { cwd: '/p', sessionId: 'b', terminalPid: 2, startedAt: 1000 },
+        { cwd: '/p', sessionId: 'new', terminalPid: null, startedAt: 1 },
+        { cwd: '/p', sessionId: 'pinnedone', terminalPid: null, startedAt: 2 },
       ],
     };
-    const parser = {
-      hasTranscript: () => false,
-      listForSession: vi.fn(),
-    };
+    const parser = makeParser({ mtimes: { new: 5000, pinnedone: 1000 } });
     const svc = new SnapshotService(resolver as any, parser as any);
-    expect(svc.build()).toBeNull();
-    expect(parser.listForSession).not.toHaveBeenCalled();
+    svc.setPinnedSession('pinnedone');
+    const snap = svc.build()!;
+    expect(snap.sessionId).toBe('pinnedone');
+    expect(snap.pinned).toBe(true);
+  });
+
+  it('falls back to auto when the pinned session has no transcript', () => {
+    const resolver = {
+      resolveCandidates: () => [
+        { cwd: '/p', sessionId: 'new', terminalPid: null, startedAt: 1 },
+      ],
+    };
+    const parser = makeParser({ mtimes: { new: 5000 } });
+    const svc = new SnapshotService(resolver as any, parser as any);
+    svc.setPinnedSession('gone');
+    const snap = svc.build()!;
+    expect(snap.sessionId).toBe('new');
+    expect(snap.pinned).toBe(false);
+  });
+
+  it('uses the ai-title, with a fallback when absent', () => {
+    const resolver = {
+      resolveCandidates: () => [
+        { cwd: '/p', sessionId: 'wxyz5678aaaa', terminalPid: null, startedAt: 2 },
+        { cwd: '/p', sessionId: 'abcd1234efgh', terminalPid: null, startedAt: 1 },
+      ],
+    };
+    const parser = makeParser({
+      mtimes: { wxyz5678aaaa: 5000, abcd1234efgh: 4000 },
+      titles: { wxyz5678aaaa: 'Minha sessão' },
+    });
+    const svc = new SnapshotService(resolver as any, parser as any);
+    const sessions = svc.listSessions();
+    expect(sessions[0].title).toBe('Minha sessão');
+    expect(sessions[1].title).toBe('Session · abcd1234');
+  });
+
+  it('listSessions is sorted by mtime descending', () => {
+    const resolver = {
+      resolveCandidates: () => [
+        { cwd: '/p', sessionId: 'mid', terminalPid: null, startedAt: 1 },
+        { cwd: '/p', sessionId: 'newest', terminalPid: null, startedAt: 1 },
+        { cwd: '/p', sessionId: 'oldest', terminalPid: null, startedAt: 1 },
+      ],
+    };
+    const parser = makeParser({ mtimes: { mid: 2000, newest: 3000, oldest: 1000 } });
+    const svc = new SnapshotService(resolver as any, parser as any);
+    expect(svc.listSessions().map(s => s.sessionId)).toEqual(['newest', 'mid', 'oldest']);
   });
 });
