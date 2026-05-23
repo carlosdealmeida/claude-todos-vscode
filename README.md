@@ -8,6 +8,14 @@
 
 Visualização ao vivo do `TodoWrite` do Claude Code, restrita ao workspace aberto na janela atual do VSCode. O painel mostra o agente principal e seus sub-agents lado a lado. Duas janelas do VSCode em projetos diferentes nunca veem os todos uma da outra.
 
+## Como funciona
+
+![Painel Claude Todos atualizando ao vivo durante uma sessão do Claude Code](screenshots/panel-live-during-smoke-test.png)
+
+O painel **Claude Todos** (na Barra de Atividades, à esquerda) lê os transcripts que o próprio Claude Code já grava em disco e mostra o agente principal e seus sub-agents lado a lado, com cada item transicionando `pending → in_progress → completed` em tempo real conforme o agente trabalha.
+
+Não importa **onde** o `claude` esteja rodando: pode ser o terminal integrado do VSCode, qualquer terminal externo (Windows Terminal, iTerm, gnome-terminal) ou até a CLI do Claude Code em outra janela. Desde que o diretório de trabalho da sessão bata com o workspace aberto no VSCode, o painel reflete.
+
 ## Instalação
 
 1. Instale a extensão (arquivo `.vsix` ou pelo VSCode Marketplace, quando publicado).

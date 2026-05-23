@@ -8,6 +8,14 @@
 
 Live view of `TodoWrite` from Claude Code, scoped to the workspace open in the current VSCode window. The panel shows the main agent and its sub-agents side by side. Two VSCode windows in different projects never see each other's todos.
 
+## How it works
+
+![Claude Todos panel updating live during a Claude Code session](screenshots/panel-live-during-smoke-test.png)
+
+The **Claude Todos** panel (Activity Bar, on the left) reads the transcripts Claude Code already writes to disk and shows the main agent and its sub-agents side by side, with each item transitioning `pending → in_progress → completed` in real time as the agent works.
+
+It does not matter **where** `claude` is running: VSCode's integrated terminal, any external terminal (Windows Terminal, iTerm, gnome-terminal), or the Claude Code CLI in a separate window. As long as the session's working directory matches the workspace open in VSCode, the panel reflects it.
+
 ## Install
 
 1. Install the extension (`.vsix` file or VSCode Marketplace once published).
