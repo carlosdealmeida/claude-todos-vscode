@@ -62,6 +62,35 @@ export class HookInstaller {
     for (const event of events) this.uninstall(event, command);
   }
 
+  // Removes hooks whose command matches a regex AND differs from `keepCommand`.
+  // Use to clean up stale entries pointing to old versioned extension paths
+  // after the extension moves to a stable hook location.
+  cleanupLegacyHooks(events: HookEvent[], legacyPattern: RegExp, keepCommand: string): number {
+    const settings = this.read();
+    if (!settings.hooks) return 0;
+    let removed = 0;
+    for (const event of events) {
+      const entries = settings.hooks[event];
+      if (!entries) continue;
+      settings.hooks[event] = entries
+        .map(entry => ({
+          ...entry,
+          hooks: entry.hooks.filter(h => {
+            if (h.command === keepCommand) return true;
+            if (legacyPattern.test(h.command)) {
+              removed++;
+              return false;
+            }
+            return true;
+          }),
+        }))
+        .filter(entry => entry.hooks.length > 0);
+      if (settings.hooks[event]!.length === 0) delete settings.hooks[event];
+    }
+    if (removed > 0) this.write(settings);
+    return removed;
+  }
+
   isInstalled(event: HookEvent, command: string): boolean {
     return Boolean(this.findCommand(this.read(), event, command));
   }

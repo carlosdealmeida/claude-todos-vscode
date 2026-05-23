@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] - 2026-05-23
+
+### Fixed
+- Parser now supports the new `TaskCreate` / `TaskUpdate` tool schema used by Claude Code when `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is enabled. The legacy `TodoWrite` snapshot format is still recognized; whichever schema produced the most recent event is used.
+- Hook script is now copied to a stable path under `~/.claude/.vscode-todos-bridge/hook.js` instead of being registered from the versioned extension directory. Extension updates no longer leave orphan hook commands pointing at deleted folders.
+- Stale hooks from older versions (e.g. `carlosjunior1992.claude-todos-0.1.0/...`) are swept from `~/.claude/settings.json` on activation. User hooks for unrelated tools are preserved.
+
 ## [0.2.0] - 2026-05-22
 
 ### Added

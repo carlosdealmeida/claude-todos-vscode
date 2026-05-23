@@ -99,6 +99,41 @@ describe('TodosParser', () => {
     }
   }
 
+  function taskCreateToolUse(toolUseId: string, subject: string, activeForm: string, opts: { isSidechain?: boolean } = {}): object {
+    return {
+      isSidechain: opts.isSidechain ?? false,
+      message: {
+        content: [
+          { type: 'tool_use', name: 'TaskCreate', id: toolUseId, input: { subject, description: subject, activeForm } },
+        ],
+      },
+    };
+  }
+
+  function taskCreateResult(toolUseId: string, taskId: string, subject: string, opts: { isSidechain?: boolean } = {}): object {
+    return {
+      isSidechain: opts.isSidechain ?? false,
+      type: 'user',
+      toolUseResult: { task: { id: taskId, subject } },
+      message: {
+        content: [
+          { type: 'tool_result', tool_use_id: toolUseId, content: `Task #${taskId} created successfully: ${subject}` },
+        ],
+      },
+    };
+  }
+
+  function taskUpdateToolUse(toolUseId: string, taskId: string, status: string, opts: { isSidechain?: boolean } = {}): object {
+    return {
+      isSidechain: opts.isSidechain ?? false,
+      message: {
+        content: [
+          { type: 'tool_use', name: 'TaskUpdate', id: toolUseId, input: { taskId, status } },
+        ],
+      },
+    };
+  }
+
   it('returns empty when no transcript file exists', () => {
     expect(parser.listForSession('nope', CWD)).toEqual([]);
   });
@@ -299,6 +334,137 @@ describe('TodosParser', () => {
       todoWriteEntry([{ content: 'x', activeForm: 'X', status: 'pending' }]),
     ]);
     expect(parser.readSessionTitle('s1', CWD)).toBeNull();
+  });
+
+  describe('TaskCreate/TaskUpdate schema (AGENT_TEAMS)', () => {
+    it('reconstructs todos from a stream of TaskCreate calls (all pending)', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'first task', 'Doing first'),
+        taskCreateResult('tu-1', '1', 'first task'),
+        taskCreateToolUse('tu-2', 'second task', 'Doing second'),
+        taskCreateResult('tu-2', '2', 'second task'),
+        taskCreateToolUse('tu-3', 'third task', 'Doing third'),
+        taskCreateResult('tu-3', '3', 'third task'),
+      ]);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents).toHaveLength(1);
+      expect(agents[0].todos).toEqual([
+        { content: 'first task', activeForm: 'Doing first', status: 'pending' },
+        { content: 'second task', activeForm: 'Doing second', status: 'pending' },
+        { content: 'third task', activeForm: 'Doing third', status: 'pending' },
+      ]);
+    });
+
+    it('applies TaskUpdate status changes by taskId', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'a', 'A'),
+        taskCreateResult('tu-1', '1', 'a'),
+        taskCreateToolUse('tu-2', 'b', 'B'),
+        taskCreateResult('tu-2', '2', 'b'),
+        taskUpdateToolUse('tu-3', '1', 'in_progress'),
+        taskUpdateToolUse('tu-4', '1', 'completed'),
+        taskUpdateToolUse('tu-5', '2', 'in_progress'),
+      ]);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents[0].todos).toEqual([
+        { content: 'a', activeForm: 'A', status: 'completed' },
+        { content: 'b', activeForm: 'B', status: 'in_progress' },
+      ]);
+    });
+
+    it('falls back to parsing Task #N from the result content when toolUseResult is absent', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'only task', 'Only'),
+        {
+          type: 'user',
+          message: {
+            content: [
+              { type: 'tool_result', tool_use_id: 'tu-1', content: 'Task #7 created successfully: only task' },
+            ],
+          },
+        },
+        taskUpdateToolUse('tu-2', '7', 'completed'),
+      ]);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents[0].todos).toEqual([
+        { content: 'only task', activeForm: 'Only', status: 'completed' },
+      ]);
+    });
+
+    it('ignores TaskUpdate referring to an unknown taskId', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'a', 'A'),
+        taskCreateResult('tu-1', '1', 'a'),
+        taskUpdateToolUse('tu-2', '99', 'completed'),
+      ]);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents[0].todos).toEqual([
+        { content: 'a', activeForm: 'A', status: 'pending' },
+      ]);
+    });
+
+    it('ignores TaskUpdate with invalid status', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'a', 'A'),
+        taskCreateResult('tu-1', '1', 'a'),
+        taskUpdateToolUse('tu-2', '1', 'whatever'),
+      ]);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents[0].todos[0].status).toBe('pending');
+    });
+
+    it('treats Task* on the main thread (non-sidechain) as the main agent list', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'main task', 'Doing main', { isSidechain: false }),
+        taskCreateResult('tu-1', '1', 'main task'),
+        taskCreateToolUse('tu-2', 'sub task', 'Doing sub', { isSidechain: true }),
+        taskCreateResult('tu-2', '2', 'sub task', { isSidechain: true }),
+      ]);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents).toHaveLength(1);
+      expect(agents[0].isMain).toBe(true);
+      expect(agents[0].todos).toEqual([
+        { content: 'main task', activeForm: 'Doing main', status: 'pending' },
+      ]);
+    });
+
+    it('uses the most recent schema when both TodoWrite and TaskCreate exist', () => {
+      // TodoWrite first (older), then TaskCreate (newer) — TaskCreate wins.
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'legacy', activeForm: 'Legacy', status: 'in_progress' }]),
+        taskCreateToolUse('tu-1', 'new schema', 'New'),
+        taskCreateResult('tu-1', '1', 'new schema'),
+      ]);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents[0].todos).toEqual([
+        { content: 'new schema', activeForm: 'New', status: 'pending' },
+      ]);
+    });
+
+    it('renders sub-agent task lists in the new schema', () => {
+      const prompt = 'Explore something';
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('main-1', 'Aguardando subagent', 'Aguardando'),
+        taskCreateResult('main-1', '1', 'Aguardando subagent'),
+        agentToolUse('agent-tu-1', 'subagent-x', prompt),
+        agentResult('agent-tu-1', 'agg111'),
+      ]);
+      // Sub-agent file using new schema
+      const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD), 's1', 'subagents');
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'agent-agg111.jsonl'), [
+        JSON.stringify({ type: 'user', isSidechain: true, agentId: 'agg111', message: { role: 'user', content: prompt } }),
+        JSON.stringify(taskCreateToolUse('sub-tu-1', 'sub item', 'Doing sub item', { isSidechain: true })),
+        JSON.stringify(taskCreateResult('sub-tu-1', '1', 'sub item', { isSidechain: true })),
+        JSON.stringify(taskUpdateToolUse('sub-tu-2', '1', 'in_progress', { isSidechain: true })),
+      ].join('\n'));
+      const agents = parser.listForSession('s1', CWD);
+      const subAgent = agents.find(a => a.name === 'subagent-x');
+      expect(subAgent).toBeDefined();
+      expect(subAgent!.todos).toEqual([
+        { content: 'sub item', activeForm: 'Doing sub item', status: 'in_progress' },
+      ]);
+    });
   });
 
   it('does not emit duplicate sub-agent agentIds when prompts collide', () => {

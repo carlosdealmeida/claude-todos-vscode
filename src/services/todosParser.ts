@@ -15,13 +15,25 @@ interface ContentBlock {
   name?: string;
   id?: string;
   tool_use_id?: string;
-  input?: { todos?: unknown; name?: unknown; prompt?: unknown };
+  content?: unknown;
+  input?: {
+    todos?: unknown;
+    name?: unknown;
+    prompt?: unknown;
+    subject?: unknown;
+    activeForm?: unknown;
+    taskId?: unknown;
+    status?: unknown;
+  };
 }
 
 interface TranscriptEntry {
   type?: string;
   isSidechain?: boolean;
-  toolUseResult?: { agentId?: unknown };
+  toolUseResult?: {
+    agentId?: unknown;
+    task?: { id?: unknown };
+  };
   message?: {
     role?: string;
     content?: ContentBlock[] | string;
@@ -43,7 +55,7 @@ export class TodosParser {
 
     const result: AgentTodos[] = [];
 
-    const mainTodos = this.readLastTodoWrite(transcriptPath, true);
+    const mainTodos = this.readLastTodos(transcriptPath, true);
     if (mainTodos) {
       const stat = fs.statSync(transcriptPath);
       result.push({
@@ -111,7 +123,7 @@ export class TodosParser {
       const filePath = path.join(dir, file);
       const prompt = this.readSubAgentPrompt(filePath);
       if (prompt === null) continue;
-      const todos = this.readLastTodoWrite(filePath, false) ?? [];
+      const todos = this.readLastTodos(filePath, false) ?? [];
       let updatedAt = 0;
       try { updatedAt = fs.statSync(filePath).mtimeMs; } catch { /* ignore */ }
       const agentId = file.slice('agent-'.length, -'.jsonl'.length);
@@ -244,7 +256,12 @@ export class TodosParser {
     return null;
   }
 
-  private readLastTodoWrite(transcriptPath: string, skipSidechain: boolean): Todo[] | null {
+  // Returns the current todo list using whichever schema produced the most
+  // recent event in the transcript. Two schemas are supported:
+  //   - legacy `TodoWrite`: a single event carrying the full snapshot.
+  //   - new `TaskCreate` / `TaskUpdate` (enabled by `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`):
+  //     an event stream — TaskCreate adds one task, TaskUpdate mutates a task by id.
+  private readLastTodos(transcriptPath: string, skipSidechain: boolean): Todo[] | null {
     let lines: string[];
     try {
       lines = fs.readFileSync(transcriptPath, 'utf-8').split('\n');
@@ -252,6 +269,35 @@ export class TodosParser {
       return null;
     }
 
+    const schema = this.detectSchema(lines, skipSidechain);
+    if (schema === 'TodoWrite') return this.readLastTodoWriteSnapshot(lines, skipSidechain);
+    if (schema === 'Task') return this.readTaskStream(lines, skipSidechain);
+    return null;
+  }
+
+  private detectSchema(lines: string[], skipSidechain: boolean): 'TodoWrite' | 'Task' | null {
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if (!line) continue;
+      const hasTodoWrite = line.indexOf('"name":"TodoWrite"') >= 0;
+      const hasTask = line.indexOf('"name":"TaskCreate"') >= 0 || line.indexOf('"name":"TaskUpdate"') >= 0;
+      if (!hasTodoWrite && !hasTask) continue;
+      try {
+        const entry = JSON.parse(line) as TranscriptEntry;
+        if (skipSidechain && entry.isSidechain) continue;
+        const content = entry.message?.content;
+        if (!Array.isArray(content)) continue;
+        for (const block of content) {
+          if (block?.type !== 'tool_use') continue;
+          if (block.name === 'TodoWrite') return 'TodoWrite';
+          if (block.name === 'TaskCreate' || block.name === 'TaskUpdate') return 'Task';
+        }
+      } catch { /* skip malformed */ }
+    }
+    return null;
+  }
+
+  private readLastTodoWriteSnapshot(lines: string[], skipSidechain: boolean): Todo[] | null {
     for (let i = lines.length - 1; i >= 0; i--) {
       const line = lines[i];
       if (!line || line.indexOf('"name":"TodoWrite"') < 0) continue;
@@ -268,6 +314,69 @@ export class TodosParser {
           }
         }
       } catch { /* skip malformed line */ }
+    }
+    return null;
+  }
+
+  private readTaskStream(lines: string[], skipSidechain: boolean): Todo[] {
+    const tasks = new Map<string, { content: string; activeForm: string; status: TodoStatus }>();
+    const order: string[] = [];
+    // tool_use_id of TaskCreate awaiting its tool_result, where the assigned id is revealed.
+    const pendingCreates = new Map<string, { content: string; activeForm: string }>();
+
+    for (const line of lines) {
+      if (!line) continue;
+      let entry: TranscriptEntry;
+      try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
+      if (skipSidechain && entry.isSidechain) continue;
+      const content = entry.message?.content;
+      if (!Array.isArray(content)) continue;
+
+      for (const block of content) {
+        if (block?.type === 'tool_use' && typeof block.id === 'string') {
+          if (block.name === 'TaskCreate') {
+            const subject = block.input?.subject;
+            const activeForm = block.input?.activeForm;
+            if (typeof subject === 'string') {
+              pendingCreates.set(block.id, {
+                content: subject,
+                activeForm: typeof activeForm === 'string' ? activeForm : subject,
+              });
+            }
+          } else if (block.name === 'TaskUpdate') {
+            const taskId = block.input?.taskId;
+            const status = block.input?.status;
+            if (typeof taskId === 'string' && typeof status === 'string'
+                && VALID_STATUSES.includes(status as TodoStatus)) {
+              const t = tasks.get(taskId);
+              if (t) t.status = status as TodoStatus;
+            }
+          }
+        } else if (block?.type === 'tool_result' && typeof block.tool_use_id === 'string') {
+          const pending = pendingCreates.get(block.tool_use_id);
+          if (!pending) continue;
+          const taskId = this.resolveCreatedTaskId(entry, block);
+          if (taskId && !tasks.has(taskId)) {
+            tasks.set(taskId, { ...pending, status: 'pending' });
+            order.push(taskId);
+          }
+          pendingCreates.delete(block.tool_use_id);
+        }
+      }
+    }
+
+    return order.map(id => {
+      const t = tasks.get(id)!;
+      return { content: t.content, activeForm: t.activeForm, status: t.status };
+    });
+  }
+
+  private resolveCreatedTaskId(entry: TranscriptEntry, block: ContentBlock): string | null {
+    const fromResult = entry.toolUseResult?.task?.id;
+    if (typeof fromResult === 'string') return fromResult;
+    if (typeof block.content === 'string') {
+      const match = block.content.match(/Task #(\d+)/);
+      if (match) return match[1];
     }
     return null;
   }

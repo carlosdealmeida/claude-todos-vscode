@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { BridgeFile } from './services/bridgeFile';
@@ -12,6 +13,12 @@ import { TodosPanelProvider } from './providers/todosPanelProvider';
 import type { WebviewMessage } from './types';
 
 const HOOK_EVENTS: HookEvent[] = ['SessionStart', 'UserPromptSubmit'];
+
+// Matches commands pointing at the *versioned* extension directory used in
+// 0.1.x / 0.2.0 (e.g. `.../carlosjunior1992.claude-todos-0.1.0/...`). These
+// become orphans on every extension update — we sweep them on activation and
+// migrate to a stable, install-independent path under ~/.claude.
+const LEGACY_HOOK_PATTERN = /carlosjunior1992\.claude-todos-\d+\.\d+\.\d+[\\/]dist[\\/]hooks/;
 
 interface SessionPickItem extends vscode.QuickPickItem {
   sessionId: string | null;
@@ -30,8 +37,17 @@ export function activate(context: vscode.ExtensionContext): void {
   const claudeDir = resolveClaudeDir();
   const bridgePath = path.join(claudeDir, '.vscode-todos-bridge', 'sessions.json');
   const settingsPath = path.join(claudeDir, 'settings.json');
-  const hookScriptPath = vscode.Uri.joinPath(context.extensionUri, 'dist', 'hooks', 'sessionStart.js').fsPath;
+  const hookScriptPath = ensureStableHookScript(context, claudeDir);
   const hookCommand = `node "${hookScriptPath}"`;
+
+  const hookInstaller = new HookInstaller(settingsPath);
+  const removedLegacy = hookInstaller.cleanupLegacyHooks(HOOK_EVENTS, LEGACY_HOOK_PATTERN, hookCommand);
+  if (removedLegacy > 0) {
+    // The user had previously consented to hooks for an older versioned path
+    // (now deleted by VSCode's update). Re-install transparently at the stable
+    // path so the prompt does not fire again on every update.
+    try { hookInstaller.installAll(HOOK_EVENTS, hookCommand); } catch { /* swallow */ }
+  }
 
   const bridge = new BridgeFile(bridgePath);
   const parser = new TodosParser(claudeDir);
@@ -42,7 +58,6 @@ export function activate(context: vscode.ExtensionContext): void {
   const snapshotService = new SnapshotService(resolver, parser);
   snapshotService.setPinnedSession(context.workspaceState.get<string | null>('pinnedSessionId', null));
   const watcher = new TodosWatcher(claudeDir);
-  const hookInstaller = new HookInstaller(settingsPath);
   context.subscriptions.push(watcher);
 
   let viewProvider!: TodosViewProvider;
@@ -120,6 +135,26 @@ function resolveClaudeDir(): string {
   const override = vscode.workspace.getConfiguration('claudeTodos').get<string>('claudeDir');
   if (override && override.trim()) return override;
   return path.join(os.homedir(), '.claude');
+}
+
+// Copies the bundled hook script to a stable location under ~/.claude so that
+// VSCode extension updates (which delete the previous versioned directory) do
+// not invalidate the hook command registered in settings.json. Returns the
+// stable path to register.
+function ensureStableHookScript(context: vscode.ExtensionContext, claudeDir: string): string {
+  const sourcePath = vscode.Uri.joinPath(context.extensionUri, 'dist', 'hooks', 'sessionStart.js').fsPath;
+  const targetDir = path.join(claudeDir, '.vscode-todos-bridge');
+  const targetPath = path.join(targetDir, 'hook.js');
+  try {
+    fs.mkdirSync(targetDir, { recursive: true });
+    fs.copyFileSync(sourcePath, targetPath);
+  } catch {
+    // If the copy fails (permissions, etc.), fall back to the source path —
+    // the hook will still work for the current install, only future updates
+    // would leave orphans. The cleanup sweep mitigates that.
+    return sourcePath;
+  }
+  return targetPath;
 }
 
 async function maybePromptInstallHook(

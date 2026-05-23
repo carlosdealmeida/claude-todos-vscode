@@ -103,6 +103,90 @@ describe('HookInstaller', () => {
     expect(installer.areAllInstalled(['SessionStart', 'UserPromptSubmit'], HOOK_COMMAND)).toBe(false);
   });
 
+  describe('cleanupLegacyHooks', () => {
+    const STABLE_COMMAND = 'node "C:\\Users\\u\\.claude\\.vscode-todos-bridge\\hook.js"';
+    const LEGACY_PATTERN = /carlosjunior1992\.claude-todos-\d+\.\d+\.\d+[\\/]dist[\\/]hooks/;
+
+    it('removes legacy versioned hooks but keeps the stable command', () => {
+      fs.writeFileSync(settingsPath, JSON.stringify({
+        hooks: {
+          SessionStart: [
+            { matcher: '*', hooks: [{ type: 'command', command: 'node "C:\\Users\\u\\.vscode\\extensions\\carlosjunior1992.claude-todos-0.1.0\\dist\\hooks\\sessionStart.js"' }] },
+            { matcher: '*', hooks: [{ type: 'command', command: 'node "C:\\Users\\u\\.vscode\\extensions\\carlosjunior1992.claude-todos-0.2.0\\dist\\hooks\\sessionStart.js"' }] },
+            { matcher: '*', hooks: [{ type: 'command', command: STABLE_COMMAND }] },
+          ],
+          UserPromptSubmit: [
+            { matcher: '*', hooks: [{ type: 'command', command: 'node "C:\\Users\\u\\.vscode\\extensions\\carlosjunior1992.claude-todos-0.1.5\\dist\\hooks\\sessionStart.js"' }] },
+          ],
+        },
+      }));
+      const installer = new HookInstaller(settingsPath);
+      const removed = installer.cleanupLegacyHooks(['SessionStart', 'UserPromptSubmit'], LEGACY_PATTERN, STABLE_COMMAND);
+      expect(removed).toBe(3);
+      const parsed = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+      const sessionStartCmds = (parsed.hooks.SessionStart ?? []).flatMap((e: any) => e.hooks).map((h: any) => h.command);
+      expect(sessionStartCmds).toEqual([STABLE_COMMAND]);
+      expect(parsed.hooks.UserPromptSubmit).toBeUndefined();
+    });
+
+    it('preserves unrelated hooks (other tools, other events)', () => {
+      fs.writeFileSync(settingsPath, JSON.stringify({
+        hooks: {
+          SessionStart: [
+            { matcher: '*', hooks: [{ type: 'command', command: 'echo user-hook' }] },
+            { matcher: '*', hooks: [{ type: 'command', command: 'node "C:\\Users\\u\\.vscode\\extensions\\carlosjunior1992.claude-todos-0.1.0\\dist\\hooks\\sessionStart.js"' }] },
+          ],
+          SessionEnd: [
+            { matcher: '', hooks: [{ type: 'command', command: 'node /custom/stats.mjs' }] },
+          ],
+        },
+      }));
+      const installer = new HookInstaller(settingsPath);
+      installer.cleanupLegacyHooks(['SessionStart', 'UserPromptSubmit'], LEGACY_PATTERN, STABLE_COMMAND);
+      const parsed = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+      const sessionStartCmds = parsed.hooks.SessionStart.flatMap((e: any) => e.hooks).map((h: any) => h.command);
+      expect(sessionStartCmds).toEqual(['echo user-hook']);
+      expect(parsed.hooks.SessionEnd[0].hooks[0].command).toBe('node /custom/stats.mjs');
+    });
+
+    it('keeps the current stable command even if it matches the pattern', () => {
+      const STABLE_BUT_PATTERN_MATCH = 'node "carlosjunior1992.claude-todos-0.2.0/dist/hooks/sessionStart.js"';
+      fs.writeFileSync(settingsPath, JSON.stringify({
+        hooks: {
+          SessionStart: [
+            { matcher: '*', hooks: [{ type: 'command', command: STABLE_BUT_PATTERN_MATCH }] },
+          ],
+        },
+      }));
+      const installer = new HookInstaller(settingsPath);
+      const removed = installer.cleanupLegacyHooks(['SessionStart'], LEGACY_PATTERN, STABLE_BUT_PATTERN_MATCH);
+      expect(removed).toBe(0);
+      const parsed = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+      expect(parsed.hooks.SessionStart[0].hooks[0].command).toBe(STABLE_BUT_PATTERN_MATCH);
+    });
+
+    it('does not touch file when nothing matches', () => {
+      fs.writeFileSync(settingsPath, JSON.stringify({
+        hooks: {
+          SessionStart: [{ matcher: '*', hooks: [{ type: 'command', command: 'echo not-mine' }] }],
+        },
+      }));
+      const before = fs.statSync(settingsPath).mtimeMs;
+      const installer = new HookInstaller(settingsPath);
+      const removed = installer.cleanupLegacyHooks(['SessionStart'], LEGACY_PATTERN, STABLE_COMMAND);
+      expect(removed).toBe(0);
+      const after = fs.statSync(settingsPath).mtimeMs;
+      expect(after).toBe(before);
+    });
+
+    it('returns 0 when no hooks block exists', () => {
+      fs.writeFileSync(settingsPath, JSON.stringify({ env: { X: '1' } }));
+      const installer = new HookInstaller(settingsPath);
+      const removed = installer.cleanupLegacyHooks(['SessionStart'], LEGACY_PATTERN, STABLE_COMMAND);
+      expect(removed).toBe(0);
+    });
+  });
+
   it('UserPromptSubmit hook coexists with other user hooks on different events', () => {
     fs.writeFileSync(settingsPath, JSON.stringify({
       hooks: {
