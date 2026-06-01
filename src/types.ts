@@ -16,12 +16,32 @@ export interface AgentTodos {
   updatedAt: number;
 }
 
+export interface ModelUsage {
+  model: string;   // ex.: "claude-opus-4-8"
+  input: number;   // soma de input_tokens
+  output: number;  // soma de output_tokens
+  cache: number;   // cache_creation_input_tokens + cache_read_input_tokens
+}
+
+export interface AgentUsage {
+  agentId: string;
+  name: string;        // "Main agent" ou nome do sub-agent
+  isMain: boolean;
+  models: ModelUsage[];
+}
+
+export interface SessionUsage {
+  byModel: ModelUsage[];  // totais da sessão agrupados por modelo
+  byAgent: AgentUsage[];  // quebra por agente
+}
+
 export interface SessionSnapshot {
   sessionId: string;
   cwd: string;
   title: string;
   pinned: boolean;
   agents: AgentTodos[];
+  usage?: SessionUsage;
 }
 
 export interface SessionSummary {
