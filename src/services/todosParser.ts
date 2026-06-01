@@ -1,14 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { encodeCwdToProjectDir } from './projectDir';
 import type { AgentTodos, Todo, TodoStatus } from '../types';
+import { transcriptPath as resolveTranscriptPath, subAgentsDir as resolveSubAgentsDir } from './transcriptPaths';
 
 const VALID_STATUSES: TodoStatus[] = ['pending', 'in_progress', 'completed'];
-
-// Session ids are used to build filesystem paths. Restrict them to a safe
-// character set so a crafted id (e.g. containing `..` or path separators)
-// cannot traverse outside the Claude projects directory.
-const SAFE_SESSION_ID = /^[A-Za-z0-9_-]+$/;
 
 interface ContentBlock {
   type?: string;
@@ -211,29 +206,12 @@ export class TodosParser {
     return out;
   }
 
-  private cwdCandidates(cwd: string): string[] {
-    const candidates = process.platform === 'win32'
-      ? [cwd, cwd.toLowerCase(), cwd.charAt(0).toUpperCase() + cwd.slice(1).toLowerCase()]
-      : [cwd];
-    return [...new Set(candidates)];
-  }
-
   private transcriptPath(sessionId: string, cwd: string): string | null {
-    if (!SAFE_SESSION_ID.test(sessionId)) return null;
-    for (const candidate of this.cwdCandidates(cwd)) {
-      const p = path.join(this.claudeDir, 'projects', encodeCwdToProjectDir(candidate), `${sessionId}.jsonl`);
-      if (fs.existsSync(p)) return p;
-    }
-    return null;
+    return resolveTranscriptPath(this.claudeDir, sessionId, cwd);
   }
 
   private subAgentsDir(sessionId: string, cwd: string): string | null {
-    if (!SAFE_SESSION_ID.test(sessionId)) return null;
-    for (const candidate of this.cwdCandidates(cwd)) {
-      const d = path.join(this.claudeDir, 'projects', encodeCwdToProjectDir(candidate), sessionId, 'subagents');
-      if (fs.existsSync(d)) return d;
-    }
-    return null;
+    return resolveSubAgentsDir(this.claudeDir, sessionId, cwd);
   }
 
   private readSubAgentPrompt(filePath: string): string | null {
