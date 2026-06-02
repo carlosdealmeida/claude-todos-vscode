@@ -18,6 +18,7 @@ interface RawUsage {
 
 interface TranscriptEntry {
   type?: string;
+  isSidechain?: boolean;
   message?: {
     model?: unknown;
     usage?: RawUsage;
@@ -44,7 +45,7 @@ export class UsageParser {
         : this.subAgentFile(sessionId, cwd, agent.agentId);
       if (!filePath) continue;
 
-      const models = this.modelsForFile(filePath);
+      const models = this.modelsForFile(filePath, agent.isMain);
       if (models.length === 0) continue;
 
       byAgent.push({
@@ -65,8 +66,11 @@ export class UsageParser {
     return fs.existsSync(file) ? file : null;
   }
 
-  // Returns one ModelUsage per distinct model in the file, in first-seen order.
-  private modelsForFile(filePath: string): ModelUsage[] {
+  // Reads one transcript file. For the main transcript, isSidechain entries are
+  // skipped (sub-agent turns are counted from their own agent-*.jsonl files,
+  // never double-counted from the main transcript). Returns one ModelUsage per
+  // distinct model in the file, in first-seen order.
+  private modelsForFile(filePath: string, skipSidechain: boolean): ModelUsage[] {
     let lines: string[];
     try {
       lines = fs.readFileSync(filePath, 'utf-8').split('\n');
@@ -79,6 +83,7 @@ export class UsageParser {
       if (!line) continue;
       let entry: TranscriptEntry;
       try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
+      if (skipSidechain && entry.isSidechain) continue;
       const msg = entry.message;
       if (!msg || !msg.usage || typeof msg.model !== 'string') continue;
       const u = msg.usage;

@@ -151,4 +151,28 @@ describe('UsageParser', () => {
     const usage = parser.usageForSession(SID, CWD, [mainRef]);
     expect(usage.byModel[0]).toEqual({ model: 'claude-opus-4-8', input: 0, output: 4, cache: 0 });
   });
+
+  it('skips isSidechain entries in the main transcript (no double-count)', () => {
+    writeMain([
+      { ...assistant('claude-opus-4-8', { input: 100, output: 10 }), isSidechain: false },
+      { ...assistant('claude-sonnet-4-6', { input: 999, output: 999 }), isSidechain: true },
+    ]);
+    const usage = parser.usageForSession(SID, CWD, [mainRef]);
+    expect(usage.byModel).toEqual([
+      { model: 'claude-opus-4-8', input: 100, output: 10, cache: 0 },
+    ]);
+  });
+
+  it('counts isSidechain assistant entries inside a sub-agent file', () => {
+    writeMain([assistant('claude-opus-4-8', { input: 10, output: 1 })]);
+    writeSubAgent('aaa', [
+      { ...assistant('claude-sonnet-4-6', { input: 40, output: 8 }), isSidechain: true },
+    ]);
+    const agents = [mainRef, { agentId: 'aaa', name: 'explorer', isMain: false }];
+    const usage = parser.usageForSession(SID, CWD, agents as any);
+    expect(usage.byAgent.map(a => a.name)).toEqual(['Main agent', 'explorer']);
+    expect(usage.byAgent[1].models).toEqual([
+      { model: 'claude-sonnet-4-6', input: 40, output: 8, cache: 0 },
+    ]);
+  });
 });
