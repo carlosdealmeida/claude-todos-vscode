@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-06-02
+
+### Added
+- Token usage table at the top of the panel. One row per model used in the session (Input / Output / Cache columns) with a **Total** row, and a toggle to switch to a per-agent breakdown. It counts the whole session — the main agent plus every sub-agent — by reading `message.usage` from the transcripts. Tokens only; no cost estimate.
+- `UsageParser` reads token usage per agent file and aggregates by model. Sidechain entries are ignored in the main transcript so sub-agent turns (counted from their own `agent-*.jsonl`) are never double-counted.
+
 ## [0.2.1] - 2026-05-23
 
 ### Fixed
