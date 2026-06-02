@@ -2,6 +2,7 @@
   import { todosStore } from './stores.svelte';
   import AgentSection from './lib/AgentSection.svelte';
   import EmptyState from './lib/EmptyState.svelte';
+  import UsageTable from './lib/UsageTable.svelte';
   import type { AgentTodos } from '../types';
 
   function isHistory(agent: AgentTodos): boolean {
@@ -37,6 +38,9 @@
       </button>
       <button class="ghost" onclick={() => todosStore.refresh()} title="Refresh">↻</button>
     </header>
+    {#if snapshot.usage}
+      <UsageTable usage={snapshot.usage} />
+    {/if}
     <div class="agents">
       {#each snapshot.agents as agent, i (agent.agentId)}
         {#if isFirstHistory(snapshot.agents, i)}
