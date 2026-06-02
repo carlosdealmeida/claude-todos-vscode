@@ -1,5 +1,6 @@
 import type { SessionResolver } from './sessionResolver';
 import type { TodosParser } from './todosParser';
+import type { UsageParser } from './usageParser';
 import type { SessionSnapshot, SessionSummary } from '../types';
 
 export class SnapshotService {
@@ -8,6 +9,7 @@ export class SnapshotService {
   constructor(
     private readonly resolver: SessionResolver,
     private readonly parser: TodosParser,
+    private readonly usageParser: UsageParser,
   ) {}
 
   setPinnedSession(sessionId: string | null): void {
@@ -39,12 +41,14 @@ export class SnapshotService {
       : undefined;
     const chosen = pinned ?? sessions[0];
 
+    const agents = this.parser.listForSession(chosen.sessionId, chosen.cwd);
     return {
       sessionId: chosen.sessionId,
       cwd: chosen.cwd,
       title: chosen.title,
       pinned: pinned !== undefined,
-      agents: this.parser.listForSession(chosen.sessionId, chosen.cwd),
+      agents,
+      usage: this.usageParser.usageForSession(chosen.sessionId, chosen.cwd, agents),
     };
   }
 

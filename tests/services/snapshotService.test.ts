@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { SnapshotService } from '../../src/services/snapshotService';
 
+const usageStub = {
+  usageForSession: () => ({ byModel: [], byAgent: [] }),
+};
+
 function makeParser(opts: {
   mtimes: Record<string, number | null>;
   titles?: Record<string, string | null>;
@@ -22,7 +26,7 @@ describe('SnapshotService', () => {
       ],
     };
     const parser = makeParser({ mtimes: { a: null } });
-    const svc = new SnapshotService(resolver as any, parser as any);
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
     expect(svc.build()).toBeNull();
   });
 
@@ -34,7 +38,7 @@ describe('SnapshotService', () => {
       ],
     };
     const parser = makeParser({ mtimes: { old: 1000, new: 5000 } });
-    const svc = new SnapshotService(resolver as any, parser as any);
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
     const snap = svc.build()!;
     expect(snap.sessionId).toBe('new');
     expect(snap.pinned).toBe(false);
@@ -48,7 +52,7 @@ describe('SnapshotService', () => {
       ],
     };
     const parser = makeParser({ mtimes: { new: 5000, pinnedone: 1000 } });
-    const svc = new SnapshotService(resolver as any, parser as any);
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
     svc.setPinnedSession('pinnedone');
     const snap = svc.build()!;
     expect(snap.sessionId).toBe('pinnedone');
@@ -62,7 +66,7 @@ describe('SnapshotService', () => {
       ],
     };
     const parser = makeParser({ mtimes: { new: 5000 } });
-    const svc = new SnapshotService(resolver as any, parser as any);
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
     svc.setPinnedSession('gone');
     const snap = svc.build()!;
     expect(snap.sessionId).toBe('new');
@@ -80,7 +84,7 @@ describe('SnapshotService', () => {
       mtimes: { wxyz5678aaaa: 5000, abcd1234efgh: 4000 },
       titles: { wxyz5678aaaa: 'Minha sessão' },
     });
-    const svc = new SnapshotService(resolver as any, parser as any);
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
     const sessions = svc.listSessions();
     expect(sessions[0].title).toBe('Minha sessão');
     expect(sessions[1].title).toBe('Session · abcd1234');
@@ -95,7 +99,25 @@ describe('SnapshotService', () => {
       ],
     };
     const parser = makeParser({ mtimes: { mid: 2000, newest: 3000, oldest: 1000 } });
-    const svc = new SnapshotService(resolver as any, parser as any);
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
     expect(svc.listSessions().map(s => s.sessionId)).toEqual(['newest', 'mid', 'oldest']);
+  });
+
+  it('attaches usage from the usageParser', () => {
+    const resolver = {
+      resolveCandidates: () => [
+        { cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 },
+      ],
+    };
+    const parser = makeParser({ mtimes: { a: 1000 } });
+    const usage = {
+      usageForSession: () => ({
+        byModel: [{ model: 'claude-opus-4-8', input: 1, output: 2, cache: 3 }],
+        byAgent: [],
+      }),
+    };
+    const svc = new SnapshotService(resolver as any, parser as any, usage as any);
+    const snap = svc.build()!;
+    expect(snap.usage?.byModel[0].model).toBe('claude-opus-4-8');
   });
 });

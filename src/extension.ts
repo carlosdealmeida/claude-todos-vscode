@@ -6,6 +6,7 @@ import { BridgeFile } from './services/bridgeFile';
 import { TodosParser } from './services/todosParser';
 import { SessionResolver } from './services/sessionResolver';
 import { SnapshotService } from './services/snapshotService';
+import { UsageParser } from './services/usageParser';
 import { TodosWatcher } from './services/todosWatcher';
 import { HookInstaller, type HookEvent } from './services/hookInstaller';
 import { TodosViewProvider } from './providers/todosViewProvider';
@@ -51,11 +52,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const bridge = new BridgeFile(bridgePath);
   const parser = new TodosParser(claudeDir);
+  const usageParser = new UsageParser(claudeDir);
   const resolver = new SessionResolver(bridge, () => {
     const folders = vscode.workspace.workspaceFolders;
     return folders?.[0]?.uri.fsPath ?? null;
   });
-  const snapshotService = new SnapshotService(resolver, parser);
+  const snapshotService = new SnapshotService(resolver, parser, usageParser);
   snapshotService.setPinnedSession(context.workspaceState.get<string | null>('pinnedSessionId', null));
   const watcher = new TodosWatcher(claudeDir);
   context.subscriptions.push(watcher);
