@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { UsageParser } from '../../src/services/usageParser';
+import { UsageParser, contextLimitFor } from '../../src/services/usageParser';
 import { encodeCwdToProjectDir } from '../../src/services/projectDir';
 
 interface AgentRef { agentId: string; name: string; isMain: boolean; }
@@ -174,5 +174,16 @@ describe('UsageParser', () => {
     expect(usage.byAgent[1].models).toEqual([
       { model: 'claude-sonnet-4-6', input: 40, output: 8, cache: 0 },
     ]);
+  });
+});
+
+describe('contextLimitFor', () => {
+  it('returns 1M when the model id advertises a 1m window', () => {
+    expect(contextLimitFor('claude-opus-4-8[1m]')).toBe(1_000_000);
+    expect(contextLimitFor('claude-sonnet-4-6-1M')).toBe(1_000_000);
+  });
+  it('defaults to 200k otherwise', () => {
+    expect(contextLimitFor('claude-opus-4-8')).toBe(200_000);
+    expect(contextLimitFor('gpt-x')).toBe(200_000);
   });
 });

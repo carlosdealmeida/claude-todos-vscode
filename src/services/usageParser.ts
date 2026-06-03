@@ -3,6 +3,15 @@ import * as path from 'path';
 import { transcriptPath, subAgentsDir } from './transcriptPaths';
 import type { AgentUsage, ModelUsage, SessionUsage } from '../types';
 
+const DEFAULT_CONTEXT_LIMIT = 200_000;
+const ONE_MILLION = 1_000_000;
+
+// The context window for a model: 1M when the id advertises it (e.g. the
+// "[1m]" suffix), otherwise the 200k default.
+export function contextLimitFor(model: string): number {
+  return /1m/i.test(model) ? ONE_MILLION : DEFAULT_CONTEXT_LIMIT;
+}
+
 interface AgentRef {
   agentId: string;
   name: string;
