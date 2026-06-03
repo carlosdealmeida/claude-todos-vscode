@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { BridgeRecord } from '../types';
+import { atomicWriteFileSync } from './atomicWrite';
 
 export class BridgeFile {
   constructor(private readonly filePath: string) {}
@@ -20,7 +21,7 @@ export class BridgeFile {
     fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
     const all = this.readAll();
     all.push(record);
-    fs.writeFileSync(this.filePath, JSON.stringify(all, null, 2));
+    atomicWriteFileSync(this.filePath, JSON.stringify(all, null, 2));
   }
 
   latestForCwd(cwd: string): BridgeRecord | null {
@@ -40,6 +41,6 @@ export class BridgeFile {
   prune(maxAgeMs: number): void {
     const cutoff = Date.now() - maxAgeMs;
     const all = this.readAll().filter(r => r.startedAt >= cutoff);
-    fs.writeFileSync(this.filePath, JSON.stringify(all, null, 2));
+    atomicWriteFileSync(this.filePath, JSON.stringify(all, null, 2));
   }
 }

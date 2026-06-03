@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { readStream } from '../services/readStream';
+import { atomicWriteFileSync } from '../services/atomicWrite';
 
 interface ClaudeHookInput {
   session_id: string;
@@ -9,18 +11,13 @@ interface ClaudeHookInput {
   [key: string]: unknown;
 }
 
-function readStdin(): Promise<string> {
-  return new Promise(resolve => {
-    let data = '';
-    process.stdin.setEncoding('utf-8');
-    process.stdin.on('data', chunk => (data += chunk));
-    process.stdin.on('end', () => resolve(data));
-  });
-}
+// Guard against a stdin that the parent never closes: resolve with whatever was
+// received so the hook can never hang and stall session startup.
+const STDIN_TIMEOUT_MS = 2000;
 
 async function main(): Promise<void> {
   try {
-    const raw = await readStdin();
+    const raw = await readStream(process.stdin, STDIN_TIMEOUT_MS);
     if (!raw.trim()) {
       process.exit(0);
     }
@@ -53,7 +50,7 @@ async function main(): Promise<void> {
 
     if (records.length > 200) records = records.slice(-200);
 
-    fs.writeFileSync(bridgePath, JSON.stringify(records, null, 2));
+    atomicWriteFileSync(bridgePath, JSON.stringify(records, null, 2));
   } catch (err) {
     try {
       const errDir = path.join(os.homedir(), '.claude', '.vscode-todos-bridge');

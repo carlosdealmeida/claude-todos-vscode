@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { atomicWriteFileSync } from './atomicWrite';
 
 interface HookEntry {
   type: 'command';
@@ -117,6 +118,6 @@ export class HookInstaller {
 
   private write(settings: Settings): void {
     fs.mkdirSync(path.dirname(this.settingsPath), { recursive: true });
-    fs.writeFileSync(this.settingsPath, JSON.stringify(settings, null, 2));
+    atomicWriteFileSync(this.settingsPath, JSON.stringify(settings, null, 2));
   }
 }

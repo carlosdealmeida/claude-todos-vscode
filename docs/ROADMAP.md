@@ -112,12 +112,22 @@ de tokens do 0.3.0).
 
 ### R1. Hooks no Windows — instalação e execução frágeis
 - **Issues:** [#34457](https://github.com/anthropics/claude-code/issues/34457) (`NOT_PLANNED`) hooks com shell travam 5+ min no Windows · [#59622](https://github.com/anthropics/claude-code/issues/59622) `EEXIST` em `mkdir` não-idempotente de session-env · [#59072](https://github.com/anthropics/claude-code/issues/59072) hooks do `settings.json` silenciosamente não invocados no Windows
-- **Status:** 🔍 auditar nosso `hookInstaller` / `sessionStart`
-- **Risco:** nós instalamos `SessionStart` + `UserPromptSubmit` que rodam um script Node. Três
-  issues distintas mostram que hooks no Windows sofrem com `mkdir` não-idempotente, hangs e
-  não-invocação. Como o ambiente alvo do mantenedor é Windows, vale auditar se nosso instalador e
-  script de hook são idempotentes, rápidos e à prova de path com espaço/acentos.
-- **Não é feature:** é dívida de robustez; barata de verificar, cara se morder um usuário.
+- **Status:** ✅ auditado e corrigido (parcial) — ver veredito abaixo.
+
+**Veredito da auditoria** (`hookInstaller`, `sessionStart`, `bridgeFile`, `extension`):
+
+| Bug | Nosso estado |
+|---|---|
+| #59622 `EEXIST` no `mkdir` | ✅ Já protegidos — todos os `mkdirSync` usam `{ recursive: true }` (idempotente). |
+| #59072 path quebra no Windows | ✅ Baixo risco — comando é `node "${path}"` com aspas; espaços OK. Depende de `node` no `PATH` (documentado). |
+| #34457 hook trava 5+ min | ⚠️→✅ **Corrigido** — `readStdin` não tinha timeout e penduraria se o stdin não fechasse. |
+
+**Corrigido nesta passagem (TDD, +5 testes):**
+- `readStream(stream, timeoutMs)` ([src/services/readStream.ts](../src/services/readStream.ts)) — lê o stdin com timeout de 2s; o hook nunca pendura. Usado no `sessionStart`.
+- `atomicWriteFileSync` ([src/services/atomicWrite.ts](../src/services/atomicWrite.ts)) — escrita `tmp`+`rename`, atômica. Plugada em `hookInstaller.write` (protege o `settings.json` do usuário de corrupção), `bridgeFile.append`/`prune` e `sessionStart` (protegem o `sessions.json`).
+
+**Pendência (fora do escopo desta passagem):**
+- **R1a — lost-update concorrente no `sessions.json`.** A escrita atômica elimina *corrupção* (escrita parcial), mas não o *lost-update*: duas sessões iniciando quase ao mesmo tempo fazem read-modify-write e uma sobrescreve a outra → perde **uma detecção** de sessão (não corrompe). Exigiria file-lock ou append-only. Raro, impacto baixo. 🔍 a avaliar.
 
 ---
 
