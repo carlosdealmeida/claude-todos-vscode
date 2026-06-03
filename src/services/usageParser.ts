@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { transcriptPath, subAgentsDir } from './transcriptPaths';
-import type { AgentUsage, ModelUsage, SessionUsage } from '../types';
+import type { AgentUsage, ContextUsage, ModelUsage, SessionUsage } from '../types';
 
 const DEFAULT_CONTEXT_LIMIT = 200_000;
 const ONE_MILLION = 1_000_000;
@@ -65,7 +65,14 @@ export class UsageParser {
       });
     }
 
-    return { byModel: this.aggregate(byAgent), byAgent };
+    let context: ContextUsage | undefined;
+    const mainRef = agents.find(a => a.isMain);
+    if (mainRef) {
+      const mainFile = transcriptPath(this.claudeDir, sessionId, cwd);
+      if (mainFile) context = this.contextForFile(mainFile);
+    }
+
+    return { byModel: this.aggregate(byAgent), byAgent, context };
   }
 
   private subAgentFile(sessionId: string, cwd: string, agentId: string): string | null {
@@ -103,6 +110,34 @@ export class UsageParser {
       byModel.set(msg.model, acc);
     }
     return [...byModel.values()];
+  }
+
+  // The current context size = input + cache of the LAST usage-bearing message
+  // in the main transcript (output is excluded; sidechain entries are skipped).
+  // Returns undefined when the transcript has no usage yet.
+  private contextForFile(filePath: string): ContextUsage | undefined {
+    let lines: string[];
+    try {
+      lines = fs.readFileSync(filePath, 'utf-8').split('\n');
+    } catch {
+      return undefined;
+    }
+
+    let last: { usage: RawUsage; model: string } | undefined;
+    for (const line of lines) {
+      if (!line) continue;
+      let entry: TranscriptEntry;
+      try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
+      if (entry.isSidechain) continue;
+      const msg = entry.message;
+      if (!msg || !msg.usage || typeof msg.model !== 'string') continue;
+      last = { usage: msg.usage, model: msg.model };
+    }
+    if (!last) return undefined;
+
+    const u = last.usage;
+    const tokens = num(u.input_tokens) + num(u.cache_read_input_tokens) + num(u.cache_creation_input_tokens);
+    return { tokens, limit: contextLimitFor(last.model) };
   }
 
   // Aggregates per-agent models into session-wide totals per model, in

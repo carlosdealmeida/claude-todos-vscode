@@ -30,9 +30,15 @@ export interface AgentUsage {
   models: ModelUsage[];
 }
 
+export interface ContextUsage {
+  tokens: number;  // input + cache da última mensagem do transcript principal
+  limit: number;   // 200_000 | 1_000_000
+}
+
 export interface SessionUsage {
   byModel: ModelUsage[];  // totais da sessão agrupados por modelo
   byAgent: AgentUsage[];  // quebra por agente
+  context?: ContextUsage;
 }
 
 export interface SessionSnapshot {
