@@ -66,8 +66,8 @@ export class UsageParser {
     }
 
     let context: ContextUsage | undefined;
-    const mainRef = agents.find(a => a.isMain);
-    if (mainRef) {
+    const hasMain = agents.some(a => a.isMain);
+    if (hasMain) {
       const mainFile = transcriptPath(this.claudeDir, sessionId, cwd);
       if (mainFile) context = this.contextForFile(mainFile);
     }

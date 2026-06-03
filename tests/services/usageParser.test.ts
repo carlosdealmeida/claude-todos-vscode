@@ -175,6 +175,44 @@ describe('UsageParser', () => {
       { model: 'claude-sonnet-4-6', input: 40, output: 8, cache: 0 },
     ]);
   });
+
+  describe('context window usage', () => {
+    it('reads context from the last usage-bearing message of the main transcript', () => {
+      writeMain([
+        assistant('claude-opus-4-8', { input: 100, cacheCreate: 200, cacheRead: 50 }),
+        assistant('claude-opus-4-8', { input: 1000, output: 30, cacheCreate: 2000, cacheRead: 5000 }),
+      ]);
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      // última msg: input 1000 + cacheRead 5000 + cacheCreate 2000 = 8000 (output ignorado)
+      expect(usage.context).toEqual({ tokens: 8000, limit: 200_000 });
+    });
+
+    it('detects the 1M window from the model id', () => {
+      writeMain([assistant('claude-opus-4-8[1m]', { input: 10, cacheRead: 5 })]);
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      expect(usage.context).toEqual({ tokens: 15, limit: 1_000_000 });
+    });
+
+    it('ignores sidechain entries when picking the last message', () => {
+      writeMain([
+        { ...assistant('claude-opus-4-8', { input: 100, cacheRead: 50 }), isSidechain: false },
+        { ...assistant('claude-sonnet-4-6', { input: 9999, cacheRead: 9999 }), isSidechain: true },
+      ]);
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      expect(usage.context).toEqual({ tokens: 150, limit: 200_000 });
+    });
+
+    it('leaves context undefined when the transcript has no usage', () => {
+      const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, `${SID}.jsonl`),
+        JSON.stringify({ type: 'user', message: { role: 'user', content: 'hi' } }),
+      );
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      expect(usage.context).toBeUndefined();
+    });
+  });
 });
 
 describe('contextLimitFor', () => {
@@ -185,80 +223,5 @@ describe('contextLimitFor', () => {
   it('defaults to 200k otherwise', () => {
     expect(contextLimitFor('claude-opus-4-8')).toBe(200_000);
     expect(contextLimitFor('gpt-x')).toBe(200_000);
-  });
-});
-
-describe('context window usage', () => {
-  let claudeDir: string;
-  let parser: UsageParser;
-  const CWD = '/home/user/proj';
-  const SID = 's1';
-
-  beforeEach(() => {
-    claudeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'usage-test-'));
-    parser = new UsageParser(claudeDir);
-  });
-  afterEach(() => {
-    fs.rmSync(claudeDir, { recursive: true, force: true });
-  });
-
-  function assistant(model: string, u: Partial<{ input: number; output: number; cacheCreate: number; cacheRead: number }>): object {
-    return {
-      type: 'assistant',
-      message: {
-        model,
-        role: 'assistant',
-        usage: {
-          input_tokens: u.input ?? 0,
-          output_tokens: u.output ?? 0,
-          cache_creation_input_tokens: u.cacheCreate ?? 0,
-          cache_read_input_tokens: u.cacheRead ?? 0,
-        },
-      },
-    };
-  }
-
-  function writeMain(lines: object[]): void {
-    const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, `${SID}.jsonl`), lines.map(l => JSON.stringify(l)).join('\n'));
-  }
-
-  const mainRef: AgentRef = { agentId: SID, name: 'Main agent', isMain: true };
-
-  it('reads context from the last usage-bearing message of the main transcript', () => {
-    writeMain([
-      assistant('claude-opus-4-8', { input: 100, cacheCreate: 200, cacheRead: 50 }),
-      assistant('claude-opus-4-8', { input: 1000, output: 30, cacheCreate: 2000, cacheRead: 5000 }),
-    ]);
-    const usage = parser.usageForSession(SID, CWD, [mainRef]);
-    // última msg: input 1000 + cacheRead 5000 + cacheCreate 2000 = 8000 (output ignorado)
-    expect(usage.context).toEqual({ tokens: 8000, limit: 200_000 });
-  });
-
-  it('detects the 1M window from the model id', () => {
-    writeMain([assistant('claude-opus-4-8[1m]', { input: 10, cacheRead: 5 })]);
-    const usage = parser.usageForSession(SID, CWD, [mainRef]);
-    expect(usage.context).toEqual({ tokens: 15, limit: 1_000_000 });
-  });
-
-  it('ignores sidechain entries when picking the last message', () => {
-    writeMain([
-      { ...assistant('claude-opus-4-8', { input: 100, cacheRead: 50 }), isSidechain: false },
-      { ...assistant('claude-sonnet-4-6', { input: 9999, cacheRead: 9999 }), isSidechain: true },
-    ]);
-    const usage = parser.usageForSession(SID, CWD, [mainRef]);
-    expect(usage.context).toEqual({ tokens: 150, limit: 200_000 });
-  });
-
-  it('leaves context undefined when the transcript has no usage', () => {
-    const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(
-      path.join(dir, `${SID}.jsonl`),
-      JSON.stringify({ type: 'user', message: { role: 'user', content: 'hi' } }),
-    );
-    const usage = parser.usageForSession(SID, CWD, [mainRef]);
-    expect(usage.context).toBeUndefined();
   });
 });
