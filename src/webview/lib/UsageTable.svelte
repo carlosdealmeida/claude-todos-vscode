@@ -1,8 +1,11 @@
 <script lang="ts">
   import type { SessionUsage, ModelUsage } from '../../types';
-  import { formatCompact, shortModel } from '../format';
+  import { formatCompact, shortModel, contextLevel } from '../format';
 
   let { usage }: { usage: SessionUsage } = $props();
+  let ctx = $derived(usage.context);
+  let ctxPct = $derived(ctx ? Math.min(ctx.tokens / ctx.limit, 1) : 0);
+  let ctxLevel = $derived(ctx ? contextLevel(ctx.tokens / ctx.limit) : 'ok');
   let byAgent = $state(false);
 
   function total(rows: ModelUsage[]): ModelUsage {
@@ -18,11 +21,18 @@
 {#if usage.byModel.length > 0}
   <section class="usage">
     <div class="head">
-      <span class="label">Tokens</span>
+      <span class="label">Tokens{#if ctx}<span class="ctx-badge {ctxLevel}">{Math.round(ctxPct * 100)}% ctx</span>{/if}</span>
       <button class="toggle" onclick={() => byAgent = !byAgent} aria-pressed={byAgent}>
         {byAgent ? '◂ por modelo' : 'por agente ▸'}
       </button>
     </div>
+
+    {#if ctx}
+      <div class="ctx-bar-row">
+        <div class="ctx-bar"><div class="ctx-fill {ctxLevel}" style="width: {ctxPct * 100}%"></div></div>
+        <span class="ctx-count">{formatCompact(ctx.tokens)}/{formatCompact(ctx.limit)}</span>
+      </div>
+    {/if}
 
     <table>
       <thead>
@@ -112,6 +122,38 @@
   tfoot td {
     border-top: 1px solid var(--vscode-panel-border);
     font-weight: 600;
+  }
+  .ctx-badge {
+    margin-left: 0.4rem;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 0.85em;
+    font-weight: 600;
+  }
+  .ctx-badge.ok { color: var(--vscode-charts-green); }
+  .ctx-badge.warn { color: var(--vscode-charts-yellow); }
+  .ctx-badge.danger { color: var(--vscode-charts-red); }
+  .ctx-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+  }
+  .ctx-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--vscode-panel-border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .ctx-fill { height: 100%; transition: width 200ms ease; }
+  .ctx-fill.ok { background: var(--vscode-charts-green); }
+  .ctx-fill.warn { background: var(--vscode-charts-yellow); }
+  .ctx-fill.danger { background: var(--vscode-charts-red); }
+  .ctx-count {
+    font-size: 0.8em;
+    color: var(--vscode-descriptionForeground);
+    white-space: nowrap;
   }
   .model {
     color: var(--vscode-descriptionForeground);
