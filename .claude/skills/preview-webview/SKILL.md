@@ -64,8 +64,17 @@ module load, which only exists inside VSCode and crashes a plain browser.
 5. **Look at it** — Read `c:/tmp/webview-preview.png`. A blank image = the component
    didn't mount; check the Vite log for an `acquireVsCodeApi`/import error.
 
-6. **Clean up:** TaskStop the Vite background task, then delete `src/webview/preview.ts`
-   and `src/webview/preview.html`. Confirm `git status` is clean.
+6. **Clean up:** TaskStop the Vite background task. On Windows TaskStop may leave the
+   node child alive holding the port, so also free it explicitly (PowerShell):
+
+   ```
+   Get-NetTCPConnection -LocalPort 5174 -State Listen -ErrorAction SilentlyContinue |
+     Select-Object -ExpandProperty OwningProcess -Unique |
+     ForEach-Object { Stop-Process -Id $_ -Force }
+   ```
+
+   Then delete `src/webview/preview.ts` and `src/webview/preview.html`, and the PNG in
+   `c:/tmp`. Confirm `git status` is clean.
 
 ## Gotchas
 
@@ -77,7 +86,7 @@ module load, which only exists inside VSCode and crashes a plain browser.
 | Screenshot too narrow, content cut off | Pass a wider window size as the 3rd arg, e.g. `480,1080`. |
 | Component renders a `<li>` (e.g. `TodoItem`) | Mount into a `<ul>` host, not a `<div>`, or the layout is off. |
 | Some props look empty/wrong | Populate every field the component reads — check `src/types.ts`. E.g. an `in_progress` todo renders `activeForm`, not `content`. |
-| Vite background task reports "failed"/exit 1 | Benign as long as `curl` returned `200` and the PNG rendered. Stop it with TaskStop when done. |
+| Vite task "failed"/exit 1, "Port 5174 already in use" | A Vite orphan from a previous run still holds the port (TaskStop didn't kill the node child). It serves the current files fine (curl `200`), so the screenshot works — just free the port in cleanup (step 6). |
 | PNG in the repo / leftover files | Write screenshots to `c:/tmp`, not the project. Delete the preview files when done. |
 
 ## Notes
