@@ -29,7 +29,7 @@
 
     {#if ctx}
       <div class="ctx-bar-row">
-        <div class="ctx-bar"><div class="ctx-fill {ctxLevel}" style="width: {ctxPct * 100}%"></div></div>
+        <div class="ctx-bar" aria-hidden="true"><div class="ctx-fill {ctxLevel}" style="width: {Math.round(ctxPct * 100)}%"></div></div>
         <span class="ctx-count">{formatCompact(ctx.tokens)}/{formatCompact(ctx.limit)}</span>
       </div>
     {/if}
@@ -130,9 +130,18 @@
     font-size: 0.85em;
     font-weight: 600;
   }
-  .ctx-badge.ok { color: var(--vscode-charts-green); }
-  .ctx-badge.warn { color: var(--vscode-charts-yellow); }
-  .ctx-badge.danger { color: var(--vscode-charts-red); }
+  .ctx-badge.ok {
+    color: var(--vscode-charts-green);
+    background: color-mix(in srgb, var(--vscode-charts-green) 15%, transparent);
+  }
+  .ctx-badge.warn {
+    color: var(--vscode-charts-yellow);
+    background: color-mix(in srgb, var(--vscode-charts-yellow) 15%, transparent);
+  }
+  .ctx-badge.danger {
+    color: var(--vscode-charts-red);
+    background: color-mix(in srgb, var(--vscode-charts-red) 15%, transparent);
+  }
   .ctx-bar-row {
     display: flex;
     align-items: center;
