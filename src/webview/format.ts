@@ -21,3 +21,13 @@ export function formatCompact(n: number): string {
 export function shortModel(model: string): string {
   return model.startsWith('claude-') ? model.slice('claude-'.length) : model;
 }
+
+export type ContextLevel = 'ok' | 'warn' | 'danger';
+
+// Maps a context-fill ratio (0..1+) to a traffic-light level:
+// ok < 0.60 <= warn < 0.85 <= danger.
+export function contextLevel(pct: number): ContextLevel {
+  if (pct >= 0.85) return 'danger';
+  if (pct >= 0.60) return 'warn';
+  return 'ok';
+}
