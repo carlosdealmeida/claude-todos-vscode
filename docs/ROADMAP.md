@@ -40,13 +40,12 @@ de tokens do 0.3.0).
   naquela posição.
 - **Depende de:** entender como o parser hoje localiza e ordena os itens.
 
-### 2. Indicador de uso de contexto/token na barra
+### 2. Indicador de uso de contexto/token na barra ✅ ENTREGUE
 - **Issue:** [#58159](https://github.com/anthropics/claude-code/issues/58159) — labels `platform:vscode`, `area:statusline`
 - **Reforçada por:** [#516](https://github.com/anthropics/claude-code/issues/516) (`NOT_PLANNED`) "Always show available context percentage" — pedido antigo, nunca atendido.
-- **Status:** 🔍 a investigar
-- **Ideia:** mostrar "Context: 45% / 200k" perto do input, como na CLI, + aviso de proximidade
-  do autocompact. Dados já estão no `usage` por mensagem do transcript.
-- **Sinergia:** reaproveita a agregação de tokens do 0.3.0.
+- **Status:** ✅ entregue — badge "{pct}% ctx" + barra fina com semáforo (verde <60% / amarelo 60–85% / vermelho ≥85%) na `UsageTable`. Spec: [docs/specs/2026-06-03-context-usage-indicator-design.md](specs/2026-06-03-context-usage-indicator-design.md). Plano: [docs/plans/2026-06-03-context-usage-indicator.md](plans/2026-06-03-context-usage-indicator.md).
+- **Como:** o parser extrai o tamanho do contexto da última mensagem do transcript principal (`input + cache`); limite 200k/1M detectado pelo modelo. Lógica de nível em `format.contextLevel`.
+- **Melhoria futura (R-perf):** `usageParser` lê o transcript principal duas vezes (`modelsForFile` + `contextForFile`). Para transcripts grandes vale unificar numa passagem única. Conecta com o tema "performance de transcripts grandes" do backlog. 🔍 a avaliar.
 
 ### 3. Visibilidade de custo: cached vs uncached + aviso por valor absoluto
 - **Issue:** [#44779](https://github.com/anthropics/claude-code/issues/44779) — labels `area:cost`, `area:tui`, `area:statusline`
