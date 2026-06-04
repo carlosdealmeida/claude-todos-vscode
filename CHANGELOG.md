@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - 2026-06-04
+
+### Added
+- Context usage indicator in the Tokens panel: a `{pct}% ctx` badge plus a thin progress bar showing the current context size against the model's window (200k, or 1M when the model advertises it). The color is a traffic light — green below 60%, amber 60–85%, red at 85% and above — so an approaching auto-compact is visible at a glance. The size is read from the last message's `usage` in the main transcript (input + cache; output excluded); sub-agents are not counted, since each has its own context.
+
+### Fixed
+- Hook robustness on Windows. The session-start hook now reads stdin with a 2-second timeout, so it can no longer hang indefinitely if the parent process never closes the stream. Writes to `~/.claude/settings.json` and the bridge `sessions.json` are now atomic (temp file + rename), preventing corruption from a crash or concurrent write mid-write.
+
 ## [0.3.0] - 2026-06-02
 
 ### Added
