@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>webview preview</title>
+  <style>
+    /* VSCode theme variables the components rely on (dark theme values).
+       Without these the panel renders without colors. Add more as needed. */
+    :root {
+      --vscode-foreground: #cccccc;
+      --vscode-descriptionForeground: #9d9d9d;
+      --vscode-panel-border: #3c3c3c;
+      --vscode-list-hoverBackground: #2a2d2e;
+      --vscode-sideBarSectionHeader-background: #2a2a2a;
+      --vscode-badge-background: #4d4d4d;
+      --vscode-badge-foreground: #ffffff;
+      --vscode-progressBar-background: #0e70c0;
+      --vscode-errorForeground: #f14c4c;
+      --vscode-charts-green: #89d185;
+      --vscode-charts-yellow: #e6c07b;
+      --vscode-charts-red: #f14c4c;
+      --vscode-charts-blue: #4daafc;
+    }
+    body {
+      background: #1e1e1e;
+      color: #cccccc;
+      font-family: -apple-system, "Segoe UI", sans-serif;
+      padding: 24px 8px;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="./preview.ts"></script>
+</body>
+</html>
