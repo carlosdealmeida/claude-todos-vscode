@@ -184,7 +184,7 @@ describe('UsageParser', () => {
       ]);
       const usage = parser.usageForSession(SID, CWD, [mainRef]);
       // última msg: input 1000 + cacheRead 5000 + cacheCreate 2000 = 8000 (output ignorado)
-      expect(usage.context).toEqual({ tokens: 8000, limit: 200_000 });
+      expect(usage.context).toEqual({ tokens: 8000, limit: 1_000_000 });
     });
 
     it('detects the 1M window from the model id', () => {
@@ -199,7 +199,13 @@ describe('UsageParser', () => {
         { ...assistant('claude-sonnet-4-6', { input: 9999, cacheRead: 9999 }), isSidechain: true },
       ]);
       const usage = parser.usageForSession(SID, CWD, [mainRef]);
-      expect(usage.context).toEqual({ tokens: 150, limit: 200_000 });
+      expect(usage.context).toEqual({ tokens: 150, limit: 1_000_000 });
+    });
+
+    it('elevates a 200k-family model to 1M when the observed context exceeds 200k', () => {
+      writeMain([assistant('claude-haiku-4-5', { cacheRead: 250_000 })]);
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      expect(usage.context).toEqual({ tokens: 250_000, limit: 1_000_000 });
     });
 
     it('leaves context undefined when the transcript has no usage', () => {
@@ -216,12 +222,21 @@ describe('UsageParser', () => {
 });
 
 describe('contextLimitFor', () => {
-  it('returns 1M when the model id advertises a 1m window', () => {
+  it('detects 1M for opus/sonnet generation 4+ by family', () => {
+    expect(contextLimitFor('claude-opus-4-8')).toBe(1_000_000);
+    expect(contextLimitFor('claude-sonnet-4-6')).toBe(1_000_000);
+  });
+  it('detects 1M from an explicit 1m suffix', () => {
     expect(contextLimitFor('claude-opus-4-8[1m]')).toBe(1_000_000);
     expect(contextLimitFor('claude-sonnet-4-6-1M')).toBe(1_000_000);
   });
-  it('defaults to 200k otherwise', () => {
-    expect(contextLimitFor('claude-opus-4-8')).toBe(200_000);
-    expect(contextLimitFor('gpt-x')).toBe(200_000);
+  it('keeps 200k for haiku and pre-4 families', () => {
+    expect(contextLimitFor('claude-haiku-4-5')).toBe(200_000);
+    expect(contextLimitFor('claude-3-5-sonnet-20241022')).toBe(200_000);
+  });
+  it('elevates to 1M when observed tokens exceed 200k (evidence)', () => {
+    expect(contextLimitFor('claude-haiku-4-5', 250_000)).toBe(1_000_000);
+    expect(contextLimitFor('claude-haiku-4-5', 50_000)).toBe(200_000);
+    expect(contextLimitFor('totally-unknown', 300_000)).toBe(1_000_000);
   });
 });

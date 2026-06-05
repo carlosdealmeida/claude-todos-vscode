@@ -6,10 +6,21 @@ import type { AgentUsage, ContextUsage, ModelUsage, SessionUsage } from '../type
 const DEFAULT_CONTEXT_LIMIT = 200_000;
 const ONE_MILLION = 1_000_000;
 
-// The context window for a model: 1M when the id advertises it (e.g. the
-// "[1m]" suffix), otherwise the 200k default.
-export function contextLimitFor(model: string): number {
-  return /1m/i.test(model) ? ONE_MILLION : DEFAULT_CONTEXT_LIMIT;
+// opus/sonnet generation 4–19 (e.g. opus-4-8, sonnet-4-6). The `(?!\d)` stops
+// the date-suffixed legacy id "claude-3-5-sonnet-20241022" from matching
+// (its "sonnet-20" is neither [4-9] nor 1\d).
+const ONE_M_FAMILY = /(?:opus|sonnet)-(?:[4-9]|1\d)(?!\d)/i;
+
+function supportsOneMillion(model: string): boolean {
+  return /1m/i.test(model) || ONE_M_FAMILY.test(model);
+}
+
+// The context window for a model. 1M when the family supports it (opus/sonnet
+// gen 4+, or an explicit 1m suffix) OR when the observed context already
+// exceeds 200k (proof of a larger window). Always elevates, never lowers.
+export function contextLimitFor(model: string, observedTokens = 0): number {
+  const base = supportsOneMillion(model) ? ONE_MILLION : DEFAULT_CONTEXT_LIMIT;
+  return observedTokens > base ? ONE_MILLION : base;
 }
 
 interface AgentRef {
@@ -137,7 +148,7 @@ export class UsageParser {
 
     const u = last.usage;
     const tokens = num(u.input_tokens) + num(u.cache_read_input_tokens) + num(u.cache_creation_input_tokens);
-    return { tokens, limit: contextLimitFor(last.model) };
+    return { tokens, limit: contextLimitFor(last.model, tokens) };
   }
 
   // Aggregates per-agent models into session-wide totals per model, in
