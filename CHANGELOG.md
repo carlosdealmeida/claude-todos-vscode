@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] - 2026-06-05
+
+### Added
+- Cache-efficiency indicator in the Tokens panel: a `{pct}% reaproveitado` badge plus a thin stacked bar (cache read / cache creation / new input) with a legend, showing how much of the session's input came from the prompt cache. The reuse rate is aggregated across the whole session (main agent + sub-agents) and color-coded as a traffic light (green ≥75%, amber 50–75%, red <50%). It coexists with the context indicator; the token table is unchanged.
+
+### Fixed
+- Context window detection. Models that support a 1M window but whose id omits the `[1m]` suffix (e.g. `claude-opus-4-8`, `claude-sonnet-4-6`) were treated as 200k, so a large session showed a false `100% / 200k`. Detection now recognizes the opus/sonnet generation-4+ family and also elevates to 1M whenever the observed context already exceeds 200k. The exact window size is not available in the transcript or hooks, so this remains a heuristic.
+
 ## [0.4.0] - 2026-06-04
 
 ### Added
