@@ -70,9 +70,14 @@ de tokens do 0.3.0).
   nomear/apelidar sessões; atalho de teclado para alternar.
 - **Sinergia:** o `bridgeFile` já sabe quais sessões pertencem à janela.
 
----
-
-## Média aderência (escopo maior)
+### 10. Mostrar o uso da sessão mesmo sem todos (painel "early")
+- **Origem:** observação de uso — hoje o painel só aparece quando há `TodoWrite`; sem todos, cai no `EmptyState`. Mas agora temos tokens/contexto/cache, que existem assim que a sessão tem qualquer atividade.
+- **Status:** 🔍 a investigar
+- **Ideia:** exibir o bloco de uso (tabela de tokens + indicador de contexto + eficiência de cache) **assim que existe uma sessão com `usage`**, independente de haver todos. A lista de tasks complementa quando o agente chamar `TodoWrite`. Desacopla "tem sessão" de "tem todo".
+- **Pontos de mudança:**
+  - [snapshotService.build()](../src/services/snapshotService.ts#L35) — o `usage` é computado a partir dos `agents` do `TodosParser`; sem todos, `agents` é vazio → sem usage. Resolver ao menos o agente **main** a partir do transcript (mesmo sem todos) para o `usageParser` computar.
+  - [App.svelte](../src/webview/App.svelte) — a condição `snapshot.agents.length === 0` → `EmptyState` precisa virar "mostra o uso se há `usage`, e um estado leve de 'aguardando tasks' no lugar da lista".
+- **Sinergia:** reaproveita 100% o que já foi entregue (0.3.0–0.5.0); é só desacoplar a condição de exibição.
 
 ### 6. Tokens por sub-agent (sessão + semanal)
 - **Issue:** [#59412](https://github.com/anthropics/claude-code/issues/59412) — labels `area:cost`, `area:agent-view`
