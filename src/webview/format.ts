@@ -31,3 +31,13 @@ export function contextLevel(pct: number): ContextLevel {
   if (pct >= 0.60) return 'warn';
   return 'ok';
 }
+
+export type CacheLevel = 'good' | 'mid' | 'low';
+
+// Maps a cache-reuse ratio (0..1) to a traffic-light level. Inverted vs
+// contextLevel: more reuse is better. good >= 0.75 > mid >= 0.50 > low.
+export function cacheLevel(rate: number): CacheLevel {
+  if (rate >= 0.75) return 'good';
+  if (rate >= 0.50) return 'mid';
+  return 'low';
+}

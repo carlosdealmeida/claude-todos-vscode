@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatCompact, shortModel, contextLevel } from '../../src/webview/format';
+import { formatCompact, shortModel, contextLevel, cacheLevel } from '../../src/webview/format';
 
 describe('formatCompact', () => {
   it('formats values below 1000 as-is', () => {
@@ -47,5 +47,20 @@ describe('contextLevel', () => {
   });
   it('treats values above 1 as danger', () => {
     expect(contextLevel(1.5)).toBe('danger');
+  });
+});
+
+describe('cacheLevel', () => {
+  it('is good at 75% and above', () => {
+    expect(cacheLevel(1)).toBe('good');
+    expect(cacheLevel(0.75)).toBe('good');
+  });
+  it('is mid from 50% up to (but not including) 75%', () => {
+    expect(cacheLevel(0.74)).toBe('mid');
+    expect(cacheLevel(0.50)).toBe('mid');
+  });
+  it('is low below 50%', () => {
+    expect(cacheLevel(0.49)).toBe('low');
+    expect(cacheLevel(0)).toBe('low');
   });
 });
