@@ -35,10 +35,17 @@ export interface ContextUsage {
   limit: number;   // 200_000 | 1_000_000
 }
 
+export interface CacheStats {
+  input: number;     // entrada não-cacheada (Σ input_tokens)
+  read: number;      // Σ cache_read_input_tokens
+  creation: number;  // Σ cache_creation_input_tokens
+}
+
 export interface SessionUsage {
   byModel: ModelUsage[];  // totais da sessão agrupados por modelo
   byAgent: AgentUsage[];  // quebra por agente
   context?: ContextUsage;
+  cache?: CacheStats;
 }
 
 export interface SessionSnapshot {

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { transcriptPath, subAgentsDir } from './transcriptPaths';
-import type { AgentUsage, ContextUsage, ModelUsage, SessionUsage } from '../types';
+import type { AgentUsage, CacheStats, ContextUsage, ModelUsage, SessionUsage } from '../types';
 
 const DEFAULT_CONTEXT_LIMIT = 200_000;
 const ONE_MILLION = 1_000_000;
@@ -58,6 +58,7 @@ export class UsageParser {
   // are skipped.
   usageForSession(sessionId: string, cwd: string, agents: AgentRef[]): SessionUsage {
     const byAgent: AgentUsage[] = [];
+    const sessionCache: CacheStats = { input: 0, read: 0, creation: 0 };
 
     for (const agent of agents) {
       const filePath = agent.isMain
@@ -65,15 +66,13 @@ export class UsageParser {
         : this.subAgentFile(sessionId, cwd, agent.agentId);
       if (!filePath) continue;
 
-      const models = this.modelsForFile(filePath, agent.isMain);
+      const { models, cache } = this.modelsAndCacheForFile(filePath, agent.isMain);
       if (models.length === 0) continue;
 
-      byAgent.push({
-        agentId: agent.agentId,
-        name: agent.name,
-        isMain: agent.isMain,
-        models,
-      });
+      byAgent.push({ agentId: agent.agentId, name: agent.name, isMain: agent.isMain, models });
+      sessionCache.input += cache.input;
+      sessionCache.read += cache.read;
+      sessionCache.creation += cache.creation;
     }
 
     let context: ContextUsage | undefined;
@@ -83,7 +82,10 @@ export class UsageParser {
       if (mainFile) context = this.contextForFile(mainFile);
     }
 
-    return { byModel: this.aggregate(byAgent), byAgent, context };
+    const cacheTotal = sessionCache.input + sessionCache.read + sessionCache.creation;
+    const cache = cacheTotal > 0 ? sessionCache : undefined;
+
+    return { byModel: this.aggregate(byAgent), byAgent, context, cache };
   }
 
   private subAgentFile(sessionId: string, cwd: string, agentId: string): string | null {
@@ -93,19 +95,20 @@ export class UsageParser {
     return fs.existsSync(file) ? file : null;
   }
 
-  // Reads one transcript file. For the main transcript, isSidechain entries are
-  // skipped (sub-agent turns are counted from their own agent-*.jsonl files,
-  // never double-counted from the main transcript). Returns one ModelUsage per
-  // distinct model in the file, in first-seen order.
-  private modelsForFile(filePath: string, skipSidechain: boolean): ModelUsage[] {
+  // Reads one transcript file in a single pass. For the main transcript,
+  // isSidechain entries are skipped (sub-agent turns come from their own
+  // agent-*.jsonl). Returns one ModelUsage per distinct model AND the cache
+  // breakdown (non-cached input, cache read, cache creation) for the file.
+  private modelsAndCacheForFile(filePath: string, skipSidechain: boolean): { models: ModelUsage[]; cache: CacheStats } {
     let lines: string[];
     try {
       lines = fs.readFileSync(filePath, 'utf-8').split('\n');
     } catch {
-      return [];
+      return { models: [], cache: { input: 0, read: 0, creation: 0 } };
     }
 
     const byModel = new Map<string, ModelUsage>();
+    const cache: CacheStats = { input: 0, read: 0, creation: 0 };
     for (const line of lines) {
       if (!line) continue;
       let entry: TranscriptEntry;
@@ -114,13 +117,19 @@ export class UsageParser {
       const msg = entry.message;
       if (!msg || !msg.usage || typeof msg.model !== 'string') continue;
       const u = msg.usage;
+      const input = num(u.input_tokens);
+      const read = num(u.cache_read_input_tokens);
+      const creation = num(u.cache_creation_input_tokens);
       const acc = byModel.get(msg.model) ?? { model: msg.model, input: 0, output: 0, cache: 0 };
-      acc.input += num(u.input_tokens);
+      acc.input += input;
       acc.output += num(u.output_tokens);
-      acc.cache += num(u.cache_creation_input_tokens) + num(u.cache_read_input_tokens);
+      acc.cache += creation + read;
       byModel.set(msg.model, acc);
+      cache.input += input;
+      cache.read += read;
+      cache.creation += creation;
     }
-    return [...byModel.values()];
+    return { models: [...byModel.values()], cache };
   }
 
   // The current context size = input + cache of the LAST usage-bearing message

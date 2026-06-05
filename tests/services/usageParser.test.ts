@@ -219,6 +219,34 @@ describe('UsageParser', () => {
       expect(usage.context).toBeUndefined();
     });
   });
+
+  describe('cache stats', () => {
+    it('aggregates input/read/creation across main and sub-agents', () => {
+      writeMain([assistant('claude-opus-4-8', { input: 10, cacheRead: 100, cacheCreate: 5 })]);
+      writeSubAgent('aaa', [assistant('claude-sonnet-4-6', { input: 4, cacheRead: 40, cacheCreate: 2 })]);
+      const agents = [mainRef, { agentId: 'aaa', name: 'explorer', isMain: false }];
+      const usage = parser.usageForSession(SID, CWD, agents);
+      expect(usage.cache).toEqual({ input: 14, read: 140, creation: 7 });
+    });
+
+    it('skips sidechain entries in the main transcript (no double-count)', () => {
+      writeMain([
+        { ...assistant('claude-opus-4-8', { input: 10, cacheRead: 100 }), isSidechain: false },
+        { ...assistant('claude-sonnet-4-6', { input: 999, cacheRead: 999 }), isSidechain: true },
+      ]);
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      expect(usage.cache).toEqual({ input: 10, read: 100, creation: 0 });
+    });
+
+    it('leaves cache undefined when there is no usage', () => {
+      const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, `${SID}.jsonl`),
+        JSON.stringify({ type: 'user', message: { role: 'user', content: 'hi' } }));
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      expect(usage.cache).toBeUndefined();
+    });
+  });
 });
 
 describe('contextLimitFor', () => {
