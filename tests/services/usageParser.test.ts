@@ -238,6 +238,12 @@ describe('UsageParser', () => {
       expect(usage.cache).toEqual({ input: 10, read: 100, creation: 0 });
     });
 
+    it('keeps cache defined with read/creation 0 when there is input but no cache yet', () => {
+      writeMain([assistant('claude-opus-4-8', { input: 5 })]);
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      expect(usage.cache).toEqual({ input: 5, read: 0, creation: 0 });
+    });
+
     it('leaves cache undefined when there is no usage', () => {
       const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
       fs.mkdirSync(dir, { recursive: true });
