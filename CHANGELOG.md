@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.0] - 2026-06-05
+
+### Added
+- The usage block (token table + context indicator + cache efficiency) now shows as soon as a session has any activity, even before the agent calls `TodoWrite`. Previously the panel fell back to the empty state until the first todo appeared. When there are no todos yet, the agent list is replaced by a light **"Sessão ativa — aguardando tasks"** note while the usage block stays visible. This decouples "has a session" from "has a todo": `snapshotService.build()` synthesizes the main agent from the transcript to feed the usage parser, and the panel no longer gates on a non-empty agent list.
+
 ## [0.5.0] - 2026-06-05
 
 ### Added
