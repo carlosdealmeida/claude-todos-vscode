@@ -103,6 +103,36 @@ describe('SnapshotService', () => {
     expect(svc.listSessions().map(s => s.sessionId)).toEqual(['newest', 'mid', 'oldest']);
   });
 
+  it('computes usage even when there are no todos, synthesizing the main agent', () => {
+    const resolver = {
+      resolveCandidates: () => [
+        { cwd: '/p', sessionId: 'sess', terminalPid: null, startedAt: 1 },
+      ],
+    };
+    const parser = {
+      transcriptMtime: () => 1000,
+      readSessionTitle: () => null,
+      listForSession: () => [], // no TodoWrite yet → no agents
+    };
+    let receivedAgents: any[] | undefined;
+    const usage = {
+      usageForSession: (_s: string, _c: string, agents: any[]) => {
+        receivedAgents = agents;
+        return { byModel: [{ model: 'claude-opus-4-8', input: 1, output: 2, cache: 3 }], byAgent: [] };
+      },
+    };
+    const svc = new SnapshotService(resolver as any, parser as any, usage as any);
+    const snap = svc.build()!;
+
+    // visible agents stay empty (UI shows the "awaiting tasks" state)
+    expect(snap.agents).toEqual([]);
+    // but usage still computed, from a synthesized main agent
+    expect(snap.usage?.byModel[0].model).toBe('claude-opus-4-8');
+    expect(receivedAgents).toEqual([
+      expect.objectContaining({ agentId: 'sess', isMain: true }),
+    ]);
+  });
+
   it('attaches usage from the usageParser', () => {
     const resolver = {
       resolveCandidates: () => [

@@ -1,7 +1,7 @@
 import type { SessionResolver } from './sessionResolver';
 import type { TodosParser } from './todosParser';
 import type { UsageParser } from './usageParser';
-import type { SessionSnapshot, SessionSummary } from '../types';
+import type { AgentTodos, SessionSnapshot, SessionSummary } from '../types';
 
 export class SnapshotService {
   private pinnedSessionId: string | null = null;
@@ -42,13 +42,25 @@ export class SnapshotService {
     const chosen = pinned ?? sessions[0];
 
     const agents = this.parser.listForSession(chosen.sessionId, chosen.cwd);
+    // Desacopla "tem sessão" de "tem todo": antes de qualquer TodoWrite, ainda
+    // resolvemos o agente main para que tokens/contexto/cache apareçam assim que
+    // a sessão tem atividade. A lista visível (`agents`) continua vazia — a UI
+    // mostra um estado leve de "aguardando tasks" no lugar da lista.
+    const usageAgents: AgentTodos[] = agents.length > 0 ? agents : [{
+      sessionId: chosen.sessionId,
+      agentId: chosen.sessionId,
+      name: 'Main agent',
+      isMain: true,
+      todos: [],
+      updatedAt: 0,
+    }];
     return {
       sessionId: chosen.sessionId,
       cwd: chosen.cwd,
       title: chosen.title,
       pinned: pinned !== undefined,
       agents,
-      usage: this.usageParser.usageForSession(chosen.sessionId, chosen.cwd, agents),
+      usage: this.usageParser.usageForSession(chosen.sessionId, chosen.cwd, usageAgents),
     };
   }
 

@@ -23,8 +23,6 @@
     <div class="error">{todosStore.error}</div>
   {:else if !snapshot}
     <EmptyState reason="no-session" />
-  {:else if snapshot.agents.length === 0}
-    <EmptyState reason="no-session" />
   {:else}
     <header class="top">
       <button
@@ -41,14 +39,21 @@
     {#if snapshot.usage}
       <UsageTable usage={snapshot.usage} />
     {/if}
-    <div class="agents">
-      {#each snapshot.agents as agent, i (agent.agentId)}
-        {#if isFirstHistory(snapshot.agents, i)}
-          <div class="history-divider">histórico</div>
-        {/if}
-        <AgentSection {agent} defaultExpanded={agent.isMain} history={isHistory(agent)} />
-      {/each}
-    </div>
+    {#if snapshot.agents.length > 0}
+      <div class="agents">
+        {#each snapshot.agents as agent, i (agent.agentId)}
+          {#if isFirstHistory(snapshot.agents, i)}
+            <div class="history-divider">histórico</div>
+          {/if}
+          <AgentSection {agent} defaultExpanded={agent.isMain} history={isHistory(agent)} />
+        {/each}
+      </div>
+    {:else}
+      <div class="awaiting">
+        <p class="awaiting-title">Sessão ativa — aguardando tasks</p>
+        <p class="awaiting-sub">As tarefas aparecem aqui assim que o agente usar <code>TodoWrite</code>.</p>
+      </div>
+    {/if}
   {/if}
 </main>
 
@@ -88,6 +93,19 @@
   }
   .pin, .caret { flex: none; }
   .caret { opacity: 0.7; }
+  .awaiting {
+    padding: 1.25rem 1rem;
+    text-align: center;
+    color: var(--vscode-descriptionForeground);
+  }
+  .awaiting-title { font-size: 0.9rem; margin-bottom: 0.35rem; }
+  .awaiting-sub { font-size: 0.8rem; opacity: 0.85; }
+  .awaiting code {
+    background: var(--vscode-textBlockQuote-background);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: var(--vscode-editor-font-family);
+  }
   .history-divider {
     text-transform: uppercase;
     font-size: 0.7em;
