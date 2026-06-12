@@ -27,9 +27,10 @@ describe('TodosParser', () => {
     return file;
   }
 
-  function todoWriteEntry(todos: object[], opts: { isSidechain?: boolean } = {}): object {
+  function todoWriteEntry(todos: object[], opts: { isSidechain?: boolean; timestamp?: string } = {}): object {
     return {
       isSidechain: opts.isSidechain ?? false,
+      ...(opts.timestamp ? { timestamp: opts.timestamp } : {}),
       message: {
         content: [
           { type: 'tool_use', name: 'TodoWrite', input: { todos } },
@@ -123,9 +124,10 @@ describe('TodosParser', () => {
     };
   }
 
-  function taskUpdateToolUse(toolUseId: string, taskId: string, status: string, opts: { isSidechain?: boolean } = {}): object {
+  function taskUpdateToolUse(toolUseId: string, taskId: string, status: string, opts: { isSidechain?: boolean; timestamp?: string } = {}): object {
     return {
       isSidechain: opts.isSidechain ?? false,
+      ...(opts.timestamp ? { timestamp: opts.timestamp } : {}),
       message: {
         content: [
           { type: 'tool_use', name: 'TaskUpdate', id: toolUseId, input: { taskId, status } },
@@ -336,6 +338,108 @@ describe('TodosParser', () => {
     expect(parser.readSessionTitle('s1', CWD)).toBeNull();
   });
 
+  describe('TodoWrite timing', () => {
+    it('captures startedAt and completedAt across the snapshot sequence', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'task a', activeForm: 'Doing a', status: 'in_progress' }], { timestamp: '2026-06-12T10:00:00.000Z' }),
+        todoWriteEntry([{ content: 'task a', activeForm: 'Doing a', status: 'completed' }], { timestamp: '2026-06-12T10:01:00.000Z' }),
+      ]);
+      const todo = parser.listForSession('s1', CWD)[0].todos[0];
+      expect(todo.startedAt).toBe(Date.parse('2026-06-12T10:00:00.000Z'));
+      expect(todo.completedAt).toBe(Date.parse('2026-06-12T10:01:00.000Z'));
+    });
+
+    it('keeps the first in_progress timestamp (first-write-wins) across snapshots', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'in_progress' }], { timestamp: '2026-06-12T10:00:00.000Z' }),
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'in_progress' }], { timestamp: '2026-06-12T10:05:00.000Z' }),
+      ]);
+      const todo = parser.listForSession('s1', CWD)[0].todos[0];
+      expect(todo.startedAt).toBe(Date.parse('2026-06-12T10:00:00.000Z'));
+    });
+
+    it('matches tasks by content even when the list is reordered', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([
+          { content: 'first', activeForm: 'First', status: 'in_progress' },
+          { content: 'second', activeForm: 'Second', status: 'pending' },
+        ], { timestamp: '2026-06-12T10:00:00.000Z' }),
+        todoWriteEntry([
+          { content: 'second', activeForm: 'Second', status: 'in_progress' },
+          { content: 'first', activeForm: 'First', status: 'completed' },
+        ], { timestamp: '2026-06-12T10:02:00.000Z' }),
+      ]);
+      const todos = parser.listForSession('s1', CWD)[0].todos;
+      const first = todos.find(t => t.content === 'first')!;
+      const second = todos.find(t => t.content === 'second')!;
+      expect(first.startedAt).toBe(Date.parse('2026-06-12T10:00:00.000Z'));
+      expect(first.completedAt).toBe(Date.parse('2026-06-12T10:02:00.000Z'));
+      expect(second.startedAt).toBe(Date.parse('2026-06-12T10:02:00.000Z'));
+    });
+
+    it('records only completedAt when a task skips in_progress', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'pending' }], { timestamp: '2026-06-12T10:00:00.000Z' }),
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'completed' }], { timestamp: '2026-06-12T10:03:00.000Z' }),
+      ]);
+      const todo = parser.listForSession('s1', CWD)[0].todos[0];
+      expect(todo.startedAt).toBeUndefined();
+      expect(todo.completedAt).toBe(Date.parse('2026-06-12T10:03:00.000Z'));
+    });
+
+    it('leaves timing undefined when snapshots have no timestamp', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'in_progress' }]),
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'completed' }]),
+      ]);
+      const todo = parser.listForSession('s1', CWD)[0].todos[0];
+      expect(todo.startedAt).toBeUndefined();
+      expect(todo.completedAt).toBeUndefined();
+    });
+
+    it('resets timing to the current round when the same content is reused (no leak)', () => {
+      writeTranscript('s1', CWD, [
+        // rodada 1: mesma content, in_progress -> completed
+        todoWriteEntry([{ content: 'task X', activeForm: 'X', status: 'in_progress' }], { timestamp: '2026-06-12T21:08:53.000Z' }),
+        todoWriteEntry([{ content: 'task X', activeForm: 'X', status: 'completed' }], { timestamp: '2026-06-12T21:09:04.000Z' }),
+        // rodada 2: reaberta como pending (fronteira), depois in_progress -> completed ~14min depois
+        todoWriteEntry([{ content: 'task X', activeForm: 'X', status: 'pending' }], { timestamp: '2026-06-12T21:22:40.000Z' }),
+        todoWriteEntry([{ content: 'task X', activeForm: 'X', status: 'in_progress' }], { timestamp: '2026-06-12T21:22:48.000Z' }),
+        todoWriteEntry([{ content: 'task X', activeForm: 'X', status: 'completed' }], { timestamp: '2026-06-12T21:22:59.000Z' }),
+      ]);
+      const todo = parser.listForSession('s1', CWD)[0].todos[0];
+      // deve refletir a 2ª rodada, não vazar o tempo antigo (21:08:53)
+      expect(todo.startedAt).toBe(Date.parse('2026-06-12T21:22:48.000Z'));
+      expect(todo.completedAt).toBe(Date.parse('2026-06-12T21:22:59.000Z'));
+    });
+
+    it('resets timing when a completed task reopens in_progress with NO pending step', () => {
+      writeTranscript('s1', CWD, [
+        // rodada 1: in_progress -> completed
+        todoWriteEntry([{ content: 'task Y', activeForm: 'Y', status: 'in_progress' }], { timestamp: '2026-06-12T21:43:28.000Z' }),
+        todoWriteEntry([{ content: 'task Y', activeForm: 'Y', status: 'completed' }], { timestamp: '2026-06-12T21:43:37.000Z' }),
+        // rodada 2: reabre DIRETO em in_progress (completed -> in_progress, sem pending)
+        todoWriteEntry([{ content: 'task Y', activeForm: 'Y', status: 'in_progress' }], { timestamp: '2026-06-12T21:48:49.000Z' }),
+        todoWriteEntry([{ content: 'task Y', activeForm: 'Y', status: 'completed' }], { timestamp: '2026-06-12T21:48:59.000Z' }),
+      ]);
+      const todo = parser.listForSession('s1', CWD)[0].todos[0];
+      expect(todo.startedAt).toBe(Date.parse('2026-06-12T21:48:49.000Z'));
+      expect(todo.completedAt).toBe(Date.parse('2026-06-12T21:48:59.000Z'));
+    });
+
+    it('resets timing when a reused content reappears in_progress after being absent', () => {
+      writeTranscript('s1', CWD, [
+        // rodada 1: a task aparece in_progress e fica (sem concluir), depois some da lista
+        todoWriteEntry([{ content: 'task Z', activeForm: 'Z', status: 'in_progress' }], { timestamp: '2026-06-12T10:00:00.000Z' }),
+        todoWriteEntry([{ content: 'outra coisa', activeForm: 'O', status: 'in_progress' }], { timestamp: '2026-06-12T10:01:00.000Z' }),
+        // rodada 2: a mesma content reaparece in_progress 10 min depois
+        todoWriteEntry([{ content: 'task Z', activeForm: 'Z', status: 'in_progress' }], { timestamp: '2026-06-12T10:10:00.000Z' }),
+      ]);
+      const todo = parser.listForSession('s1', CWD)[0].todos.find(t => t.content === 'task Z')!;
+      expect(todo.startedAt).toBe(Date.parse('2026-06-12T10:10:00.000Z'));
+    });
+  });
+
   describe('TaskCreate/TaskUpdate schema (AGENT_TEAMS)', () => {
     it('reconstructs todos from a stream of TaskCreate calls (all pending)', () => {
       writeTranscript('s1', CWD, [
@@ -439,6 +543,41 @@ describe('TodosParser', () => {
       expect(agents[0].todos).toEqual([
         { content: 'new schema', activeForm: 'New', status: 'pending' },
       ]);
+    });
+
+    it('records startedAt and completedAt from TaskUpdate timestamps', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'a', 'A'),
+        taskCreateResult('tu-1', '1', 'a'),
+        taskUpdateToolUse('tu-2', '1', 'in_progress', { timestamp: '2026-06-12T10:00:00.000Z' }),
+        taskUpdateToolUse('tu-3', '1', 'completed', { timestamp: '2026-06-12T10:02:30.000Z' }),
+      ]);
+      const todo = parser.listForSession('s1', CWD)[0].todos[0];
+      expect(todo.startedAt).toBe(Date.parse('2026-06-12T10:00:00.000Z'));
+      expect(todo.completedAt).toBe(Date.parse('2026-06-12T10:02:30.000Z'));
+    });
+
+    it('keeps the first timestamp for each status transition (first-write-wins)', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'a', 'A'),
+        taskCreateResult('tu-1', '1', 'a'),
+        taskUpdateToolUse('tu-2', '1', 'in_progress', { timestamp: '2026-06-12T10:00:00.000Z' }),
+        taskUpdateToolUse('tu-3', '1', 'in_progress', { timestamp: '2026-06-12T10:05:00.000Z' }),
+      ]);
+      const todo = parser.listForSession('s1', CWD)[0].todos[0];
+      expect(todo.startedAt).toBe(Date.parse('2026-06-12T10:00:00.000Z'));
+    });
+
+    it('leaves timing undefined when TaskUpdate entries have no timestamp', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'a', 'A'),
+        taskCreateResult('tu-1', '1', 'a'),
+        taskUpdateToolUse('tu-2', '1', 'in_progress'),
+        taskUpdateToolUse('tu-3', '1', 'completed'),
+      ]);
+      const todo = parser.listForSession('s1', CWD)[0].todos[0];
+      expect(todo.startedAt).toBeUndefined();
+      expect(todo.completedAt).toBeUndefined();
     });
 
     it('renders sub-agent task lists in the new schema', () => {
