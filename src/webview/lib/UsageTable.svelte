@@ -109,9 +109,9 @@
 <style>
   .usage {
     border: 1px solid var(--vscode-panel-border);
-    border-radius: 6px;
-    margin: 0 0.5rem 0.5rem;
-    padding: 0.4rem 0.5rem;
+    border-radius: var(--radius);
+    margin: 0 var(--sp-1) var(--sp-2);
+    padding: 0.4rem var(--sp-2);
     font-size: 0.85em;
   }
   .head {
