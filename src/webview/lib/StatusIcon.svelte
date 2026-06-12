@@ -16,13 +16,13 @@
   </svg>
 {:else}
   <svg class="icon pending" viewBox="0 0 16 16" aria-label="pending">
-    <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+    <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.5 2.5" opacity="0.55"/>
   </svg>
 {/if}
 
 <style>
   .icon { width: 1rem; height: 1rem; flex-shrink: 0; }
-  .completed { color: var(--vscode-testing-iconPassed, #4caf50); }
-  .in-progress { color: var(--vscode-progressBar-background, #0e70c0); }
-  .pending { color: var(--vscode-foreground); }
+  .completed { color: var(--ok, var(--vscode-testing-iconPassed, #4caf50)); }
+  .in-progress { color: var(--run, var(--vscode-progressBar-background, #0e70c0)); }
+  .pending { color: var(--muted, var(--vscode-foreground)); }
 </style>

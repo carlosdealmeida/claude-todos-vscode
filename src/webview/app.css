@@ -3,6 +3,28 @@
   font-size: var(--vscode-font-size);
   color: var(--vscode-foreground);
   background: transparent;
+
+  /* Tokens de design, todos derivados do tema do VSCode (nunca hex fixo). */
+  --accent: var(--vscode-focusBorder, var(--vscode-progressBar-background, #0e70c0));
+  --ok: var(--vscode-charts-green, var(--vscode-testing-iconPassed, #4caf50));
+  --run: var(--vscode-charts-blue, var(--vscode-progressBar-background, #0e70c0));
+  /* Accent do card do agente ativo — quente (âmbar) para não se confundir com o
+     azul da task em carregamento. */
+  --card-accent: var(--vscode-charts-orange, #cc8400);
+  --muted: var(--vscode-descriptionForeground);
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --radius: 6px;
 }
 body { margin: 0; padding: 0; }
 * { box-sizing: border-box; }
+
+/* Acessibilidade: desliga pulsos/animação para quem pede menos movimento. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
