@@ -110,11 +110,14 @@
     "@types/vscode": "~1.85.0",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.1",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.1",
     "svelte": "^5.55.9",
     "svelte-check": "^3.8.6",
     "typescript": "^5.9.3",
     "vite": "^7.0.0",
     "vitest": "^4.1.8"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1"
   }
 }
