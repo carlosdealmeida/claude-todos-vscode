@@ -5,6 +5,27 @@ import { transcriptPath as resolveTranscriptPath, subAgentsDir as resolveSubAgen
 
 const VALID_STATUSES: TodoStatus[] = ['pending', 'in_progress', 'completed'];
 
+function parseEpoch(ts: string | undefined): number | undefined {
+  if (!ts) return undefined;
+  const ms = Date.parse(ts);
+  return Number.isFinite(ms) ? ms : undefined;
+}
+
+// Monta um Todo omitindo campos de timing indefinidos, para não inflar o
+// snapshot nem quebrar comparações que só esperam os 3 campos obrigatórios.
+function makeTodo(
+  content: string,
+  activeForm: string,
+  status: TodoStatus,
+  startedAt?: number,
+  completedAt?: number,
+): Todo {
+  const todo: Todo = { content, activeForm, status };
+  if (startedAt !== undefined) todo.startedAt = startedAt;
+  if (completedAt !== undefined) todo.completedAt = completedAt;
+  return todo;
+}
+
 interface ContentBlock {
   type?: string;
   name?: string;
@@ -25,6 +46,7 @@ interface ContentBlock {
 interface TranscriptEntry {
   type?: string;
   isSidechain?: boolean;
+  timestamp?: string;
   toolUseResult?: {
     agentId?: unknown;
     task?: { id?: unknown };
@@ -248,9 +270,75 @@ export class TodosParser {
     }
 
     const schema = this.detectSchema(lines, skipSidechain);
-    if (schema === 'TodoWrite') return this.readLastTodoWriteSnapshot(lines, skipSidechain);
+    if (schema === 'TodoWrite') {
+      const todos = this.readLastTodoWriteSnapshot(lines, skipSidechain);
+      if (!todos) return null;
+      const timings = this.extractTodoWriteTimings(lines, skipSidechain);
+      return todos.map(t => {
+        const timing = timings.get(t.content);
+        return timing
+          ? makeTodo(t.content, t.activeForm, t.status, timing.startedAt, timing.completedAt)
+          : t;
+      });
+    }
     if (schema === 'Task') return this.readTaskStream(lines, skipSidechain);
     return null;
+  }
+
+  // Varre os snapshots do TodoWrite em ordem cronológica e registra, por
+  // `content`, o primeiro instante em que cada task apareceu in_progress e
+  // completed (first-write-wins). Casa por `content` por ser estável a
+  // reordenações da lista entre snapshots.
+  private extractTodoWriteTimings(
+    lines: string[],
+    skipSidechain: boolean,
+  ): Map<string, { startedAt?: number; completedAt?: number }> {
+    const timings = new Map<string, { startedAt?: number; completedAt?: number }>();
+    // Último status observado por content. Serve para detectar a TRANSIÇÃO para
+    // in_progress: quando uma task entra em in_progress vindo de qualquer outro
+    // estado (pending, completed, ausente ou nova), começa um novo streak e o
+    // timing é zerado — assim uma rodada que reutiliza a mesma descrição não
+    // herda o tempo de uma rodada anterior. 'absent' = não estava no snapshot.
+    const prevStatus = new Map<string, TodoStatus | 'absent'>();
+    for (const line of lines) {
+      if (!line || line.indexOf('"name":"TodoWrite"') < 0) continue;
+      let entry: TranscriptEntry;
+      try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
+      if (skipSidechain && entry.isSidechain) continue;
+      const ts = parseEpoch(entry.timestamp);
+      if (ts === undefined) continue;
+      const content = entry.message?.content;
+      if (!Array.isArray(content)) continue;
+      for (const block of content) {
+        if (block?.type !== 'tool_use' || block.name !== 'TodoWrite') continue;
+        const raw = block.input?.todos;
+        if (!Array.isArray(raw)) continue;
+        const seen = new Set<string>();
+        for (const item of raw) {
+          if (!this.isValidTodo(item)) continue;
+          seen.add(item.content);
+          const prev = prevStatus.get(item.content);
+          if (item.status === 'in_progress') {
+            // Entrou agora em in_progress (não estava in_progress antes) → novo streak.
+            if (prev !== 'in_progress') timings.set(item.content, { startedAt: ts });
+          } else if (item.status === 'completed') {
+            const rec = timings.get(item.content) ?? {};
+            if (rec.completedAt === undefined) rec.completedAt = ts;
+            timings.set(item.content, rec);
+          } else {
+            // pending = ainda não começou nesta rodada.
+            timings.set(item.content, {});
+          }
+          prevStatus.set(item.content, item.status);
+        }
+        // Tasks que sumiram deste snapshot: marca como ausentes para que uma
+        // reaparição futura em in_progress conte como novo streak.
+        for (const key of prevStatus.keys()) {
+          if (!seen.has(key)) prevStatus.set(key, 'absent');
+        }
+      }
+    }
+    return timings;
   }
 
   private detectSchema(lines: string[], skipSidechain: boolean): 'TodoWrite' | 'Task' | null {
@@ -297,7 +385,10 @@ export class TodosParser {
   }
 
   private readTaskStream(lines: string[], skipSidechain: boolean): Todo[] {
-    const tasks = new Map<string, { content: string; activeForm: string; status: TodoStatus }>();
+    const tasks = new Map<string, {
+      content: string; activeForm: string; status: TodoStatus;
+      startedAt?: number; completedAt?: number;
+    }>();
     const order: string[] = [];
     // tool_use_id of TaskCreate awaiting its tool_result, where the assigned id is revealed.
     const pendingCreates = new Map<string, { content: string; activeForm: string }>();
@@ -327,7 +418,14 @@ export class TodosParser {
             if (typeof taskId === 'string' && typeof status === 'string'
                 && VALID_STATUSES.includes(status as TodoStatus)) {
               const t = tasks.get(taskId);
-              if (t) t.status = status as TodoStatus;
+              if (t) {
+                t.status = status as TodoStatus;
+                const ts = parseEpoch(entry.timestamp);
+                if (ts !== undefined) {
+                  if (status === 'in_progress' && t.startedAt === undefined) t.startedAt = ts;
+                  if (status === 'completed' && t.completedAt === undefined) t.completedAt = ts;
+                }
+              }
             }
           }
         } else if (block?.type === 'tool_result' && typeof block.tool_use_id === 'string') {
@@ -345,7 +443,7 @@ export class TodosParser {
 
     return order.map(id => {
       const t = tasks.get(id)!;
-      return { content: t.content, activeForm: t.activeForm, status: t.status };
+      return makeTodo(t.content, t.activeForm, t.status, t.startedAt, t.completedAt);
     });
   }
 

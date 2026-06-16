@@ -3,6 +3,7 @@
   import AgentSection from './lib/AgentSection.svelte';
   import EmptyState from './lib/EmptyState.svelte';
   import UsageTable from './lib/UsageTable.svelte';
+  import Icon from './lib/Icon.svelte';
   import type { AgentTodos } from '../types';
 
   function isHistory(agent: AgentTodos): boolean {
@@ -30,11 +31,11 @@
         onclick={() => todosStore.pickSession()}
         title={`${snapshot.title}\n${snapshot.sessionId}`}
       >
-        {#if snapshot.pinned}<span class="pin">📌</span>{/if}
+        {#if snapshot.pinned}<span class="pin"><Icon name="pin" size={12} /></span>{/if}
         <span class="session-title">{snapshot.title}</span>
-        <span class="caret">▾</span>
+        <span class="caret"><Icon name="chevron" size={12} /></span>
       </button>
-      <button class="ghost" onclick={() => todosStore.refresh()} title="Refresh">↻</button>
+      <button class="ghost" onclick={() => todosStore.refresh()} title="Refresh" aria-label="Refresh"><Icon name="refresh" size={14} /></button>
     </header>
     {#if snapshot.usage}
       <UsageTable usage={snapshot.usage} />
@@ -59,40 +60,45 @@
 
 <style>
   main {
-    padding: 0.5rem;
+    padding: var(--sp-2);
     height: 100vh;
     overflow-y: auto;
   }
   .top {
     display: flex;
     align-items: center;
+    gap: var(--sp-1);
     justify-content: space-between;
-    padding: 0.25rem 0.5rem 0.5rem;
+    padding: var(--sp-1) var(--sp-1) var(--sp-2);
     font-size: 0.85em;
-    opacity: 0.8;
   }
   .session-btn {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: var(--sp-1);
     flex: 1;
     min-width: 0;
     background: transparent;
     border: 1px solid var(--vscode-panel-border);
-    border-radius: 4px;
+    border-radius: 5px;
     color: inherit;
     font: inherit;
-    padding: 0.15rem 0.5rem;
+    padding: 0.2rem var(--sp-2);
     cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
   }
-  .session-btn:hover { background: var(--vscode-list-hoverBackground); }
+  .session-btn:hover {
+    background: var(--vscode-list-hoverBackground);
+    border-color: var(--accent);
+  }
   .session-title {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .pin, .caret { flex: none; }
-  .caret { opacity: 0.7; }
+  .pin, .caret { flex: none; display: inline-flex; }
+  .pin { color: var(--accent); }
+  .caret { opacity: 0.65; transform: rotate(90deg); }
   .awaiting {
     padding: 1.25rem 1rem;
     text-align: center;
@@ -107,22 +113,35 @@
     font-family: var(--vscode-editor-font-family);
   }
   .history-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
     text-transform: uppercase;
     font-size: 0.7em;
     letter-spacing: 0.5px;
-    color: var(--vscode-descriptionForeground);
-    text-align: center;
-    margin: 0.5rem 0 0.25rem;
+    color: var(--muted);
+    margin: var(--sp-2) var(--sp-1) var(--sp-1);
+  }
+  .history-divider::before,
+  .history-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--vscode-panel-border);
   }
   .ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: transparent;
     border: 1px solid var(--vscode-panel-border);
     color: inherit;
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
+    padding: 0.25rem 0.4rem;
+    border-radius: 5px;
     cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
   }
-  .ghost:hover { background: var(--vscode-list-hoverBackground); }
+  .ghost:hover { background: var(--vscode-list-hoverBackground); border-color: var(--accent); }
   .loading, .error {
     padding: 1rem;
     text-align: center;

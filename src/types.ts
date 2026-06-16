@@ -4,6 +4,8 @@ export interface Todo {
   content: string;
   status: TodoStatus;
   activeForm: string;
+  startedAt?: number;    // epoch ms — 1ª vez observada in_progress
+  completedAt?: number;  // epoch ms — 1ª vez observada completed
 }
 
 export interface AgentTodos {

@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { formatCompact, shortModel, contextLevel, cacheLevel } from '../../src/webview/format';
+import { formatCompact, shortModel, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations } from '../../src/webview/format';
+import type { Todo, TodoStatus } from '../../src/types';
+
+function todo(status: TodoStatus, startedAt?: number, completedAt?: number): Todo {
+  const t: Todo = { content: status, activeForm: status, status };
+  if (startedAt !== undefined) t.startedAt = startedAt;
+  if (completedAt !== undefined) t.completedAt = completedAt;
+  return t;
+}
 
 describe('formatCompact', () => {
   it('formats values below 1000 as-is', () => {
@@ -19,6 +27,126 @@ describe('formatCompact', () => {
   it('clamps negative/non-finite to 0', () => {
     expect(formatCompact(-5)).toBe('0');
     expect(formatCompact(NaN)).toBe('0');
+  });
+});
+
+describe('formatDuration', () => {
+  it('clamps zero, negative and non-finite to 0s', () => {
+    expect(formatDuration(0)).toBe('0s');
+    expect(formatDuration(-5)).toBe('0s');
+    expect(formatDuration(NaN)).toBe('0s');
+  });
+  it('shows 0s for sub-second durations', () => {
+    expect(formatDuration(500)).toBe('0s');
+  });
+  it('shows whole seconds below a minute', () => {
+    expect(formatDuration(45_000)).toBe('45s');
+  });
+  it('shows minutes and seconds below an hour', () => {
+    expect(formatDuration(90_000)).toBe('1m 30s');
+    expect(formatDuration(134_000)).toBe('2m 14s');
+  });
+  it('shows hours and minutes from an hour up', () => {
+    expect(formatDuration(3_600_000)).toBe('1h 0m');
+    expect(formatDuration(3_900_000)).toBe('1h 5m');
+  });
+});
+
+describe('completedTaskDurations', () => {
+  it('uses the observed span when startedAt is present', () => {
+    expect(completedTaskDurations([todo('completed', 0, 60_000)])).toEqual([60_000]);
+  });
+
+  it('infers the start from the previous task completion when startedAt is missing', () => {
+    const todos = [todo('completed', 0, 60_000), todo('completed', undefined, 90_000)];
+    expect(completedTaskDurations(todos)).toEqual([60_000, 30_000]);
+  });
+
+  it('yields zero for tasks completed in the same batch', () => {
+    const todos = [
+      todo('completed', 0, 60_000),
+      todo('completed', undefined, 60_000),
+      todo('completed', undefined, 60_000),
+    ];
+    expect(completedTaskDurations(todos)).toEqual([60_000, 0, 0]);
+  });
+
+  it('returns undefined for tasks that are not completed', () => {
+    const todos = [todo('pending'), todo('in_progress', 0), todo('completed', 0, 60_000)];
+    expect(completedTaskDurations(todos)).toEqual([undefined, undefined, 60_000]);
+  });
+
+  it('yields zero for a first task that lacks a start', () => {
+    expect(completedTaskDurations([todo('completed', undefined, 50_000)])).toEqual([0]);
+  });
+});
+
+describe('summarizeTiming', () => {
+  it('counts inferred durations in elapsed but not in the estimate average', () => {
+    const todos = [todo('completed', 0, 60_000), todo('completed', undefined, 90_000), todo('pending')];
+    const r = summarizeTiming(todos, 999_999);
+    expect(r.elapsedMs).toBe(90_000);   // 60_000 observado + 30_000 inferido
+    expect(r.estimateMs).toBe(60_000);  // média só do observado (60_000) × 1 pendente
+  });
+
+  it('sums completed task durations into elapsedMs', () => {
+    const r = summarizeTiming([todo('completed', 0, 60_000)], 999_999);
+    expect(r.elapsedMs).toBe(60_000);
+  });
+
+  it('includes the live elapsed of an in_progress task', () => {
+    const r = summarizeTiming(
+      [todo('completed', 0, 60_000), todo('in_progress', 100_000)],
+      130_000,
+    );
+    expect(r.elapsedMs).toBe(90_000); // 60_000 + (130_000 - 100_000)
+  });
+
+  it('has no estimate without a measurable completed task', () => {
+    const r = summarizeTiming([todo('in_progress', 0)], 30_000);
+    expect(r.hasEstimate).toBe(false);
+    expect(r.estimateMs).toBe(0);
+    expect(r.elapsedMs).toBe(30_000);
+  });
+
+  it('estimates remaining as average completed duration times remaining count', () => {
+    const r = summarizeTiming(
+      [todo('completed', 0, 40_000), todo('completed', 40_000, 120_000), todo('pending'), todo('pending')],
+      999_999,
+    );
+    expect(r.hasEstimate).toBe(true);
+    expect(r.estimateMs).toBe(120_000); // avg (40_000+80_000)/2 = 60_000 * 2 restantes
+    expect(r.elapsedMs).toBe(120_000);
+  });
+
+  it('counts the remaining estimate down as the in_progress task runs', () => {
+    // avg concluída = 60s; pendente contribui 60s; a ativa contribui max(0, 60s - decorrido dela)
+    const todos = [todo('completed', 0, 60_000), todo('in_progress', 1_000_000), todo('pending')];
+    const early = summarizeTiming(todos, 1_020_000); // 20s na ativa → 40_000 + 60_000
+    const later = summarizeTiming(todos, 1_050_000); // 50s na ativa → 10_000 + 60_000
+    expect(early.estimateMs).toBe(100_000);
+    expect(later.estimateMs).toBe(70_000);
+    expect(later.estimateMs).toBeLessThan(early.estimateMs);
+  });
+
+  it('floors the active task share at zero when it exceeds the average', () => {
+    const todos = [todo('completed', 0, 60_000), todo('in_progress', 1_000_000), todo('pending')];
+    const over = summarizeTiming(todos, 1_200_000); // 200s na ativa (>60s) → 0 + 60_000 pendente
+    expect(over.estimateMs).toBe(60_000);
+  });
+
+  it('clamps out-of-order timestamps to zero', () => {
+    const r = summarizeTiming([todo('completed', 100_000, 50_000)], 999_999);
+    expect(r.elapsedMs).toBe(0);
+  });
+
+  it('ignores tasks without startedAt in elapsed and estimate base', () => {
+    const r = summarizeTiming(
+      [todo('completed', undefined, 60_000), todo('in_progress', 0)],
+      30_000,
+    );
+    expect(r.elapsedMs).toBe(30_000); // só a in_progress conta
+    expect(r.hasEstimate).toBe(false); // nenhuma completed mensurável
   });
 });
 
