@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.0] - 2026-06-16
+
+### Added
+- Task execution time in the panel. Each `completed` task shows how long it took, and the `in_progress` task shows a live stopwatch (`⏱`, ticking every second). The agent header shows the real total elapsed time plus a countdown estimate of the time remaining — always labelled as an estimate. Times are derived from transcript timestamps; because Claude Code records no sub-progress, there is no per-task percentage (it would be a misleading guess). Timing resets on each new activation of a task, so rounds that reuse the same description don't leak time into each other.
+
+### Changed
+- Panel visual refresh, theme-aware. SVG icons replace the emoji, statuses are color-coded, the active item is highlighted and pulses, the elapsed/remaining times are shown as metric cards, and overall hierarchy and spacing are tightened. Everything is driven by `--vscode-*` variables (so it adapts to dark/light/high-contrast) and respects `prefers-reduced-motion`. No new dependency.
+
 ## [0.6.0] - 2026-06-05
 
 ### Added
