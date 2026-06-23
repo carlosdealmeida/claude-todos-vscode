@@ -1,17 +1,18 @@
 <script lang="ts">
+  import { todosStore } from '../stores.svelte';
   let { reason }: { reason: 'no-workspace' | 'no-session' | 'hook-missing' } = $props();
 </script>
 
 <div class="empty">
   {#if reason === 'no-workspace'}
-    <h3>No workspace open</h3>
-    <p>Open a folder to track Claude Code sessions in this workspace.</p>
+    <h3>{todosStore.t('empty.noWorkspace.title')}</h3>
+    <p>{todosStore.t('empty.noWorkspace.body')}</p>
   {:else if reason === 'hook-missing'}
-    <h3>Session hook not installed</h3>
-    <p>Run the command <code>Claude Todos: Install Session Hook</code> to enable tracking.</p>
+    <h3>{todosStore.t('empty.hookMissing.title')}</h3>
+    <p>{todosStore.t('empty.hookMissing.before')}<code>{todosStore.t('empty.hookMissing.command')}</code>{todosStore.t('empty.hookMissing.after')}</p>
   {:else}
-    <h3>Waiting for a Claude Code session</h3>
-    <p>Run <code>claude</code> in this workspace and your todos will appear here.</p>
+    <h3>{todosStore.t('empty.noSession.title')}</h3>
+    <p>{todosStore.t('empty.noSession.before')}<code>claude</code>{todosStore.t('empty.noSession.after')}</p>
   {/if}
 </div>
 

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { SessionUsage, ModelUsage } from '../../types';
   import { formatCompact, shortModel, contextLevel, cacheLevel } from '../format';
+  import { todosStore } from '../stores.svelte';
 
   let { usage }: { usage: SessionUsage } = $props();
   let ctx = $derived(usage.context);
@@ -30,9 +31,9 @@
 {#if usage.byModel.length > 0}
   <section class="usage">
     <div class="head">
-      <span class="label">Tokens{#if ctx}<span class="ctx-badge {ctxLevel}">{Math.round(ctxPct * 100)}% ctx</span>{/if}</span>
+      <span class="label">{todosStore.t('usage.tokens')}{#if ctx}<span class="ctx-badge {ctxLevel}">{todosStore.t('usage.ctxBadge', { pct: Math.round(ctxPct * 100) })}</span>{/if}</span>
       <button class="toggle" onclick={() => byAgent = !byAgent} aria-pressed={byAgent}>
-        {byAgent ? '◂ por modelo' : 'por agente ▸'}
+        {byAgent ? '◂ ' + todosStore.t('usage.byModel') : todosStore.t('usage.byAgent') + ' ▸'}
       </button>
     </div>
 
@@ -45,8 +46,8 @@
 
     {#if cache && cacheTotal > 0}
       <div class="cache-head">
-        <span class="cache-label">Cache</span>
-        <span class="cache-badge {cacheLvl}">{Math.round(cacheRate * 100)}% reaproveitado</span>
+        <span class="cache-label">{todosStore.t('usage.cache')}</span>
+        <span class="cache-badge {cacheLvl}">{todosStore.t('usage.cacheReuse', { pct: Math.round(cacheRate * 100) })}</span>
       </div>
       <div class="cache-stack" aria-hidden="true">
         <div class="seg read" style="width: {pctOf(cache.read)}%"></div>
@@ -54,19 +55,19 @@
         <div class="seg new" style="width: {pctOf(cache.input)}%"></div>
       </div>
       <div class="cache-legend">
-        <span><span class="cdot read"></span>lido {formatCompact(cache.read)}</span>
-        <span><span class="cdot create"></span>criado {formatCompact(cache.creation)}</span>
-        <span><span class="cdot new"></span>novo {formatCompact(cache.input)}</span>
+        <span><span class="cdot read"></span>{todosStore.t('usage.cacheRead')} {formatCompact(cache.read)}</span>
+        <span><span class="cdot create"></span>{todosStore.t('usage.cacheCreated')} {formatCompact(cache.creation)}</span>
+        <span><span class="cdot new"></span>{todosStore.t('usage.cacheNew')} {formatCompact(cache.input)}</span>
       </div>
     {/if}
 
     <table>
       <thead>
         <tr>
-          <th class="name">{byAgent ? 'Agente' : 'Modelo'}</th>
-          <th>Input</th>
-          <th>Output</th>
-          <th>Cache</th>
+          <th class="name">{byAgent ? todosStore.t('usage.colAgent') : todosStore.t('usage.colModel')}</th>
+          <th>{todosStore.t('usage.colInput')}</th>
+          <th>{todosStore.t('usage.colOutput')}</th>
+          <th>{todosStore.t('usage.cache')}</th>
         </tr>
       </thead>
       <tbody>
@@ -96,7 +97,7 @@
       </tbody>
       <tfoot>
         <tr>
-          <td class="name">Total</td>
+          <td class="name">{todosStore.t('usage.total')}</td>
           <td title={String(modelTotal.input)}>{formatCompact(modelTotal.input)}</td>
           <td title={String(modelTotal.output)}>{formatCompact(modelTotal.output)}</td>
           <td title={String(modelTotal.cache)}>{formatCompact(modelTotal.cache)}</td>

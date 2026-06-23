@@ -44,15 +44,15 @@
       <div class="agents">
         {#each snapshot.agents as agent, i (agent.agentId)}
           {#if isFirstHistory(snapshot.agents, i)}
-            <div class="history-divider">histórico</div>
+            <div class="history-divider">{todosStore.t('app.historyDivider')}</div>
           {/if}
           <AgentSection {agent} defaultExpanded={agent.isMain} history={isHistory(agent)} />
         {/each}
       </div>
     {:else}
       <div class="awaiting">
-        <p class="awaiting-title">Sessão ativa — aguardando tasks</p>
-        <p class="awaiting-sub">As tarefas aparecem aqui assim que o agente usar <code>TodoWrite</code>.</p>
+        <p class="awaiting-title">{todosStore.t('app.awaitingTitle')}</p>
+        <p class="awaiting-sub">{todosStore.t('app.awaitingSubBefore')}<code>TodoWrite</code>{todosStore.t('app.awaitingSubAfter')}</p>
       </div>
     {/if}
   {/if}

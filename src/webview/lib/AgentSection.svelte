@@ -5,6 +5,7 @@
   import Icon from './Icon.svelte';
   import { summarizeTiming, formatDuration, completedTaskDurations } from '../format';
   import { clock } from '../clock.svelte';
+  import { todosStore } from '../stores.svelte';
 
   let { agent, defaultExpanded = true, history = false }: { agent: AgentTodos; defaultExpanded?: boolean; history?: boolean } = $props();
   let expanded = $state(defaultExpanded);
@@ -37,7 +38,7 @@
     <span class="title">{title}</span>
     <span class="counts">
       <span class="frac">{counts.completed}/{counts.total}</span>
-      {#if counts.inProgress > 0}<span class="badge">{counts.inProgress} active</span>{/if}
+      {#if counts.inProgress > 0}<span class="badge">{todosStore.t('agent.activeBadge', { count: counts.inProgress })}</span>{/if}
     </span>
   </button>
 
@@ -46,15 +47,15 @@
       <div class="timing" transition:slide={{ duration: 180 }}>
         {#if timing.elapsedMs > 0}
           <div class="stat">
-            <span class="stat-label"><Icon name="clock" size={11} /> decorrido</span>
+            <span class="stat-label"><Icon name="clock" size={11} /> {todosStore.t('agent.elapsed')}</span>
             <span class="stat-value">{formatDuration(timing.elapsedMs)}</span>
           </div>
         {/if}
         {#if timing.hasEstimate}
           <div class="stat">
-            <span class="stat-label"><Icon name="hourglass" size={11} /> restante</span>
+            <span class="stat-label"><Icon name="hourglass" size={11} /> {todosStore.t('agent.remaining')}</span>
             <span class="stat-value">~{formatDuration(timing.estimateMs)}</span>
-            <span class="stat-cap" title="Estimativa: média das tasks concluídas, descontando o tempo já gasto na task atual">estimativa</span>
+            <span class="stat-cap" title={todosStore.t('agent.estimateTooltip')}>{todosStore.t('agent.estimateLabel')}</span>
           </div>
         {/if}
       </div>
@@ -64,7 +65,7 @@
         <TodoItem {todo} completedMs={durations[i]} />
       {/each}
       {#if agent.todos.length === 0}
-        <li class="empty">No todos yet</li>
+        <li class="empty">{todosStore.t('agent.noTodos')}</li>
       {/if}
     </ul>
   {/if}
