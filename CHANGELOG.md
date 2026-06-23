@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.1] - 2026-06-23
+
+### Security
+- Bumped the transitive `undici` dependency to 7.28.0, clearing 6 Dependabot advisories (2 high, 2 moderate, 2 low). `undici` is a build/dev-only dependency and is never bundled into the published extension, so end users were not exposed; this is preventive hygiene.
+
+### Changed
+- Added a `.gitattributes` enforcing LF line endings, preventing accidental CRLF commits from Windows working trees. No change to the published artifact.
+
 ## [0.8.0] - 2026-06-23
 
 ### Added

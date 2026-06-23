@@ -2,7 +2,7 @@
   "name": "claude-todos",
   "displayName": "Claude Todos",
   "description": "%extension.description%",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "license": "MIT",
   "publisher": "CarlosJunior1992",
   "icon": "media/icon.png",
