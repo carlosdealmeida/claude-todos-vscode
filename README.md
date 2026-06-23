@@ -8,6 +8,8 @@
 
 Visualização ao vivo do `TodoWrite` do Claude Code, restrita ao workspace aberto na janela atual do VSCode. O painel mostra o agente principal e seus sub-agents lado a lado. Duas janelas do VSCode em projetos diferentes nunca veem os todos uma da outra.
 
+![Painel Claude Todos: agente principal e sub-agents com as tasks avançando de pending → in_progress → completed ao vivo, com tempos por task](screenshots/claude-todos-demo.gif)
+
 ## Como funciona
 
 ![Painel Claude Todos atualizando ao vivo durante uma sessão do Claude Code](screenshots/panel-live-during-smoke-test.png)

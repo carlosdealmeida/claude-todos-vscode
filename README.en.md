@@ -8,6 +8,8 @@
 
 Live view of `TodoWrite` from Claude Code, scoped to the workspace open in the current VSCode window. The panel shows the main agent and its sub-agents side by side. Two VSCode windows in different projects never see each other's todos.
 
+![Claude Todos panel: main agent and sub-agents with tasks advancing from pending → in_progress → completed live, with per-task timings](screenshots/claude-todos-demo.gif)
+
 ## How it works
 
 ![Claude Todos panel updating live during a Claude Code session](screenshots/panel-live-during-smoke-test.png)
