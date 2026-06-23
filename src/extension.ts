@@ -12,6 +12,8 @@ import { HookInstaller, type HookEvent } from './services/hookInstaller';
 import { TodosViewProvider } from './providers/todosViewProvider';
 import { TodosPanelProvider } from './providers/todosPanelProvider';
 import type { WebviewMessage } from './types';
+import { createT } from './i18n/t';
+import { resolveLocale } from './localeResolver';
 
 const HOOK_EVENTS: HookEvent[] = ['SessionStart', 'UserPromptSubmit'];
 
@@ -25,13 +27,13 @@ interface SessionPickItem extends vscode.QuickPickItem {
   sessionId: string | null;
 }
 
-function relativeTime(ms: number): string {
+function relativeTime(ms: number, t: ReturnType<typeof createT>): string {
   const min = Math.floor((Date.now() - ms) / 60000);
-  if (min < 1) return 'agora';
-  if (min < 60) return `há ${min} min`;
+  if (min < 1) return t('time.now');
+  if (min < 60) return t('time.minutesAgo', { n: min });
   const hours = Math.floor(min / 60);
-  if (hours < 24) return `há ${hours} h`;
-  return `há ${Math.floor(hours / 24)} d`;
+  if (hours < 24) return t('time.hoursAgo', { n: hours });
+  return t('time.daysAgo', { n: Math.floor(hours / 24) });
 }
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -66,17 +68,18 @@ export function activate(context: vscode.ExtensionContext): void {
   let panelProvider!: TodosPanelProvider;
 
   const showSessionPicker = async (): Promise<void> => {
+    const t = createT(resolveLocale());
     const sessions = snapshotService.listSessions();
     const items: SessionPickItem[] = [
-      { label: 'Auto', description: 'seguir a sessão mais ativa', sessionId: null },
+      { label: t('picker.auto'), description: t('picker.autoDesc'), sessionId: null },
       ...sessions.map(s => ({
         label: s.title,
-        description: `${s.sessionId.slice(0, 8)} · ${relativeTime(s.updatedAt)}`,
+        description: `${s.sessionId.slice(0, 8)} · ${relativeTime(s.updatedAt, t)}`,
         sessionId: s.sessionId,
       })),
     ];
     const picked = await vscode.window.showQuickPick(items, {
-      placeHolder: 'Selecione a sessão a exibir',
+      placeHolder: t('picker.placeholder'),
     });
     if (!picked) return;
     snapshotService.setPinnedSession(picked.sessionId);
@@ -114,6 +117,15 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
       viewProvider.pushSnapshot();
       panelProvider.pushSnapshot();
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('claudeTodos.language')) {
+        viewProvider.pushLocale();
+        panelProvider.pushLocale();
+      }
     }),
   );
 
@@ -169,21 +181,22 @@ async function maybePromptInstallHook(
   if (installer.areAllInstalled(HOOK_EVENTS, command)) return;
   if (context.globalState.get<boolean>('hookPromptDismissed')) return;
 
+  const t = createT(resolveLocale());
   const choice = await vscode.window.showInformationMessage(
-    'Claude Todos needs to install hooks (SessionStart + UserPromptSubmit) in ~/.claude/settings.json to detect Claude Code sessions for this workspace. UserPromptSubmit allows in-progress sessions to be tracked on the next message.',
-    'Install',
-    'Not now',
-    "Don't ask again",
+    t('hook.promptMessage'),
+    t('hook.install'),
+    t('hook.notNow'),
+    t('hook.dontAskAgain'),
   );
 
-  if (choice === 'Install') {
+  if (choice === t('hook.install')) {
     try {
       installer.installAll(HOOK_EVENTS, command);
-      vscode.window.showInformationMessage('Claude Todos hooks installed. In-progress Claude Code sessions will be tracked on their next message; new sessions are tracked immediately.');
+      vscode.window.showInformationMessage(t('hook.installedAuto'));
     } catch (err) {
-      vscode.window.showErrorMessage(`Failed to install hooks: ${String(err)}`);
+      vscode.window.showErrorMessage(t('hook.installFailed', { error: String(err) }));
     }
-  } else if (choice === "Don't ask again") {
+  } else if (choice === t('hook.dontAskAgain')) {
     await context.globalState.update('hookPromptDismissed', true);
   }
 }
@@ -192,10 +205,11 @@ async function promptInstallHook(
   installer: HookInstaller,
   command: string,
 ): Promise<void> {
+  const t = createT(resolveLocale());
   try {
     installer.installAll(HOOK_EVENTS, command);
-    vscode.window.showInformationMessage('Claude Todos hooks installed (SessionStart + UserPromptSubmit).');
+    vscode.window.showInformationMessage(t('hook.installedManual'));
   } catch (err) {
-    vscode.window.showErrorMessage(`Failed to install hooks: ${String(err)}`);
+    vscode.window.showErrorMessage(t('hook.installFailed', { error: String(err) }));
   }
 }
