@@ -6,3 +6,6 @@ out/
 docs/superpowers/
 .superpowers/
 .claude/settings.local.json
+
+# Worktrees criadas pelo ClaudeForge
+.worktrees/
