@@ -1,0 +1,10 @@
+# Normaliza todos os arquivos de texto para LF no repositório e no checkout,
+# evitando que finais de linha CRLF (Windows) sejam commitados acidentalmente.
+* text=auto eol=lf
+
+# Assets binários — nunca normalizar.
+*.png binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+*.vsix binary
