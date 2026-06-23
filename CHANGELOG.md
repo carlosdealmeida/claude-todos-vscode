@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.1] - 2026-06-23
+
+### Changed
+- Marketplace discoverability: added the `AI` and `Visualization` categories (previously only `Other`) and broadened the keywords (`task tracking`, `agent`, `subagent`) so the extension surfaces under the relevant Marketplace filters and searches.
+
+### Added
+- Animated GIF at the top of the READMEs (pt/en/es) showing the panel updating live — the main agent and its sub-agents with tasks advancing `pending → in_progress → completed`, including per-task timings.
+
 ## [0.7.0] - 2026-06-16
 
 ### Added
