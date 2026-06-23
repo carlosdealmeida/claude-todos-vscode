@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { buildWebviewHtml } from '../webview/html';
 import type { SnapshotService } from '../services/snapshotService';
 import type { ExtensionMessage, WebviewMessage } from '../types';
+import { resolveLocale } from '../localeResolver';
 
 export class TodosPanelProvider {
   private panel: vscode.WebviewPanel | null = null;
@@ -29,7 +30,10 @@ export class TodosPanelProvider {
     );
     this.panel.webview.html = buildWebviewHtml(this.panel.webview, this.extensionUri);
     this.panel.webview.onDidReceiveMessage((msg: WebviewMessage) => {
-      if (msg.type === 'ready') this.pushSnapshot();
+      if (msg.type === 'ready') {
+        this.pushLocale();
+        this.pushSnapshot();
+      }
       this.onWebviewMessage(msg);
     });
     this.panel.onDidDispose(() => { this.panel = null; });
@@ -38,6 +42,12 @@ export class TodosPanelProvider {
   pushSnapshot(): void {
     if (!this.panel) return;
     const msg: ExtensionMessage = { type: 'snapshot', snapshot: this.snapshotService.build() };
+    this.panel.webview.postMessage(msg);
+  }
+
+  pushLocale(): void {
+    if (!this.panel) return;
+    const msg: ExtensionMessage = { type: 'locale', locale: resolveLocale() };
     this.panel.webview.postMessage(msg);
   }
 }

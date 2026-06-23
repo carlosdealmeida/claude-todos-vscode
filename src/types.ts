@@ -1,3 +1,5 @@
+import type { Locale } from './i18n/locale';
+
 export type TodoStatus = 'pending' | 'in_progress' | 'completed';
 
 export interface Todo {
@@ -76,6 +78,7 @@ export interface BridgeRecord {
 export type ExtensionMessage =
   | { type: 'snapshot'; snapshot: SessionSnapshot | null }
   | { type: 'theme'; theme: 'dark' | 'light' | 'high-contrast' }
+  | { type: 'locale'; locale: Locale }
   | { type: 'error'; message: string };
 
 export type WebviewMessage =

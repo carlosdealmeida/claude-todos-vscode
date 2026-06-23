@@ -1,4 +1,6 @@
 import type { SessionSnapshot, ExtensionMessage, WebviewMessage } from '../types';
+import { createT } from '../i18n/t';
+import type { Locale } from '../i18n/locale';
 
 declare function acquireVsCodeApi(): {
   postMessage(msg: WebviewMessage): void;
@@ -12,6 +14,8 @@ class TodosStore {
   snapshot = $state<SessionSnapshot | null>(null);
   error = $state<string | null>(null);
   loading = $state(true);
+  locale = $state<Locale>('en');
+  t = $derived(createT(this.locale));
 
   constructor() {
     window.addEventListener('message', (event) => {
@@ -31,6 +35,9 @@ class TodosStore {
       case 'error':
         this.error = msg.message;
         this.loading = false;
+        break;
+      case 'locale':
+        this.locale = msg.locale;
         break;
     }
   }

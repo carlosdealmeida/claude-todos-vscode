@@ -19,7 +19,7 @@
 
 <main>
   {#if todosStore.loading}
-    <div class="loading">Loading…</div>
+    <div class="loading">{todosStore.t('app.loading')}</div>
   {:else if todosStore.error}
     <div class="error">{todosStore.error}</div>
   {:else if !snapshot}
@@ -35,7 +35,7 @@
         <span class="session-title">{snapshot.title}</span>
         <span class="caret"><Icon name="chevron" size={12} /></span>
       </button>
-      <button class="ghost" onclick={() => todosStore.refresh()} title="Refresh" aria-label="Refresh"><Icon name="refresh" size={14} /></button>
+      <button class="ghost" onclick={() => todosStore.refresh()} title={todosStore.t('app.refresh')} aria-label={todosStore.t('app.refresh')}><Icon name="refresh" size={14} /></button>
     </header>
     {#if snapshot.usage}
       <UsageTable usage={snapshot.usage} />
