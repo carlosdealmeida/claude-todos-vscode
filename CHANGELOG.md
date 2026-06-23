@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.0] - 2026-06-23
+
+### Added
+- Internationalization (i18n) of the whole extension UI in **English** (base/fallback), **Portuguese (Brazil)** and **Spanish**. By default the UI follows VS Code's display language; a new `claudeTodos.language` setting allows forcing a specific language (`auto` | `en` | `pt-br` | `es`). Coverage spans all three surfaces: the webview panel (labels, empty states, error messages, time units, cache legend, status `aria-label`s), the extension runtime (notifications, session quick pick, hook prompts) and the manifest (command titles and setting descriptions via `package.nls*.json`). Changing the language updates the panel live, without reloading the window.
+
+### Changed
+- The panel UI, previously a mix of English and Portuguese strings, is now fully and consistently localized through a single typed message catalog with automatic fallback to English.
+
+### Note
+- Command titles shown in the Command Palette follow VS Code's display language only; the `claudeTodos.language` override does not affect them (a VS Code limitation: `package.nls.*` is resolved by the host at startup, before the extension's settings are available).
+
 ## [0.7.1] - 2026-06-23
 
 ### Changed
