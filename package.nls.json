@@ -1,0 +1,14 @@
+{
+  "extension.description": "Live view of Claude Code TodoWrite tool for the current workspace",
+  "view.todos.name": "Todos",
+  "command.openPanel.title": "Claude Todos: Open in Editor",
+  "command.installHook.title": "Claude Todos: Install Session Hook",
+  "command.refresh.title": "Claude Todos: Refresh",
+  "config.claudeDir.description": "Override ~/.claude path (empty = auto-detect)",
+  "config.autoInstallHook.description": "Prompt to install session hook on first launch",
+  "config.language.description": "UI language for the Claude Todos panel. 'auto' follows VS Code's display language. Note: command titles in the Command Palette always follow VS Code's display language.",
+  "config.language.auto": "Follow VS Code's display language",
+  "config.language.en": "English",
+  "config.language.ptBr": "Portuguese (Brazil)",
+  "config.language.es": "Spanish"
+}

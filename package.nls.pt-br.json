@@ -1,0 +1,14 @@
+{
+  "extension.description": "Visão ao vivo da ferramenta TodoWrite do Claude Code para o workspace atual",
+  "view.todos.name": "Tarefas",
+  "command.openPanel.title": "Claude Todos: Abrir no Editor",
+  "command.installHook.title": "Claude Todos: Instalar Hook de Sessão",
+  "command.refresh.title": "Claude Todos: Atualizar",
+  "config.claudeDir.description": "Sobrescreve o caminho ~/.claude (vazio = detectar automaticamente)",
+  "config.autoInstallHook.description": "Perguntar se deve instalar o hook de sessão na primeira execução",
+  "config.language.description": "Idioma da UI do painel Claude Todos. 'auto' segue o idioma de exibição do VS Code. Obs.: títulos de comando na Paleta de Comandos sempre seguem o idioma de exibição do VS Code.",
+  "config.language.auto": "Seguir o idioma de exibição do VS Code",
+  "config.language.en": "Inglês",
+  "config.language.ptBr": "Português (Brasil)",
+  "config.language.es": "Espanhol"
+}

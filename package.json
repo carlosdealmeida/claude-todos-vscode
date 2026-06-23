@@ -1,7 +1,7 @@
 {
   "name": "claude-todos",
   "displayName": "Claude Todos",
-  "description": "Live view of Claude Code TodoWrite tool for the current workspace",
+  "description": "%extension.description%",
   "version": "0.7.1",
   "license": "MIT",
   "publisher": "CarlosJunior1992",
@@ -56,7 +56,7 @@
         {
           "type": "webview",
           "id": "claudeTodos.view",
-          "name": "Todos",
+          "name": "%view.todos.name%",
           "contextualTitle": "Claude Todos"
         }
       ]
@@ -64,15 +64,15 @@
     "commands": [
       {
         "command": "claudeTodos.openPanel",
-        "title": "Claude Todos: Open in Editor"
+        "title": "%command.openPanel.title%"
       },
       {
         "command": "claudeTodos.installHook",
-        "title": "Claude Todos: Install Session Hook"
+        "title": "%command.installHook.title%"
       },
       {
         "command": "claudeTodos.refresh",
-        "title": "Claude Todos: Refresh"
+        "title": "%command.refresh.title%"
       }
     ],
     "keybindings": [
@@ -88,12 +88,24 @@
         "claudeTodos.claudeDir": {
           "type": "string",
           "default": "",
-          "description": "Override ~/.claude path (empty = auto-detect)"
+          "description": "%config.claudeDir.description%"
         },
         "claudeTodos.autoInstallHook": {
           "type": "boolean",
           "default": true,
-          "description": "Prompt to install session hook on first launch"
+          "description": "%config.autoInstallHook.description%"
+        },
+        "claudeTodos.language": {
+          "type": "string",
+          "enum": ["auto", "en", "pt-br", "es"],
+          "enumDescriptions": [
+            "%config.language.auto%",
+            "%config.language.en%",
+            "%config.language.ptBr%",
+            "%config.language.es%"
+          ],
+          "default": "auto",
+          "description": "%config.language.description%"
         }
       }
     }
