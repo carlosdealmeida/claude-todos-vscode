@@ -87,6 +87,19 @@ de tokens do 0.3.0).
   - [TodoItem](../src/webview/lib/TodoItem.svelte) / [AgentSection](../src/webview/lib/AgentSection.svelte) — UI.
 - **Sinergia:** reaproveita os `timestamp` que já existiam no transcript; degrada graciosamente quando ausentes.
 
+### 12. i18n da UI da extensão ✅ ENTREGUE (0.7.1)
+- **Origem:** inconsistência entre README trilíngue (pt/en/es) e UI monolíngue em português; demanda crescente por localização no ecossistema Claude Code ([#60914](https://github.com/anthropics/claude-code/issues/60914), [#64472](https://github.com/anthropics/claude-code/issues/64472), [#58688](https://github.com/anthropics/claude-code/issues/58688), [#35600](https://github.com/anthropics/claude-code/issues/35600) etc.).
+- **Status:** ✅ entregue — idiomas **en** (base/fallback), **pt-br** e **es**. Segue o idioma de exibição do VS Code (`display language`) com override opcional via setting `claudeTodos.language`. Corrige a inconsistência pt/en anterior da UI.
+- **Superfícies cobertas:**
+  - **Webview** — todos os textos visíveis no painel (labels, estados vazios, mensagens de erro, unidades de tempo, legenda de cache).
+  - **Runtime da extensão** — notificações, mensagens de quick pick, títulos de sessão e demais strings do processo da extensão.
+  - **Manifesto** — títulos de comando e descrições de configuração via `package.nls.json` / `package.nls.pt-br.json` / `package.nls.es.json`.
+- **Como foi feito:**
+  - Catálogo de mensagens tipado compartilhado (sem dependência de `vscode`) com `createT` e fallback automático para `en`.
+  - `resolveLocaleFrom` / `localeResolver` — normaliza o locale do VS Code e aplica o override do setting.
+  - Listener de mudança de `display language` propaga o locale ao webview via `pushLocale`; store derivado no Svelte reage sem reload.
+- **Caveat — Paleta de Comandos:** os títulos de comando exibidos na Paleta (`Ctrl+Shift+P`) seguem **exclusivamente** o idioma de exibição do VS Code; o override `claudeTodos.language` não os afeta. É uma limitação do VS Code: os `package.nls.*` são resolvidos na inicialização pelo host, sem acesso a settings da extensão.
+
 ### 6. Tokens por sub-agent (sessão + semanal)
 - **Issue:** [#59412](https://github.com/anthropics/claude-code/issues/59412) — labels `area:cost`, `area:agent-view`
 - **Status:** 🔍 a investigar
@@ -163,14 +176,6 @@ Temas já varridos (aberto **e** fechado) em `anthropics/claude-code`:
 `TodoWrite`, todo/task panel, token usage, cost/session, context indicator, vscode extension,
 transcript viewer, subagent view, SessionStart hook, sidechain, multi-root, `/resume`/picker,
 session naming, i18n, statusline quota.
-
-### Candidata de baixa prioridade / inspiração
-
-- **i18n da nossa própria UI** — há forte demanda por localização **no Claude Code**
-  ([#60914](https://github.com/anthropics/claude-code/issues/60914), [#64472](https://github.com/anthropics/claude-code/issues/64472),
-  [#58688](https://github.com/anthropics/claude-code/issues/58688), [#35600](https://github.com/anthropics/claude-code/issues/35600) etc.).
-  Não são issues do nosso domínio, mas nossa UI hoje é só pt enquanto o README é trilíngue (pt/en/es).
-  Localizar a UI da extensão seria coerente. Esforço médio, valor incremental.
 
 ### Varredura concluída
 
