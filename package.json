@@ -23,6 +23,9 @@
     "claude-code",
     "todo",
     "tasks",
+    "task tracking",
+    "agent",
+    "subagent",
     "ai",
     "anthropic"
   ],
@@ -30,6 +33,8 @@
     "vscode": "^1.85.0"
   },
   "categories": [
+    "AI",
+    "Visualization",
     "Other"
   ],
   "activationEvents": [
