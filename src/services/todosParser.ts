@@ -35,6 +35,7 @@ interface ContentBlock {
   input?: {
     todos?: unknown;
     name?: unknown;
+    description?: unknown;
     prompt?: unknown;
     subject?: unknown;
     activeForm?: unknown;
@@ -202,10 +203,17 @@ export class TodosParser {
       if (!Array.isArray(content)) continue;
       for (const block of content) {
         if (block?.type === 'tool_use' && block.name === 'Agent' && typeof block.id === 'string') {
+          // The Agent tool's display name comes from the optional `name` param,
+          // but most dispatches only set the required `description`. Fall back to
+          // `description` so unnamed agents still surface in the panel.
           const name = block.input?.name;
+          const description = block.input?.description;
+          const label = typeof name === 'string' ? name
+            : typeof description === 'string' ? description
+            : undefined;
           const prompt = block.input?.prompt;
-          if (typeof name === 'string' && typeof prompt === 'string') {
-            invocations.set(block.id, { name, prompt });
+          if (typeof label === 'string' && typeof prompt === 'string') {
+            invocations.set(block.id, { name: label, prompt });
           }
         }
         if (block?.type === 'tool_result' && typeof block.tool_use_id === 'string') {

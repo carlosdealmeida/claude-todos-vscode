@@ -50,6 +50,20 @@ describe('TodosParser', () => {
     };
   }
 
+  // Real-world Agent dispatch: only `description` is set (the optional `name`
+  // param is usually omitted). This is the common shape produced by the Agent
+  // tool; `name` only appears when the caller explicitly sets it.
+  function agentToolUseDesc(toolUseId: string, description: string, prompt: string): object {
+    return {
+      type: 'assistant',
+      message: {
+        content: [
+          { type: 'tool_use', name: 'Agent', id: toolUseId, input: { description, subagent_type: 'general-purpose', prompt } },
+        ],
+      },
+    };
+  }
+
   function agentResult(toolUseId: string, agentId: string): object {
     return {
       type: 'user',
@@ -240,6 +254,23 @@ describe('TodosParser', () => {
     expect(agents[1].status).toBe('completed');
     expect(agents[1].todos).toHaveLength(1);
     expect(agents[1].todos[0].content).toBe('sub task');
+  });
+
+  it('includes a sub-agent dispatched with only a description (no name)', () => {
+    const prompt = 'Map the legacy architecture';
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'main task', activeForm: 'Main task', status: 'in_progress' }]),
+      agentToolUseDesc('tool-1', 'Mapear arquitetura e backend', prompt),
+      agentResult('tool-1', 'aaa111'),
+    ]);
+    writeSubAgent('s1', CWD, 'aaa111', prompt, [
+      { content: 'sub task', activeForm: 'Sub task', status: 'in_progress' },
+    ]);
+    const agents = parser.listForSession('s1', CWD);
+    expect(agents).toHaveLength(2);
+    expect(agents[1].isMain).toBe(false);
+    expect(agents[1].name).toBe('Mapear arquitetura e backend');
+    expect(agents[1].agentId).toBe('aaa111');
   });
 
   it('marks a sub-agent with no result as running', () => {
