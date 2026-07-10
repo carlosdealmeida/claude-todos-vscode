@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.2] - 2026-07-10
+
+### Fixed
+- Sub-agents dispatched without a `name` (only the required `description`) are shown in the panel again. Recent Claude Code versions stopped setting the optional `name` on `Agent` tool dispatches, so the panel silently dropped every sub-agent; the parser now falls back to `description` as the display label. The fix (`76f937f`) had landed on `master` right after 0.8.1 shipped — this release finally packages it.
+
 ## [0.8.1] - 2026-06-23
 
 ### Security
