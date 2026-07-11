@@ -39,6 +39,9 @@ de tokens do 0.3.0).
   mensagem onde cada item apareceu ou mudou de status; tornar o item clicável → abre o `.jsonl`
   naquela posição.
 - **Depende de:** entender como o parser hoje localiza e ordena os itens.
+- **Extensão da ideia (2026-07-11):** combinar com um viewer simples de transcript (renderizar
+  o `.jsonl` legível em vez de abrir o JSON cru) — transforma o painel de *monitor* em
+  *navegador* da sessão.
 
 ### 2. Indicador de uso de contexto/token na barra ✅ ENTREGUE
 - **Issue:** [#58159](https://github.com/anthropics/claude-code/issues/58159) — labels `platform:vscode`, `area:statusline`
@@ -130,6 +133,68 @@ de tokens do 0.3.0).
   Poderíamos detectar qual pasta tem sessão ativa e/ou oferecer um seletor/setting de pasta ativa.
   Endereça uma limitação real e ecoa um pedido popular (#12808 com 20 comentários).
 - **Sinergia:** resolve a nossa "Limitação conhecida" nº 1.
+
+---
+
+## Apostas de produto — observability multi-agent (garimpo interno, 2026-07-11)
+
+Diferente das seções acima (derivadas de issues), estes itens vêm de análise de produto: o
+ecossistema está migrando de "um agente com todos" para **orquestração** (sub-agents em
+background, workflows, agent teams), e os dados disso **já estão no disco** no formato que o
+parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"**.
+
+> **Fila de brainstorming (prioridade):** 1º item 13 (árvore de agentes) · 2º item 14
+> (notificações) · 3º item 15 (Open VSX). Os demais aguardam.
+
+### 13. Árvore de agentes ao vivo ("mission control") 📐 a planejar — prioridade #1
+- **Origem:** descoberta de 2026-07-10 durante o debug do 0.8.2 — cada sub-agent agora tem um
+  `agent-*.meta.json` ao lado do `.jsonl`, com `toolUseId`, `agentType` e `spawnDepth`.
+- **Ideia:** exibir a sessão como árvore expansível — main → sub-agents → agentes aninhados
+  (`spawnDepth` 2+) — com tipo do agente (Explore, Plan, general-purpose…), status, tasks e
+  tokens por nó. Nenhuma outra extensão mostra isso; é a feature de GIF no README.
+- **Passo 0 (ganho imediato):** migrar o matching invocação↔arquivo do heurístico por prompt
+  exato para o vínculo **exato** via `toolUseId` do meta.json, com fallback pro matching atual
+  em transcripts antigos. Elimina a heurística e ganha os agentes aninhados de graça (hoje
+  `spawnDepth: 2` é descartado por design).
+- **Sinergia:** resolve parcialmente o item 6 (tokens por sub-agent); fundação para workflows
+  e agent teams (item 17).
+
+### 14. Notificações — sessão terminou / aguardando input 📐 a planejar — prioridade #2
+- **Origem:** dor nº 1 de sessões longas — o agente termina (ou fica parado numa pergunta) e o
+  usuário só percebe minutos depois. Demanda comprovada: usuários montam pontes externas de
+  notificação (WhatsApp, push) por fora.
+- **Ideia:** toast nativo do VS Code quando (a) a sessão fica ociosa após atividade longa,
+  (b) todas as tasks completam. Já detectamos `mtime` do transcript + estado das tasks; falta
+  só a regra de disparo e o `window.showInformationMessage`. Opt-in via setting.
+- **Custo/benefício:** baixíssimo custo, retenção altíssima.
+
+### 15. Publicar no Open VSX 📐 a planejar — prioridade #3
+- **Origem:** Cursor, Windsurf e VSCodium não acessam o marketplace da Microsoft — e são
+  exatamente o público que mais roda Claude Code no editor.
+- **Ideia:** conta no [open-vsx.org](https://open-vsx.org), `ovsx publish` com o mesmo VSIX, e
+  um passo extra no fluxo de release (junto do `vsce publish`). Distribuição nova sem escrever
+  feature.
+
+### 16. Dashboard de uso/custo agregado (projeto/semana) 🔍 a investigar
+- **Origem:** o sucesso do `ccusage` (CLI que lê os mesmos JSONL) prova a demanda por visão
+  agregada de tokens/custo.
+- **Ideia:** aba/comando "esta semana neste projeto": N sessões, tokens por modelo, % de cache
+  reaproveitado. Reaproveita o `usageParser` inteiro; o novo é a agregação multi-sessão.
+- **Tensão:** mesma do item 8 — manter o escopo-por-workspace como default; agregado além do
+  projeto atual só se for opt-in.
+
+### 17. Agent teams: dono por task 🔍 aguardar schema estabilizar
+- **Origem:** o schema `TaskCreate`/`TaskUpdate` que já suportamos é a fundação do modo teams
+  (tasks com **owner**, agentes trocando mensagens via SendMessage).
+- **Ideia:** quando o campo de owner aparecer nos transcripts, exibi-lo por task (avatar/nome
+  do teammate). Deixa a extensão pronta para o hype de swarms antes de todo mundo.
+- **Depende de:** observar transcripts reais de teams para cravar o formato.
+
+### 18. Onboarding walkthrough + reposicionamento do README 🔍 a investigar
+- **Ideia:** (a) walkthrough nativo do VS Code (`contributes.walkthroughs`) guiando a
+  instalação do hook — reduz abandono de quem instala e não configura; (b) README reposicionado
+  de "veja seus todos" para "observability dos seus agentes Claude Code" (árvore + tempos +
+  tokens + custo), o termo que as pessoas vão buscar.
 
 ---
 
