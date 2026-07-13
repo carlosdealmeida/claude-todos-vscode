@@ -135,78 +135,102 @@ export class TodosParser {
     }
     if (files.length === 0) return [];
 
-    // Dispatches do transcript principal: toolUseId -> invocação. O ordinal
-    // registra a ordem de invocação para desempate estável na ordenação.
-    const dispatches = this.collectDispatches(this.readLines(mainTranscriptPath));
-    const ordinals = new Map<string, number>();
-    let ord = 0;
-    for (const id of dispatches.keys()) ordinals.set(id, ord++);
+    // Pass 1 — lê cada arquivo uma única vez: prompt, todos, meta e os
+    // dispatches de Agent feitos DENTRO daquele transcript (para aninhados).
+    interface FileInfo {
+      agentId: string;
+      prompt: string | null;
+      todos: Todo[];
+      updatedAt: number;
+      meta: SubAgentMeta | null;
+      dispatches: Map<string, Dispatch>;
+    }
+    const infos: FileInfo[] = [];
+    for (const file of files) {
+      const filePath = path.join(dir, file);
+      const lines = this.readLines(filePath);
+      let updatedAt = 0;
+      try { updatedAt = fs.statSync(filePath).mtimeMs; } catch { /* ignore */ }
+      infos.push({
+        agentId: file.slice('agent-'.length, -'.jsonl'.length),
+        prompt: this.firstUserPrompt(lines),
+        todos: this.readLastTodosFromLines(lines, false) ?? [],
+        updatedAt,
+        meta: readSubAgentMeta(filePath),
+        dispatches: this.collectDispatches(lines),
+      });
+    }
 
+    // Índice global: toolUseId -> dono do transcript onde a invocação vive.
+    // Main primeiro (dono = sessionId); first-wins em colisão (defensivo —
+    // ids de tool_use são únicos por construção). O ordinal preserva a ordem
+    // de invocação para desempate estável na ordenação final.
+    const index = new Map<string, { ownerAgentId: string; dispatch: Dispatch; ordinal: number }>();
+    let ord = 0;
+    for (const [id, d] of this.collectDispatches(this.readLines(mainTranscriptPath))) {
+      if (!index.has(id)) index.set(id, { ownerAgentId: sessionId, dispatch: d, ordinal: ord++ });
+    }
+    for (const info of infos) {
+      for (const [id, d] of info.dispatches) {
+        if (!index.has(id)) index.set(id, { ownerAgentId: info.agentId, dispatch: d, ordinal: ord++ });
+      }
+    }
+
+    // Pass 2 — casa cada arquivo: meta.toolUseId (exato) ou prompt (legado).
     const pending: { agent: AgentTodos; ordinal: number }[] = [];
     const seen = new Set<string>();
     const usedPromptIds = new Set<string>();
 
-    for (const file of files) {
-      const filePath = path.join(dir, file);
-      const agentId = file.slice('agent-'.length, -'.jsonl'.length);
-      if (seen.has(agentId)) continue;
-      const lines = this.readLines(filePath);
-      let updatedAt = 0;
-      try { updatedAt = fs.statSync(filePath).mtimeMs; } catch { /* ignore */ }
-      const todos = this.readLastTodosFromLines(lines, false) ?? [];
-      const meta = readSubAgentMeta(filePath);
+    for (const info of infos) {
+      if (seen.has(info.agentId)) continue;
 
-      if (meta) {
-        // Caminho novo: vínculo exato invocação↔arquivo via toolUseId.
-        const d = dispatches.get(meta.toolUseId);
-        if (d?.result === 'rejected') continue;
+      if (info.meta) {
+        const entry = index.get(info.meta.toolUseId);
+        if (entry?.dispatch.result === 'rejected') continue;
         const agent: AgentTodos = {
           sessionId,
-          agentId,
-          name: d?.label ?? meta.description ?? agentId,
+          agentId: info.agentId,
+          name: entry?.dispatch.label ?? info.meta.description ?? info.agentId,
           isMain: false,
-          todos,
-          updatedAt,
+          todos: info.todos,
+          updatedAt: info.updatedAt,
         };
-        if (d) {
-          agent.status = d.result === 'completed' ? 'completed' : 'running';
-          agent.parentAgentId = sessionId;
+        if (entry) {
+          agent.status = entry.dispatch.result === 'completed' ? 'completed' : 'running';
+          agent.parentAgentId = entry.ownerAgentId;
         }
-        if (meta.agentType !== undefined) agent.agentType = meta.agentType;
-        if (meta.spawnDepth !== undefined) agent.depth = meta.spawnDepth;
-        seen.add(agentId);
-        pending.push({
-          agent,
-          ordinal: d ? ordinals.get(meta.toolUseId)! : Number.MAX_SAFE_INTEGER,
-        });
+        if (info.meta.agentType !== undefined) agent.agentType = info.meta.agentType;
+        if (info.meta.spawnDepth !== undefined) agent.depth = info.meta.spawnDepth;
+        seen.add(info.agentId);
+        pending.push({ agent, ordinal: entry ? entry.ordinal : Number.MAX_SAFE_INTEGER });
         continue;
       }
 
-      // Caminho legado (sem meta.json): casa por prompt exato com uma
-      // invocação do main ainda não consumida. Sem match → arquivo excluído.
-      const prompt = this.firstUserPrompt(lines);
-      if (prompt === null) continue;
-      let matchedId: string | null = null;
-      for (const [id, d] of dispatches) {
-        if (usedPromptIds.has(id)) continue;
-        if (d.label !== undefined && d.prompt === prompt) { matchedId = id; break; }
+      // Legado: casa por prompt exato com uma invocação do MAIN não consumida.
+      if (info.prompt === null) continue;
+      let matched: { id: string; entry: { ownerAgentId: string; dispatch: Dispatch; ordinal: number } } | null = null;
+      for (const [id, entry] of index) {
+        if (entry.ownerAgentId !== sessionId || usedPromptIds.has(id)) continue;
+        if (entry.dispatch.label !== undefined && entry.dispatch.prompt === info.prompt) {
+          matched = { id, entry };
+          break;
+        }
       }
-      if (matchedId === null) continue;
-      usedPromptIds.add(matchedId);
-      const d = dispatches.get(matchedId)!;
-      if (d.result === 'rejected') continue;
-      seen.add(agentId);
+      if (matched === null) continue;
+      usedPromptIds.add(matched.id);
+      if (matched.entry.dispatch.result === 'rejected') continue;
+      seen.add(info.agentId);
       pending.push({
         agent: {
           sessionId,
-          agentId,
-          name: d.label!,
+          agentId: info.agentId,
+          name: matched.entry.dispatch.label!,
           isMain: false,
-          status: d.result === 'completed' ? 'completed' : 'running',
-          todos,
-          updatedAt,
+          status: matched.entry.dispatch.result === 'completed' ? 'completed' : 'running',
+          todos: info.todos,
+          updatedAt: info.updatedAt,
         },
-        ordinal: ordinals.get(matchedId)!,
+        ordinal: matched.entry.ordinal,
       });
     }
 

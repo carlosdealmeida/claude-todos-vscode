@@ -120,6 +120,30 @@ describe('TodosParser', () => {
     fs.writeFileSync(path.join(dir, `agent-${agentId}.meta.json`), JSON.stringify(meta));
   }
 
+  // Sub-agent cujo transcript também DISPARA outro agente (para testes de aninhamento).
+  function writeSubAgentWithDispatch(
+    sessionId: string, cwd: string, agentId: string, prompt: string,
+    dispatch: { toolUseId: string; description: string; childPrompt: string; completedAgentId?: string },
+  ): void {
+    const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(cwd), sessionId, 'subagents');
+    fs.mkdirSync(dir, { recursive: true });
+    const lines: object[] = [
+      { type: 'user', isSidechain: true, agentId, message: { role: 'user', content: prompt } },
+      {
+        type: 'assistant', isSidechain: true, agentId,
+        message: { content: [{ type: 'tool_use', name: 'Agent', id: dispatch.toolUseId, input: { description: dispatch.description, prompt: dispatch.childPrompt } }] },
+      },
+    ];
+    if (dispatch.completedAgentId) {
+      lines.push({
+        type: 'user', isSidechain: true, agentId,
+        toolUseResult: { agentId: dispatch.completedAgentId, status: 'completed' },
+        message: { content: [{ type: 'tool_result', tool_use_id: dispatch.toolUseId, content: 'done' }] },
+      });
+    }
+    fs.writeFileSync(path.join(dir, `agent-${agentId}.jsonl`), lines.map(l => JSON.stringify(l)).join('\n'));
+  }
+
   function taskCreateToolUse(toolUseId: string, subject: string, activeForm: string, opts: { isSidechain?: boolean } = {}): object {
     return {
       isSidechain: opts.isSidechain ?? false,
@@ -722,6 +746,59 @@ describe('TodosParser', () => {
       expect(sub.agentType).toBeUndefined();
       expect(sub.parentAgentId).toBeUndefined();
       expect(sub.depth).toBeUndefined();
+    });
+
+    it('parents a depth-2 agent to the sub-agent that dispatched it', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('toolu_P', 'Pai', 'p-pai'),
+      ]);
+      writeSubAgentWithDispatch('s1', CWD, 'pai111', 'p-pai',
+        { toolUseId: 'toolu_F', description: 'Filho aninhado', childPrompt: 'p-filho' });
+      writeSubAgentMeta('s1', CWD, 'pai111', { agentType: 'general-purpose', toolUseId: 'toolu_P', spawnDepth: 1 });
+      writeSubAgent('s1', CWD, 'filho22', 'p-filho', null);
+      writeSubAgentMeta('s1', CWD, 'filho22', { agentType: 'Explore', description: 'Filho aninhado', toolUseId: 'toolu_F', spawnDepth: 2 });
+
+      const agents = parser.listForSession('s1', CWD);
+      const filho = agents.find(a => a.agentId === 'filho22')!;
+      expect(filho).toBeDefined();
+      expect(filho.parentAgentId).toBe('pai111');
+      expect(filho.name).toBe('Filho aninhado');
+      expect(filho.depth).toBe(2);
+      expect(filho.status).toBe('running');  // sem tool_result no transcript do pai
+    });
+
+    it('marks a depth-2 agent completed from the tool_result in the parent transcript', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('toolu_P', 'Pai', 'p-pai'),
+      ]);
+      writeSubAgentWithDispatch('s1', CWD, 'pai111', 'p-pai',
+        { toolUseId: 'toolu_F', description: 'Filho', childPrompt: 'p-filho', completedAgentId: 'filho22' });
+      writeSubAgentMeta('s1', CWD, 'pai111', { toolUseId: 'toolu_P', spawnDepth: 1 });
+      writeSubAgent('s1', CWD, 'filho22', 'p-filho', null);
+      writeSubAgentMeta('s1', CWD, 'filho22', { toolUseId: 'toolu_F', spawnDepth: 2 });
+
+      const filho = parser.listForSession('s1', CWD).find(a => a.agentId === 'filho22')!;
+      expect(filho.status).toBe('completed');
+    });
+
+    it('includes an orphan meta agent (toolUseId not found anywhere) without parent or status', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+      ]);
+      writeSubAgent('s1', CWD, 'orfao1', 'p-x', [
+        { content: 'trabalho', activeForm: 'Trabalhando', status: 'completed' },
+      ]);
+      writeSubAgentMeta('s1', CWD, 'orfao1', { agentType: 'general-purpose', description: 'Sessão compactada', toolUseId: 'toolu_GONE', spawnDepth: 1 });
+
+      const agents = parser.listForSession('s1', CWD);
+      const orfao = agents.find(a => a.agentId === 'orfao1')!;
+      expect(orfao).toBeDefined();
+      expect(orfao.name).toBe('Sessão compactada');
+      expect(orfao.parentAgentId).toBeUndefined();
+      expect(orfao.status).toBeUndefined();
+      expect(orfao.todos).toHaveLength(1);
     });
   });
 
