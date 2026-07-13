@@ -114,6 +114,12 @@ describe('TodosParser', () => {
     }
   }
 
+  function writeSubAgentMeta(sessionId: string, cwd: string, agentId: string, meta: object): void {
+    const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(cwd), sessionId, 'subagents');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, `agent-${agentId}.meta.json`), JSON.stringify(meta));
+  }
+
   function taskCreateToolUse(toolUseId: string, subject: string, activeForm: string, opts: { isSidechain?: boolean } = {}): object {
     return {
       isSidechain: opts.isSidechain ?? false,
@@ -634,6 +640,88 @@ describe('TodosParser', () => {
       expect(subAgent!.todos).toEqual([
         { content: 'sub item', activeForm: 'Doing sub item', status: 'in_progress' },
       ]);
+    });
+  });
+
+  describe('meta.json matching (toolUseId)', () => {
+    it('matches by toolUseId even when the file prompt differs from the invocation prompt', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('toolu_A', 'Investigar parser', 'PROMPT DA INVOCAÇÃO'),
+        agentResult('toolu_A', 'aaa111'),
+      ]);
+      // O prompt gravado no arquivo é DIFERENTE do da invocação — o matching
+      // por prompt falharia; o toolUseId do meta.json resolve.
+      writeSubAgent('s1', CWD, 'aaa111', 'prompt reescrito pelo harness', [
+        { content: 'sub', activeForm: 'Sub', status: 'pending' },
+      ]);
+      writeSubAgentMeta('s1', CWD, 'aaa111', {
+        agentType: 'general-purpose', description: 'Investigar parser',
+        toolUseId: 'toolu_A', spawnDepth: 1,
+      });
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents).toHaveLength(2);
+      expect(agents[1].agentId).toBe('aaa111');
+      expect(agents[1].name).toBe('Investigar parser');
+      expect(agents[1].status).toBe('completed');
+    });
+
+    it('propagates agentType, depth and parentAgentId from the meta', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('toolu_B', 'Explorar código', 'p1'),
+      ]);
+      writeSubAgent('s1', CWD, 'bbb222', 'p1', null);
+      writeSubAgentMeta('s1', CWD, 'bbb222', {
+        agentType: 'Explore', description: 'Explorar código',
+        toolUseId: 'toolu_B', spawnDepth: 1,
+      });
+      const sub = parser.listForSession('s1', CWD)[1];
+      expect(sub.agentType).toBe('Explore');
+      expect(sub.depth).toBe(1);
+      expect(sub.parentAgentId).toBe('s1');
+      expect(sub.status).toBe('running');
+    });
+
+    it('falls back to prompt matching when the meta.json is corrupted', () => {
+      const prompt = 'Auditar build';
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUse('toolu_C', 'audit-build', prompt),
+        agentResult('toolu_C', 'ccc333'),
+      ]);
+      writeSubAgent('s1', CWD, 'ccc333', prompt, null);
+      const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD), 's1', 'subagents');
+      fs.writeFileSync(path.join(dir, 'agent-ccc333.meta.json'), '{broken');
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents).toHaveLength(2);
+      expect(agents[1].name).toBe('audit-build');
+      expect(agents[1].agentType).toBeUndefined();
+    });
+
+    it('excludes a meta-matched agent whose invocation was rejected', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('toolu_D', 'Rejeitado', 'p'),
+        agentRejection('toolu_D'),
+      ]);
+      writeSubAgent('s1', CWD, 'ddd444', 'p', null);
+      writeSubAgentMeta('s1', CWD, 'ddd444', { toolUseId: 'toolu_D', spawnDepth: 1 });
+      expect(parser.listForSession('s1', CWD)).toHaveLength(1);
+    });
+
+    it('does not attach tree fields to legacy (prompt-matched) agents', () => {
+      const prompt = 'Sessão antiga';
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUse('toolu_E', 'legacy', prompt),
+        agentResult('toolu_E', 'eee555'),
+      ]);
+      writeSubAgent('s1', CWD, 'eee555', prompt, null);
+      const sub = parser.listForSession('s1', CWD)[1];
+      expect(sub.agentType).toBeUndefined();
+      expect(sub.parentAgentId).toBeUndefined();
+      expect(sub.depth).toBeUndefined();
     });
   });
 

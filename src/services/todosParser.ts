@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { AgentTodos, Todo, TodoStatus } from '../types';
 import { transcriptPath as resolveTranscriptPath, subAgentsDir as resolveSubAgentsDir } from './transcriptPaths';
+import { readSubAgentMeta, type SubAgentMeta } from './subAgentMeta';
 
 const VALID_STATUSES: TodoStatus[] = ['pending', 'in_progress', 'completed'];
 
@@ -58,10 +59,10 @@ interface TranscriptEntry {
   };
 }
 
-interface AgentInvocation {
-  name: string;
-  prompt: string;
-  status: 'running' | 'completed';
+interface Dispatch {
+  label?: string;   // input.name ?? input.description da invocação
+  prompt?: string;
+  result: 'none' | 'completed' | 'rejected';
 }
 
 export class TodosParser {
@@ -126,131 +127,144 @@ export class TodosParser {
     const dir = this.subAgentsDir(sessionId, cwd);
     if (!dir) return [];
 
-    const invocations = this.readAgentInvocations(mainTranscriptPath);
-    if (invocations.length === 0) return [];
-
     let files: string[];
     try {
       files = fs.readdirSync(dir).filter(f => f.startsWith('agent-') && f.endsWith('.jsonl'));
     } catch {
       return [];
     }
+    if (files.length === 0) return [];
 
-    const byPrompt = new Map<string, { agentId: string; todos: Todo[]; updatedAt: number }>();
+    // Dispatches do transcript principal: toolUseId -> invocação. O ordinal
+    // registra a ordem de invocação para desempate estável na ordenação.
+    const dispatches = this.collectDispatches(this.readLines(mainTranscriptPath));
+    const ordinals = new Map<string, number>();
+    let ord = 0;
+    for (const id of dispatches.keys()) ordinals.set(id, ord++);
+
+    const pending: { agent: AgentTodos; ordinal: number }[] = [];
+    const seen = new Set<string>();
+    const usedPromptIds = new Set<string>();
+
     for (const file of files) {
       const filePath = path.join(dir, file);
-      const prompt = this.readSubAgentPrompt(filePath);
-      if (prompt === null) continue;
-      const todos = this.readLastTodos(filePath, false) ?? [];
+      const agentId = file.slice('agent-'.length, -'.jsonl'.length);
+      if (seen.has(agentId)) continue;
+      const lines = this.readLines(filePath);
       let updatedAt = 0;
       try { updatedAt = fs.statSync(filePath).mtimeMs; } catch { /* ignore */ }
-      const agentId = file.slice('agent-'.length, -'.jsonl'.length);
-      byPrompt.set(prompt, { agentId, todos, updatedAt });
-    }
+      const todos = this.readLastTodosFromLines(lines, false) ?? [];
+      const meta = readSubAgentMeta(filePath);
 
-    const out: AgentTodos[] = [];
-    const seenAgentIds = new Set<string>();
-    for (const inv of invocations) {
-      const match = byPrompt.get(inv.prompt);
-      if (!match) continue;
-      if (seenAgentIds.has(match.agentId)) continue;
-      seenAgentIds.add(match.agentId);
-      out.push({
-        sessionId,
-        agentId: match.agentId,
-        name: inv.name,
-        isMain: false,
-        status: inv.status,
-        todos: match.todos,
-        updatedAt: match.updatedAt,
+      if (meta) {
+        // Caminho novo: vínculo exato invocação↔arquivo via toolUseId.
+        const d = dispatches.get(meta.toolUseId);
+        if (d?.result === 'rejected') continue;
+        const agent: AgentTodos = {
+          sessionId,
+          agentId,
+          name: d?.label ?? meta.description ?? agentId,
+          isMain: false,
+          todos,
+          updatedAt,
+        };
+        if (d) {
+          agent.status = d.result === 'completed' ? 'completed' : 'running';
+          agent.parentAgentId = sessionId;
+        }
+        if (meta.agentType !== undefined) agent.agentType = meta.agentType;
+        if (meta.spawnDepth !== undefined) agent.depth = meta.spawnDepth;
+        seen.add(agentId);
+        pending.push({
+          agent,
+          ordinal: d ? ordinals.get(meta.toolUseId)! : Number.MAX_SAFE_INTEGER,
+        });
+        continue;
+      }
+
+      // Caminho legado (sem meta.json): casa por prompt exato com uma
+      // invocação do main ainda não consumida. Sem match → arquivo excluído.
+      const prompt = this.firstUserPrompt(lines);
+      if (prompt === null) continue;
+      let matchedId: string | null = null;
+      for (const [id, d] of dispatches) {
+        if (usedPromptIds.has(id)) continue;
+        if (d.label !== undefined && d.prompt === prompt) { matchedId = id; break; }
+      }
+      if (matchedId === null) continue;
+      usedPromptIds.add(matchedId);
+      const d = dispatches.get(matchedId)!;
+      if (d.result === 'rejected') continue;
+      seen.add(agentId);
+      pending.push({
+        agent: {
+          sessionId,
+          agentId,
+          name: d.label!,
+          isMain: false,
+          status: d.result === 'completed' ? 'completed' : 'running',
+          todos,
+          updatedAt,
+        },
+        ordinal: ordinals.get(matchedId)!,
       });
     }
-    out.sort((a, b) => {
-      const ga = this.subAgentGroup(a);
-      const gb = this.subAgentGroup(b);
+
+    pending.sort((a, b) => {
+      const ga = this.subAgentGroup(a.agent);
+      const gb = this.subAgentGroup(b.agent);
       if (ga !== gb) return ga - gb;
-      return b.updatedAt - a.updatedAt;
+      if (a.agent.updatedAt !== b.agent.updatedAt) return b.agent.updatedAt - a.agent.updatedAt;
+      return a.ordinal - b.ordinal;
     });
-    return out;
+    return pending.map(p => p.agent);
   }
 
-  private subAgentGroup(agent: AgentTodos): number {
-    if (agent.status === 'running') return 0;
-    if (agent.todos.length > 0) return 1;
-    return 2;
-  }
-
-  private readAgentInvocations(mainTranscriptPath: string): AgentInvocation[] {
-    let lines: string[];
-    try {
-      lines = fs.readFileSync(mainTranscriptPath, 'utf-8').split('\n');
-    } catch {
-      return [];
-    }
-
-    const invocations = new Map<string, { name: string; prompt: string }>();
-    const resultKind = new Map<string, 'completed' | 'rejected'>();
-
+  // Varre um transcript e devolve os disparos do tool Agent: toolUseId ->
+  // {label, prompt, result}. `result` reflete o tool_result correspondente:
+  // 'none' = ainda rodando; 'completed' = terminou (toolUseResult.agentId
+  // presente); 'rejected' = recusado pelo usuário ou morto por erro.
+  private collectDispatches(lines: string[]): Map<string, Dispatch> {
+    const out = new Map<string, Dispatch>();
     for (const line of lines) {
       if (!line) continue;
       let entry: TranscriptEntry;
-      try {
-        entry = JSON.parse(line) as TranscriptEntry;
-      } catch {
-        continue;
-      }
+      try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
       const content = entry.message?.content;
       if (!Array.isArray(content)) continue;
       for (const block of content) {
         if (block?.type === 'tool_use' && block.name === 'Agent' && typeof block.id === 'string') {
-          // The Agent tool's display name comes from the optional `name` param,
-          // but most dispatches only set the required `description`. Fall back to
-          // `description` so unnamed agents still surface in the panel.
           const name = block.input?.name;
           const description = block.input?.description;
           const label = typeof name === 'string' ? name
             : typeof description === 'string' ? description
             : undefined;
           const prompt = block.input?.prompt;
-          if (typeof label === 'string' && typeof prompt === 'string') {
-            invocations.set(block.id, { name: label, prompt });
-          }
+          out.set(block.id, {
+            label,
+            prompt: typeof prompt === 'string' ? prompt : undefined,
+            result: 'none',
+          });
         }
         if (block?.type === 'tool_result' && typeof block.tool_use_id === 'string') {
-          const agentId = entry.toolUseResult?.agentId;
-          resultKind.set(block.tool_use_id, typeof agentId === 'string' ? 'completed' : 'rejected');
+          const d = out.get(block.tool_use_id);
+          if (d) d.result = typeof entry.toolUseResult?.agentId === 'string' ? 'completed' : 'rejected';
         }
       }
-    }
-
-    const out: AgentInvocation[] = [];
-    for (const [toolUseId, inv] of invocations) {
-      const kind = resultKind.get(toolUseId);
-      if (kind === 'rejected') continue;
-      out.push({
-        name: inv.name,
-        prompt: inv.prompt,
-        status: kind === 'completed' ? 'completed' : 'running',
-      });
     }
     return out;
   }
 
-  private transcriptPath(sessionId: string, cwd: string): string | null {
-    return resolveTranscriptPath(this.claudeDir, sessionId, cwd);
-  }
-
-  private subAgentsDir(sessionId: string, cwd: string): string | null {
-    return resolveSubAgentsDir(this.claudeDir, sessionId, cwd);
-  }
-
-  private readSubAgentPrompt(filePath: string): string | null {
-    let lines: string[];
+  private readLines(filePath: string): string[] {
     try {
-      lines = fs.readFileSync(filePath, 'utf-8').split('\n');
+      return fs.readFileSync(filePath, 'utf-8').split('\n');
     } catch {
-      return null;
+      return [];
     }
+  }
+
+  // Primeiro user message com content string — é o prompt do sub-agent.
+  private firstUserPrompt(lines: string[]): string | null {
     for (const line of lines) {
       if (!line) continue;
       try {
@@ -264,19 +278,31 @@ export class TodosParser {
     return null;
   }
 
+  private subAgentGroup(agent: AgentTodos): number {
+    if (agent.status === 'running') return 0;
+    if (agent.todos.length > 0) return 1;
+    return 2;
+  }
+
+  private transcriptPath(sessionId: string, cwd: string): string | null {
+    return resolveTranscriptPath(this.claudeDir, sessionId, cwd);
+  }
+
+  private subAgentsDir(sessionId: string, cwd: string): string | null {
+    return resolveSubAgentsDir(this.claudeDir, sessionId, cwd);
+  }
+
   // Returns the current todo list using whichever schema produced the most
   // recent event in the transcript. Two schemas are supported:
   //   - legacy `TodoWrite`: a single event carrying the full snapshot.
   //   - new `TaskCreate` / `TaskUpdate` (enabled by `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`):
   //     an event stream — TaskCreate adds one task, TaskUpdate mutates a task by id.
   private readLastTodos(transcriptPath: string, skipSidechain: boolean): Todo[] | null {
-    let lines: string[];
-    try {
-      lines = fs.readFileSync(transcriptPath, 'utf-8').split('\n');
-    } catch {
-      return null;
-    }
+    return this.readLastTodosFromLines(this.readLines(transcriptPath), skipSidechain);
+  }
 
+  private readLastTodosFromLines(lines: string[], skipSidechain: boolean): Todo[] | null {
+    if (lines.length === 0) return null;
     const schema = this.detectSchema(lines, skipSidechain);
     if (schema === 'TodoWrite') {
       const todos = this.readLastTodoWriteSnapshot(lines, skipSidechain);

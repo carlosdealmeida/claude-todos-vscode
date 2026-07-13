@@ -18,6 +18,9 @@ export interface AgentTodos {
   status?: 'running' | 'completed';
   todos: Todo[];
   updatedAt: number;
+  agentType?: string;      // do meta.json (ex.: "general-purpose", "Explore")
+  parentAgentId?: string;  // agentId do agente que disparou este; ausente = filho do main
+  depth?: number;          // spawnDepth do meta.json (1 = disparado pelo main)
 }
 
 export interface ModelUsage {
