@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.0] - 2026-07-13
+
+### Added
+- **Live agent tree ("mission control").** The panel now renders the session as an expandable tree — main agent → sub-agents → nested agents — instead of a flat list. Each node shows a colored agent-type badge (Explore green, Plan yellow, general-purpose blue, others neutral) and the agent's total token count (input + output + cache). Layout uses VS Code-style indentation rails; collapsing a node hides its whole subtree; the main agent and running sub-agents start expanded. Strings localized in en/pt-br/es. Spec: `docs/specs/2026-07-11-agent-tree-design.md`.
+- Sub-agent matching now uses the exact `toolUseId` from the `agent-*.meta.json` files Claude Code writes next to each sub-agent transcript, instead of the exact-prompt heuristic. Old sessions without meta files fall back to the previous prompt matching, per file. Nested agents (`spawnDepth ≥ 2`), previously discarded by design, are now parented to whichever agent dispatched them.
+
+### Fixed
+- Nested agents whose dispatch already had a `tool_result` were misclassified as rejected and dropped: sub-agent transcripts never carry the `toolUseResult` enrichment (verified 0/32 in real data), so a present result there now means completed.
+- In the legacy prompt-matching fallback, a rejected invocation could consume the prompt match of a live retry with an identical prompt, hiding the real agent from the panel.
+
 ## [0.8.2] - 2026-07-10
 
 ### Fixed
