@@ -214,6 +214,11 @@ describe('agentTotalTokens', () => {
     expect(agentTotalTokens(byAgent, 'nope')).toBeNull();
     expect(agentTotalTokens(undefined, 'a1')).toBeNull();
   });
+
+  it('sums a single-model agent', () => {
+    const one: AgentUsage[] = [{ agentId: 'x', name: 'x', isMain: false, models: [{ model: 'claude-haiku-4-5', input: 7, output: 3, cache: 90 }] }];
+    expect(agentTotalTokens(one, 'x')).toBe(100);
+  });
 });
 
 describe('agentTypeTone', () => {
@@ -226,5 +231,9 @@ describe('agentTypeTone', () => {
   it('falls back to neutral for custom types', () => {
     expect(agentTypeTone('claude-code-guide')).toBe('neutral');
     expect(agentTypeTone('statusline-setup')).toBe('neutral');
+  });
+
+  it('maps empty string to neutral', () => {
+    expect(agentTypeTone('')).toBe('neutral');
   });
 });

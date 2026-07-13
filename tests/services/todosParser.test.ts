@@ -342,6 +342,22 @@ describe('TodosParser', () => {
     expect(agents[0].isMain).toBe(true);
   });
 
+  it('legacy: a rejected invocation does not consume the prompt match of a live retry', () => {
+    const prompt = 'Retry with same prompt';
+    writeTranscript('s1', CWD, [
+      todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+      agentToolUse('t-rej', 'retry-agent', prompt),
+      agentRejection('t-rej'),
+      agentToolUse('t-ok', 'retry-agent', prompt),
+      agentResult('t-ok', 'live001'),
+    ]);
+    writeSubAgent('s1', CWD, 'live001', prompt, null);
+    const agents = parser.listForSession('s1', CWD);
+    expect(agents).toHaveLength(2);
+    expect(agents[1].agentId).toBe('live001');
+    expect(agents[1].status).toBe('completed');
+  });
+
   it('excludes a sub-agent file with no matching invocation', () => {
     writeTranscript('s1', CWD, [
       todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),

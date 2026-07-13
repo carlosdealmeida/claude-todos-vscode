@@ -11,6 +11,7 @@ export interface SubAgentMeta {
 // sub-agent. Retorna null quando o arquivo não existe, não parseia ou não tem
 // toolUseId — o chamador cai no matching heurístico por prompt nesses casos.
 export function readSubAgentMeta(jsonlPath: string): SubAgentMeta | null {
+  if (!jsonlPath.endsWith('.jsonl')) return null;
   const metaPath = jsonlPath.replace(/\.jsonl$/, '.meta.json');
   let raw: string;
   try {

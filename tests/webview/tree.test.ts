@@ -58,6 +58,23 @@ describe('buildTree', () => {
     const roots = buildTree([main, c, a]);
     expect(roots[0].children.map(x => x.agent.agentId)).toEqual(['c', 'a']);
   });
+
+  it('does not attach a self-parenting agent to itself', () => {
+    const main = agent({ agentId: 's1', isMain: true });
+    const weird = agent({ agentId: 'w', parentAgentId: 'w' });
+    const roots = buildTree([main, weird]);
+    expect(roots[0].children.map(c => c.agent.agentId)).toEqual(['w']);
+    expect(roots[0].children[0].children).toEqual([]);
+  });
+
+  it('attaches a child that appears before its parent in the input', () => {
+    const main = agent({ agentId: 's1', isMain: true });
+    const filho = agent({ agentId: 'filho', parentAgentId: 'pai' });
+    const pai = agent({ agentId: 'pai', parentAgentId: 's1' });
+    const roots = buildTree([main, filho, pai]);
+    const paiNode = roots[0].children.find(c => c.agent.agentId === 'pai')!;
+    expect(paiNode.children.map(c => c.agent.agentId)).toEqual(['filho']);
+  });
 });
 
 describe('isHistory', () => {

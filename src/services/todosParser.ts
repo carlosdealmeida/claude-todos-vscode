@@ -211,6 +211,7 @@ export class TodosParser {
       let matched: { id: string; entry: { ownerAgentId: string; dispatch: Dispatch; ordinal: number } } | null = null;
       for (const [id, entry] of index) {
         if (entry.ownerAgentId !== sessionId || usedPromptIds.has(id)) continue;
+        if (entry.dispatch.result === 'rejected') continue;
         if (entry.dispatch.label !== undefined && entry.dispatch.prompt === info.prompt) {
           matched = { id, entry };
           break;
@@ -218,7 +219,6 @@ export class TodosParser {
       }
       if (matched === null) continue;
       usedPromptIds.add(matched.id);
-      if (matched.entry.dispatch.result === 'rejected') continue;
       seen.add(info.agentId);
       pending.push({
         agent: {

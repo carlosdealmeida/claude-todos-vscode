@@ -4,7 +4,7 @@
   import UsageTable from './lib/UsageTable.svelte';
   import Icon from './lib/Icon.svelte';
   import AgentTree from './lib/AgentTree.svelte';
-  import { buildTree } from './tree';
+  import { buildTree, isHistory } from './tree';
 
   let snapshot = $derived(todosStore.snapshot);
 </script>
@@ -35,7 +35,7 @@
     {#if snapshot.agents.length > 0}
       <div class="agents">
         {#each buildTree(snapshot.agents) as root (root.agent.agentId)}
-          <AgentTree node={root} usage={snapshot.usage} />
+          <AgentTree node={root} usage={snapshot.usage} history={isHistory(root.agent)} />
         {/each}
       </div>
     {:else}

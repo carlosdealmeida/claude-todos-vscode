@@ -32,7 +32,7 @@
   let title = $derived(agent.name);
 </script>
 
-<section class="agent" class:sub={!agent.isMain} class:hist={history} class:active={state === 'active'}>
+<section class="agent" class:hist={history} class:active={state === 'active'}>
   <button class="header" onclick={() => expanded = !expanded} aria-expanded={expanded}>
     <span class="chevron" class:open={expanded}><Icon name="chevron" size={12} /></span>
     {#if state !== 'idle'}<span class="dot" class:active={state === 'active'} class:done={state === 'done'}></span>{/if}
