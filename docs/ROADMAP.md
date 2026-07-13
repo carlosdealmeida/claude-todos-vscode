@@ -146,7 +146,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 > **Fila de brainstorming (prioridade):** 1º item 13 (árvore de agentes) · 2º item 14
 > (notificações) · 3º item 15 (Open VSX). Os demais aguardam.
 
-### 13. Árvore de agentes ao vivo ("mission control") 📐 a planejar — prioridade #1
+### 13. Árvore de agentes ao vivo ("mission control") 🚧 implementado — aguardando release 0.9.0
 - **Origem:** descoberta de 2026-07-10 durante o debug do 0.8.2 — cada sub-agent agora tem um
   `agent-*.meta.json` ao lado do `.jsonl`, com `toolUseId`, `agentType` e `spawnDepth`.
 - **Ideia:** exibir a sessão como árvore expansível — main → sub-agents → agentes aninhados
@@ -158,6 +158,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   `spawnDepth: 2` é descartado por design).
 - **Sinergia:** resolve parcialmente o item 6 (tokens por sub-agent); fundação para workflows
   e agent teams (item 17).
+- **Status (2026-07):** implementado — spec: [docs/specs/2026-07-11-agent-tree-design.md](specs/2026-07-11-agent-tree-design.md) · plano: [docs/plans/2026-07-11-agent-tree.md](plans/2026-07-11-agent-tree.md). Matching por `toolUseId` com fallback por prompt; agentes aninhados (`spawnDepth ≥ 2`) exibidos sob quem os disparou; badge de tipo + tokens por nó. Falta: release 0.9.0.
 
 ### 14. Notificações — sessão terminou / aguardando input 📐 a planejar — prioridade #2
 - **Origem:** dor nº 1 de sessões longas — o agente termina (ou fica parado numa pergunta) e o
