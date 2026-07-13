@@ -3,11 +3,12 @@
   import type { AgentTodos } from '../../types';
   import TodoItem from './TodoItem.svelte';
   import Icon from './Icon.svelte';
-  import { summarizeTiming, formatDuration, completedTaskDurations } from '../format';
+  import { summarizeTiming, formatDuration, completedTaskDurations, formatCompact, agentTypeTone } from '../format';
   import { clock } from '../clock.svelte';
   import { todosStore } from '../stores.svelte';
 
-  let { agent, defaultExpanded = true, history = false }: { agent: AgentTodos; defaultExpanded?: boolean; history?: boolean } = $props();
+  let { agent, defaultExpanded = true, history = false, tokens = null }:
+    { agent: AgentTodos; defaultExpanded?: boolean; history?: boolean; tokens?: number | null } = $props();
   let expanded = $state(defaultExpanded);
 
   let counts = $derived({
@@ -36,6 +37,12 @@
     <span class="chevron" class:open={expanded}><Icon name="chevron" size={12} /></span>
     {#if state !== 'idle'}<span class="dot" class:active={state === 'active'} class:done={state === 'done'}></span>{/if}
     <span class="title">{title}</span>
+    {#if agent.agentType}
+      <span class="type-badge tone-{agentTypeTone(agent.agentType)}" title={todosStore.t('agent.typeTooltip', { type: agent.agentType })}>{agent.agentType}</span>
+    {/if}
+    {#if tokens !== null}
+      <span class="tokens" title={todosStore.t('agent.tokensTooltip')}>{formatCompact(tokens)}</span>
+    {/if}
     <span class="counts">
       <span class="frac">{counts.completed}/{counts.total}</span>
       {#if counts.inProgress > 0}<span class="badge">{todosStore.t('agent.activeBadge', { count: counts.inProgress })}</span>{/if}
@@ -82,7 +89,6 @@
   /* Faixa de accent à esquerda do card ativo (sem deslocar o conteúdo). Cor quente
      para distinguir do azul da task em carregamento. */
   .agent.active { box-shadow: inset 2px 0 0 var(--card-accent); }
-  .agent.sub { margin-left: var(--sp-3); }
   .agent.hist { opacity: 0.5; }
   .header {
     width: 100%;
@@ -129,6 +135,29 @@
     gap: var(--sp-1);
   }
   .frac { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .type-badge {
+    flex: none;
+    font-size: 0.72em;
+    padding: 1px 6px;
+    border-radius: 8px;
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--tone);
+    background: color-mix(in srgb, var(--tone) 13%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tone) 40%, transparent);
+  }
+  .tone-explore { --tone: var(--vscode-charts-green); }
+  .tone-plan { --tone: var(--vscode-charts-yellow); }
+  .tone-general { --tone: var(--vscode-charts-blue); }
+  .tone-neutral { --tone: var(--vscode-descriptionForeground); }
+  .tokens {
+    flex: none;
+    font-size: 0.8em;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
   .badge {
     background: color-mix(in srgb, var(--run) 22%, var(--vscode-badge-background));
     color: var(--vscode-badge-foreground);

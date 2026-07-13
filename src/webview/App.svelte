@@ -1,18 +1,10 @@
 <script lang="ts">
   import { todosStore } from './stores.svelte';
-  import AgentSection from './lib/AgentSection.svelte';
   import EmptyState from './lib/EmptyState.svelte';
   import UsageTable from './lib/UsageTable.svelte';
   import Icon from './lib/Icon.svelte';
-  import type { AgentTodos } from '../types';
-
-  function isHistory(agent: AgentTodos): boolean {
-    return !agent.isMain && agent.status !== 'running' && agent.todos.length === 0;
-  }
-
-  function isFirstHistory(agents: AgentTodos[], i: number): boolean {
-    return isHistory(agents[i]) && (i === 0 || !isHistory(agents[i - 1]));
-  }
+  import AgentTree from './lib/AgentTree.svelte';
+  import { buildTree } from './tree';
 
   let snapshot = $derived(todosStore.snapshot);
 </script>
@@ -42,11 +34,8 @@
     {/if}
     {#if snapshot.agents.length > 0}
       <div class="agents">
-        {#each snapshot.agents as agent, i (agent.agentId)}
-          {#if isFirstHistory(snapshot.agents, i)}
-            <div class="history-divider">{todosStore.t('app.historyDivider')}</div>
-          {/if}
-          <AgentSection {agent} defaultExpanded={agent.isMain} history={isHistory(agent)} />
+        {#each buildTree(snapshot.agents) as root (root.agent.agentId)}
+          <AgentTree node={root} usage={snapshot.usage} />
         {/each}
       </div>
     {:else}
@@ -111,23 +100,6 @@
     padding: 1px 5px;
     border-radius: 3px;
     font-family: var(--vscode-editor-font-family);
-  }
-  .history-divider {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    text-transform: uppercase;
-    font-size: 0.7em;
-    letter-spacing: 0.5px;
-    color: var(--muted);
-    margin: var(--sp-2) var(--sp-1) var(--sp-1);
-  }
-  .history-divider::before,
-  .history-divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--vscode-panel-border);
   }
   .ghost {
     display: inline-flex;
