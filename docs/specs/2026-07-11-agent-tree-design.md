@@ -84,9 +84,11 @@ além dos `meta.json` (arquivos de ~150 bytes).
 - **Nome do nó:** mantém `input.name ?? input.description` da invocação; para agentes cuja
   invocação está no transcript de outro sub-agent, o mesmo fallback aplicado àquele transcript,
   e em último caso a `description` do meta.json.
-- **Status:** `tool_result` correspondente ao `toolUseId` no transcript do pai (mesma técnica
-  de hoje, estendida pelo índice): sem result → `running`; com `toolUseResult.agentId` →
-  `completed`; result de rejeição → excluído (regra atual).
+- **Status:** `tool_result` correspondente ao `toolUseId`. No transcript principal, a
+  regra atual: sem result → `running`; `toolUseResult.agentId` presente → `completed`;
+  result sem o enriquecimento → rejeitado/erro → excluído. Em transcripts de sub-agents
+  o enriquecimento `toolUseResult` **não existe** (verificado: 0/32 nos dados reais);
+  ali, result presente → `completed` (rejeição de dispatch aninhado não gera arquivo).
 - **Ordenação entre irmãos:** regra atual mantida (running → com tasks → histórico, depois
   `updatedAt` desc), aplicada **por nível**.
 

@@ -137,7 +137,6 @@ describe('TodosParser', () => {
     if (dispatch.completedAgentId) {
       lines.push({
         type: 'user', isSidechain: true, agentId,
-        toolUseResult: { agentId: dispatch.completedAgentId, status: 'completed' },
         message: { content: [{ type: 'tool_result', tool_use_id: dispatch.toolUseId, content: 'done' }] },
       });
     }

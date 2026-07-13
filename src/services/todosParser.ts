@@ -157,7 +157,7 @@ export class TodosParser {
         todos: this.readLastTodosFromLines(lines, false) ?? [],
         updatedAt,
         meta: readSubAgentMeta(filePath),
-        dispatches: this.collectDispatches(lines),
+        dispatches: this.collectDispatches(lines, false),
       });
     }
 
@@ -167,7 +167,7 @@ export class TodosParser {
     // de invocação para desempate estável na ordenação final.
     const index = new Map<string, { ownerAgentId: string; dispatch: Dispatch; ordinal: number }>();
     let ord = 0;
-    for (const [id, d] of this.collectDispatches(this.readLines(mainTranscriptPath))) {
+    for (const [id, d] of this.collectDispatches(this.readLines(mainTranscriptPath), true)) {
       if (!index.has(id)) index.set(id, { ownerAgentId: sessionId, dispatch: d, ordinal: ord++ });
     }
     for (const info of infos) {
@@ -246,9 +246,13 @@ export class TodosParser {
 
   // Varre um transcript e devolve os disparos do tool Agent: toolUseId ->
   // {label, prompt, result}. `result` reflete o tool_result correspondente:
-  // 'none' = ainda rodando; 'completed' = terminou (toolUseResult.agentId
-  // presente); 'rejected' = recusado pelo usuário ou morto por erro.
-  private collectDispatches(lines: string[]): Map<string, Dispatch> {
+  // 'none' = ainda rodando; 'completed' = terminou; 'rejected' = recusado
+  // pelo usuário ou morto por erro. `enriched` indica se o transcript recebe
+  // o enriquecimento `toolUseResult` (só o transcript principal recebe —
+  // transcripts de sub-agents nunca têm esse campo, verificado nos dados
+  // reais): quando `enriched`, um tool_result sem `toolUseResult.agentId` é
+  // rejeição; quando não, presença de tool_result já basta para 'completed'.
+  private collectDispatches(lines: string[], enriched: boolean): Map<string, Dispatch> {
     const out = new Map<string, Dispatch>();
     for (const line of lines) {
       if (!line) continue;
@@ -272,7 +276,15 @@ export class TodosParser {
         }
         if (block?.type === 'tool_result' && typeof block.tool_use_id === 'string') {
           const d = out.get(block.tool_use_id);
-          if (d) d.result = typeof entry.toolUseResult?.agentId === 'string' ? 'completed' : 'rejected';
+          if (d) {
+            if (enriched) {
+              d.result = typeof entry.toolUseResult?.agentId === 'string' ? 'completed' : 'rejected';
+            } else {
+              // Transcripts de sub-agents não recebem o enriquecimento
+              // toolUseResult; um tool_result presente = o aninhado terminou.
+              d.result = 'completed';
+            }
+          }
         }
       }
     }
