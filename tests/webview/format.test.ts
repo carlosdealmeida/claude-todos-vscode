@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { formatCompact, shortModel, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations } from '../../src/webview/format';
-import type { Todo, TodoStatus } from '../../src/types';
+import { formatCompact, shortModel, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone } from '../../src/webview/format';
+import type { Todo, TodoStatus, AgentUsage } from '../../src/types';
 
 function todo(status: TodoStatus, startedAt?: number, completedAt?: number): Todo {
   const t: Todo = { content: status, activeForm: status, status };
@@ -190,5 +190,41 @@ describe('cacheLevel', () => {
   it('is low below 50%', () => {
     expect(cacheLevel(0.49)).toBe('low');
     expect(cacheLevel(0)).toBe('low');
+  });
+});
+
+describe('agentTotalTokens', () => {
+  const byAgent: AgentUsage[] = [
+    {
+      agentId: 'a1', name: 'sub', isMain: false,
+      models: [
+        { model: 'claude-opus-4-8', input: 100, output: 50, cache: 1000 },
+        { model: 'claude-haiku-4-5', input: 10, output: 5, cache: 0 },
+      ],
+    },
+    { agentId: 'vazio', name: 'v', isMain: false, models: [] },
+  ];
+
+  it('sums input + output + cache across models', () => {
+    expect(agentTotalTokens(byAgent, 'a1')).toBe(1165);
+  });
+
+  it('returns null for an agent without usage or unknown agent', () => {
+    expect(agentTotalTokens(byAgent, 'vazio')).toBeNull();
+    expect(agentTotalTokens(byAgent, 'nope')).toBeNull();
+    expect(agentTotalTokens(undefined, 'a1')).toBeNull();
+  });
+});
+
+describe('agentTypeTone', () => {
+  it('maps known types to their tone, case-insensitive', () => {
+    expect(agentTypeTone('Explore')).toBe('explore');
+    expect(agentTypeTone('Plan')).toBe('plan');
+    expect(agentTypeTone('general-purpose')).toBe('general');
+  });
+
+  it('falls back to neutral for custom types', () => {
+    expect(agentTypeTone('claude-code-guide')).toBe('neutral');
+    expect(agentTypeTone('statusline-setup')).toBe('neutral');
   });
 });

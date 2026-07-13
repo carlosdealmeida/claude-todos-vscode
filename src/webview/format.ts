@@ -1,4 +1,4 @@
-import type { Todo } from '../types';
+import type { Todo, AgentUsage } from '../types';
 
 // Compact token formatting for the panel: 7361 -> "7,4k", 24580 -> "24,6k".
 // Uses a comma decimal separator to match pt-BR.
@@ -135,4 +135,26 @@ export function cacheLevel(rate: number): CacheLevel {
   if (rate >= 0.75) return 'good';
   if (rate >= 0.50) return 'mid';
   return 'low';
+}
+
+// Total de tokens de um agente (input + output + cache somados entre modelos),
+// para o contador do nó na árvore. null quando o agente não tem usage.
+export function agentTotalTokens(byAgent: AgentUsage[] | undefined, agentId: string): number | null {
+  const agent = byAgent?.find(a => a.agentId === agentId);
+  if (!agent || agent.models.length === 0) return null;
+  let total = 0;
+  for (const m of agent.models) total += m.input + m.output + m.cache;
+  return total;
+}
+
+export type AgentTypeTone = 'explore' | 'plan' | 'general' | 'neutral';
+
+// Tom visual do badge de tipo do agente: tipos conhecidos ganham cor própria,
+// custom caem no neutro. Case-insensitive (o harness usa "Explore"/"Plan").
+export function agentTypeTone(agentType: string): AgentTypeTone {
+  const t = agentType.toLowerCase();
+  if (t === 'explore') return 'explore';
+  if (t === 'plan') return 'plan';
+  if (t.startsWith('general')) return 'general';
+  return 'neutral';
 }
