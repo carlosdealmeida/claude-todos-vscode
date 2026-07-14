@@ -69,7 +69,7 @@
     {/if}
     <ul class="list" transition:slide={{ duration: 180 }}>
       {#each agent.todos as todo, i (i)}
-        <TodoItem {todo} completedMs={durations[i]} />
+        <TodoItem {todo} completedMs={durations[i]} sessionId={agent.sessionId} agentId={agent.agentId} />
       {/each}
       {#if agent.todos.length === 0}
         <li class="empty">{todosStore.t('agent.noTodos')}</li>

@@ -4,10 +4,13 @@
   import Icon from './Icon.svelte';
   import { formatDuration } from '../format';
   import { clock } from '../clock.svelte';
+  import { todosStore } from '../stores.svelte';
 
-  let { todo, completedMs }: { todo: Todo; completedMs?: number } = $props();
+  let { todo, completedMs, sessionId, agentId }:
+    { todo: Todo; completedMs?: number; sessionId: string; agentId: string } = $props();
 
   let label = $derived(todo.status === 'in_progress' ? todo.activeForm : todo.content);
+  let clickable = $derived(todo.sourceLine !== undefined);
 
   let duration = $derived.by(() => {
     if (todo.status === 'in_progress' && todo.startedAt !== undefined) {
@@ -18,9 +21,15 @@
     }
     return null;
   });
+
+  function open(): void {
+    if (todo.sourceLine !== undefined) {
+      todosStore.openTodoSource(sessionId, agentId, todo.sourceLine);
+    }
+  }
 </script>
 
-<li class="todo" class:completed={todo.status === 'completed'} class:in-progress={todo.status === 'in_progress'}>
+{#snippet inner()}
   <StatusIcon status={todo.status} />
   <span class="label">{label}</span>
   {#if duration}
@@ -28,6 +37,16 @@
       {#if duration.live}<Icon name="clock" size={12} />{/if}
       {duration.text}
     </span>
+  {/if}
+{/snippet}
+
+<li class="todo" class:completed={todo.status === 'completed'} class:in-progress={todo.status === 'in_progress'}>
+  {#if clickable}
+    <button class="hit" onclick={open} title={todosStore.t('todo.openSource')}>
+      {@render inner()}
+    </button>
+  {:else}
+    {@render inner()}
   {/if}
 </li>
 
@@ -43,6 +62,23 @@
     transition: background 120ms ease;
   }
   .todo:hover { background: var(--vscode-list-hoverBackground); }
+  /* Botão invisível que envolve o conteúdo quando a task é clicável — herda o
+     layout do li e só acrescenta o cursor. */
+  .hit {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-2);
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
   .todo.in-progress {
     background: color-mix(in srgb, var(--run) 15%, transparent);
   }

@@ -34,7 +34,7 @@ de tokens do 0.3.0).
 
 ### 1. Todos clicáveis → pular para a mensagem de origem
 - **Issue:** [#61543](https://github.com/anthropics/claude-code/issues/61543) — labels oficiais `area:ide`, `platform:vscode`, `area:ui`
-- **Status:** 🔍 a investigar (parser atual)
+- **Status:** 🚧 implementado — aguardando release 0.12.0. Spec: [docs/specs/2026-07-14-clickable-todos-design.md](specs/2026-07-14-clickable-todos-design.md) · plano: [docs/plans/2026-07-14-clickable-todos.md](plans/2026-07-14-clickable-todos.md). `sourceLine` (última transição de status) nos dois schemas; clique abre o `.jsonl` na linha. Viewer legível: spec futuro sobre a mesma infra.
 - **Ideia:** ao percorrer o transcript buscando o último `TodoWrite`, guardar o `uuid`/índice da
   mensagem onde cada item apareceu ou mudou de status; tornar o item clicável → abre o `.jsonl`
   naquela posição.
