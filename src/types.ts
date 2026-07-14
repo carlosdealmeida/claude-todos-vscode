@@ -55,6 +55,12 @@ export interface SessionUsage {
   cache?: CacheStats;
 }
 
+export interface ProjectUsage {
+  sessions: number;        // sessões com atividade (mtime) na janela
+  byModel: ModelUsage[];   // totais agregados por modelo
+  cache?: CacheStats;      // agregado read/creation/input; undefined se zero
+}
+
 export interface SessionSnapshot {
   sessionId: string;
   cwd: string;
