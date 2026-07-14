@@ -170,12 +170,18 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 - **Custo/benefício:** baixíssimo custo, retenção altíssima.
 - **Status (2026-07):** implementado — spec: [docs/specs/2026-07-14-session-notifications-design.md](specs/2026-07-14-session-notifications-design.md) · plano: [docs/plans/2026-07-14-session-notifications.md](plans/2026-07-14-session-notifications.md). `SessionNotifier` puro (idle após ≥60s de atividade + 45s de silêncio; allComplete na transição), timer de 10s armado só em atividade, gate de setting+foco no disparo, toast com "Abrir painel"/"Não notificar". Falta: release 0.10.0.
 
-### 15. Publicar no Open VSX 📐 a planejar — prioridade #3
+### 15. Publicar no Open VSX ✅ ENTREGUE (2026-07-14)
 - **Origem:** Cursor, Windsurf e VSCodium não acessam o marketplace da Microsoft — e são
   exatamente o público que mais roda Claude Code no editor.
-- **Ideia:** conta no [open-vsx.org](https://open-vsx.org), `ovsx publish` com o mesmo VSIX, e
-  um passo extra no fluxo de release (junto do `vsce publish`). Distribuição nova sem escrever
-  feature.
+- **Status:** ✅ entregue — 0.10.0 publicada em
+  [open-vsx.org/extension/CarlosJunior1992/claude-todos](https://open-vsx.org/extension/CarlosJunior1992/claude-todos).
+  Passo "Publish to Open VSX" no `release.yml`, gated no secret `OVSX_PAT` (skip silencioso
+  sem ele) — releases futuros publicam sozinhos. Badge + link de instalação nos 3 READMEs.
+- **Pendência (cosmética):** o Open VSX mostra "unverified publisher" porque a conta
+  `carlosdealmeida` publicou no namespace `CarlosJunior1992` sem ownership verificado.
+  Resolver com uma issue de *namespace ownership* em
+  [EclipseFdn/open-vsx.org](https://github.com/EclipseFdn/open-vsx.org/issues) — não afeta a
+  instalação.
 
 ### 16. Dashboard de uso/custo agregado (projeto/semana) 🔍 a investigar
 - **Origem:** o sucesso do `ccusage` (CLI que lê os mesmos JSONL) prova a demanda por visão

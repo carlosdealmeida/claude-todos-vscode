@@ -3,6 +3,7 @@
 [Português](README.md) · [English](README.en.md) · **Español**
 
 [![VS Code Marketplace](https://img.shields.io/badge/VS_Code_Marketplace-Claude_Todos-007ACC?logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
+[![Open VSX](https://img.shields.io/open-vsx/v/CarlosJunior1992/claude-todos?label=Open%20VSX&color=c160ef)](https://open-vsx.org/extension/CarlosJunior1992/claude-todos)
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -20,7 +21,7 @@ No importa **dónde** se esté ejecutando `claude`: puede ser el terminal integr
 
 ## Instalación
 
-1. Instala la extensión (archivo `.vsix` o desde el VSCode Marketplace una vez publicada).
+1. Instala la extensión — desde el [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos), desde [Open VSX](https://open-vsx.org/extension/CarlosJunior1992/claude-todos) (Cursor, Windsurf, VSCodium) o con el archivo `.vsix` de un [GitHub Release](https://github.com/carlosdealmeida/claude-todos-vscode/releases).
 2. En el primer arranque, acepta el aviso para instalar los hooks en `~/.claude/settings.json` — la extensión agrega dos: `SessionStart` y `UserPromptSubmit`. Los hooks existentes se conservan.
 3. Abre una carpeta y ejecuta `claude` en cualquier terminal. La vista **Claude Todos** (Barra de Actividad) se llena en cuanto Claude llama a `TodoWrite`.
 
