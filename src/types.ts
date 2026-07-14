@@ -98,4 +98,5 @@ export type WebviewMessage =
   | { type: 'refresh' }
   | { type: 'openPanel' }
   | { type: 'pickSession' }
-  | { type: 'projectUsage' };
+  | { type: 'projectUsage' }
+  | { type: 'openTodoSource'; sessionId: string; agentId: string; line: number };

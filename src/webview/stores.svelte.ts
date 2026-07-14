@@ -61,6 +61,10 @@ class TodosStore {
     this.post({ type: 'projectUsage' });
   }
 
+  openTodoSource(sessionId: string, agentId: string, line: number): void {
+    this.post({ type: 'openTodoSource', sessionId, agentId, line });
+  }
+
   openPanel(): void {
     this.post({ type: 'openPanel' });
   }

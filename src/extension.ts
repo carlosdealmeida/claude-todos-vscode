@@ -16,6 +16,7 @@ import type { WebviewMessage } from './types';
 import { createT } from './i18n/t';
 import { resolveLocale } from './localeResolver';
 import { SessionNotifier, type NotificationKind } from './services/sessionNotifier';
+import { transcriptPath, subAgentsDir, SAFE_SESSION_ID } from './services/transcriptPaths';
 
 const HOOK_EVENTS: HookEvent[] = ['SessionStart', 'UserPromptSubmit'];
 const SEVEN_DAYS_MS = 7 * 24 * 3600 * 1000;
@@ -160,6 +161,8 @@ export function activate(context: vscode.ExtensionContext): void {
       const usage = cwd ? projectUsageService.usageForProject(cwd, Date.now() - SEVEN_DAYS_MS) : null;
       viewProvider.pushProjectUsage(usage);
       panelProvider.pushProjectUsage(usage);
+    } else if (msg.type === 'openTodoSource') {
+      void openTodoSource(claudeDir, msg);
     } else if (msg.type === 'pickSession') {
       void showSessionPicker();
     }
@@ -210,6 +213,42 @@ export function activate(context: vscode.ExtensionContext): void {
   void maybePromptInstallHook(context, hookInstaller, hookCommand);
   context.subscriptions.push({ dispose: stopNotifyTimer });
   observeSession();
+}
+
+// Abre o transcript do agente no editor, com a linha da mensagem selecionada.
+// agentId igual ao sessionId = main agent (transcript principal); qualquer
+// outro = sub-agent (agent-<id>.jsonl). Ids fora do padrão seguro são
+// ignorados (defesa contra path traversal). Linha além do fim do arquivo:
+// o VS Code posiciona no fim — aceitável (transcripts são append-only).
+async function openTodoSource(
+  claudeDir: string,
+  msg: { sessionId: string; agentId: string; line: number },
+): Promise<void> {
+  if (!SAFE_SESSION_ID.test(msg.agentId)) return;
+  const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (!cwd) return;
+
+  let filePath: string | null = null;
+  if (msg.agentId === msg.sessionId) {
+    filePath = transcriptPath(claudeDir, msg.sessionId, cwd);
+  } else {
+    const dir = subAgentsDir(claudeDir, msg.sessionId, cwd);
+    if (dir) {
+      const candidate = path.join(dir, `agent-${msg.agentId}.jsonl`);
+      if (fs.existsSync(candidate)) filePath = candidate;
+    }
+  }
+  if (!filePath) {
+    const t = createT(resolveLocale());
+    void vscode.window.showWarningMessage(t('todo.sourceMissing'));
+    return;
+  }
+
+  const pos = new vscode.Position(Math.max(0, Math.floor(msg.line)), 0);
+  await vscode.window.showTextDocument(vscode.Uri.file(filePath), {
+    selection: new vscode.Range(pos, pos),
+    preview: true,
+  });
 }
 
 export function deactivate(): void {}
