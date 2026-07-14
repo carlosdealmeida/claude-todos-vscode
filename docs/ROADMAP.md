@@ -205,6 +205,20 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   de "veja seus todos" para "observability dos seus agentes Claude Code" (árvore + tempos +
   tokens + custo), o termo que as pessoas vão buscar.
 
+### 19. Hint de lista defasada (main parado + sub-agent rodando) 🔍 a investigar
+- **Origem:** caso real (2026-07-14) — orquestrador criou a lista de 8 tasks, nunca mais
+  chamou `TodoWrite` e delegou tudo a sub-agents; o painel mostrava fielmente "0/8, Task 1
+  in_progress há 17min" enquanto os cards de sub-agents avançavam (Task 2 concluída, Task 3
+  rodando). Parece bug do painel, mas é vício do agente — verificado contra o transcript
+  (último TodoWrite na linha 433 de 466).
+- **Ideia:** hint sutil no cabeçalho do main quando a lista está parada há N minutos
+  **enquanto** algum sub-agent está `running` — ex.: "lista não atualizada há 17min" —
+  sinalizando a defasagem sem esconder nem "corrigir" o dado (o painel continua espelho fiel).
+- **Dados já disponíveis:** timestamp do último evento TodoWrite (o parser já varre; é expor)
+  + status `running` dos sub-agents no snapshot.
+- **Cuidado:** limiar generoso (ex.: ≥5min) e só com sub-agent ativo, para não virar ruído em
+  sessões normais de task longa.
+
 ---
 
 ## Robustez (riscos do nosso lado, não features)
