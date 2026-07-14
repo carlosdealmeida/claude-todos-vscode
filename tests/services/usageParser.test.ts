@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { UsageParser, contextLimitFor } from '../../src/services/usageParser';
+import { UsageParser, contextLimitFor, readFileUsage } from '../../src/services/usageParser';
 import { encodeCwdToProjectDir } from '../../src/services/projectDir';
 
 interface AgentRef { agentId: string; name: string; isMain: boolean; }
@@ -251,6 +251,26 @@ describe('UsageParser', () => {
         JSON.stringify({ type: 'user', message: { role: 'user', content: 'hi' } }));
       const usage = parser.usageForSession(SID, CWD, [mainRef]);
       expect(usage.cache).toBeUndefined();
+    });
+  });
+
+  describe('readFileUsage (função exportada)', () => {
+    it('reads models and cache from a file, honoring skipSidechain', () => {
+      writeMain([
+        assistant('claude-opus-4-8', { input: 100, output: 10, cacheCreate: 200, cacheRead: 5 }),
+        { ...assistant('claude-haiku-4-5', { input: 999, output: 9 }), isSidechain: true },
+      ]);
+      const filePath = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD), `${SID}.jsonl`);
+      const withSkip = readFileUsage(filePath, true);
+      expect(withSkip.models).toEqual([{ model: 'claude-opus-4-8', input: 100, output: 10, cache: 205 }]);
+      expect(withSkip.cache).toEqual({ input: 100, read: 5, creation: 200 });
+      const withoutSkip = readFileUsage(filePath, false);
+      expect(withoutSkip.models).toHaveLength(2);
+    });
+
+    it('returns empty usage for a missing file', () => {
+      expect(readFileUsage(path.join(claudeDir, 'nope.jsonl'), true))
+        .toEqual({ models: [], cache: { input: 0, read: 0, creation: 0 } });
     });
   });
 });

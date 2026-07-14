@@ -49,6 +49,43 @@ function num(v: unknown): number {
   return typeof v === 'number' && Number.isFinite(v) ? v : 0;
 }
 
+// Lê um transcript em uma passada e devolve o uso por modelo + o breakdown de
+// cache do arquivo. No transcript principal, entradas isSidechain são puladas
+// (os turnos de sub-agents vêm dos próprios agent-*.jsonl). Compartilhada entre
+// o uso por sessão (UsageParser) e o agregado do projeto (ProjectUsageService).
+export function readFileUsage(filePath: string, skipSidechain: boolean): { models: ModelUsage[]; cache: CacheStats } {
+  let lines: string[];
+  try {
+    lines = fs.readFileSync(filePath, 'utf-8').split('\n');
+  } catch {
+    return { models: [], cache: { input: 0, read: 0, creation: 0 } };
+  }
+
+  const byModel = new Map<string, ModelUsage>();
+  const cache: CacheStats = { input: 0, read: 0, creation: 0 };
+  for (const line of lines) {
+    if (!line) continue;
+    let entry: TranscriptEntry;
+    try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
+    if (skipSidechain && entry.isSidechain) continue;
+    const msg = entry.message;
+    if (!msg || !msg.usage || typeof msg.model !== 'string') continue;
+    const u = msg.usage;
+    const input = num(u.input_tokens);
+    const read = num(u.cache_read_input_tokens);
+    const creation = num(u.cache_creation_input_tokens);
+    const acc = byModel.get(msg.model) ?? { model: msg.model, input: 0, output: 0, cache: 0 };
+    acc.input += input;
+    acc.output += num(u.output_tokens);
+    acc.cache += creation + read;
+    byModel.set(msg.model, acc);
+    cache.input += input;
+    cache.read += read;
+    cache.creation += creation;
+  }
+  return { models: [...byModel.values()], cache };
+}
+
 export class UsageParser {
   constructor(private readonly claudeDir: string) {}
 
@@ -100,36 +137,7 @@ export class UsageParser {
   // agent-*.jsonl). Returns one ModelUsage per distinct model AND the cache
   // breakdown (non-cached input, cache read, cache creation) for the file.
   private modelsAndCacheForFile(filePath: string, skipSidechain: boolean): { models: ModelUsage[]; cache: CacheStats } {
-    let lines: string[];
-    try {
-      lines = fs.readFileSync(filePath, 'utf-8').split('\n');
-    } catch {
-      return { models: [], cache: { input: 0, read: 0, creation: 0 } };
-    }
-
-    const byModel = new Map<string, ModelUsage>();
-    const cache: CacheStats = { input: 0, read: 0, creation: 0 };
-    for (const line of lines) {
-      if (!line) continue;
-      let entry: TranscriptEntry;
-      try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
-      if (skipSidechain && entry.isSidechain) continue;
-      const msg = entry.message;
-      if (!msg || !msg.usage || typeof msg.model !== 'string') continue;
-      const u = msg.usage;
-      const input = num(u.input_tokens);
-      const read = num(u.cache_read_input_tokens);
-      const creation = num(u.cache_creation_input_tokens);
-      const acc = byModel.get(msg.model) ?? { model: msg.model, input: 0, output: 0, cache: 0 };
-      acc.input += input;
-      acc.output += num(u.output_tokens);
-      acc.cache += creation + read;
-      byModel.set(msg.model, acc);
-      cache.input += input;
-      cache.read += read;
-      cache.creation += creation;
-    }
-    return { models: [...byModel.values()], cache };
+    return readFileUsage(filePath, skipSidechain);
   }
 
   // The current context size = input + cache of the LAST usage-bearing message
