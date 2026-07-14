@@ -60,6 +60,18 @@ jobs:
           draft: false
           prerelease: false
 
+      # --- Open VSX (Cursor / Windsurf / VSCodium) -------------------------
+      # Publishes when the OVSX_PAT secret exists; skips silently otherwise.
+      # The workflow only runs on tag pushes or manual dispatch, so a publish
+      # from here always corresponds to a released (or explicitly chosen) tree.
+      - name: Publish to Open VSX
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        if: env.OVSX_PAT != ''
+        run: |
+          npx ovsx create-namespace CarlosJunior1992 -p "$OVSX_PAT" || true
+          npx ovsx publish --packagePath "${{ steps.package.outputs.vsix }}" -p "$OVSX_PAT"
+
       # --- Optional: automatic Marketplace publish -------------------------
       # The job above only builds the .vsix; publishing is done manually by
       # uploading it at https://marketplace.visualstudio.com/manage
