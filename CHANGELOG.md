@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.12.0] - 2026-07-14
+
+### Added
+- **Clickable tasks → jump to the transcript.** Clicking a task in the panel opens the agent's `.jsonl` transcript in the editor with the line of the task's last status change selected — for the main agent and for sub-agents (each opens its own transcript). Works with both task schemas (`TodoWrite` snapshots and `TaskCreate`/`TaskUpdate` streams). Tasks whose origin can't be determined (e.g., very old transcripts without timestamps) simply stay non-clickable. Addresses the request in [anthropics/claude-code#61543](https://github.com/anthropics/claude-code/issues/61543). A readable transcript viewer building on this same infrastructure is planned separately.
+
 ## [0.11.0] - 2026-07-14
 
 ### Added
