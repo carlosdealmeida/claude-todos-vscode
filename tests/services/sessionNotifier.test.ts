@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { SessionNotifier, ACTIVITY_MIN_MS, IDLE_MS } from '../../src/services/sessionNotifier';
 
 const T0 = 1_000_000_000;
-const MIN = 60_000;
 
 describe('SessionNotifier', () => {
   // Simula uma rajada de atividade contínua: observações a cada 30s (< IDLE_MS,
@@ -95,6 +94,25 @@ describe('SessionNotifier', () => {
       .toEqual(['allComplete', 'idle']);
   });
 
+  it('treats a backward mtime jump (file replaced/truncated) as activity', () => {
+    const n = new SessionNotifier();
+    n.observe({ sessionId: 's1', mtime: 5_000, allComplete: false, now: T0 });
+    const c1 = burst(n, 's1', T0, ACTIVITY_MIN_MS);
+    // arquivo trocado: mtime volta para trás -> é atividade, rearma o ciclo
+    expect(n.observe({ sessionId: 's1', mtime: 100, allComplete: false, now: c1 + 10_000 })).toEqual([]);
+    // o silêncio conta a partir da regressão, não do c1
+    expect(n.observe({ sessionId: 's1', mtime: 100, allComplete: false, now: c1 + 10_000 + IDLE_MS }))
+      .toEqual(['idle']);
+  });
+
+  it('a mid-burst tick (same mtime, silence < IDLE_MS) does not disturb state', () => {
+    const n = new SessionNotifier();
+    n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
+    const c1 = burst(n, 's1', T0, ACTIVITY_MIN_MS);
+    expect(n.observe({ sessionId: 's1', mtime: c1, allComplete: false, now: c1 + 10_000 })).toEqual([]);
+    expect(n.observe({ sessionId: 's1', mtime: c1, allComplete: false, now: c1 + IDLE_MS })).toEqual(['idle']);
+  });
+
   describe('shouldPoll', () => {
     it('is false before any observation', () => {
       expect(new SessionNotifier().shouldPoll(T0)).toBe(false);
@@ -114,6 +132,12 @@ describe('SessionNotifier', () => {
       n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
       const c1 = burst(n, 's1', T0, 20_000);
       expect(n.shouldPoll(c1 + IDLE_MS + 1_000)).toBe(false); // nada vai disparar sem nova atividade
+    });
+
+    it('is false right after activation bootstrap (no burst yet)', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 1, allComplete: false, now: T0 });
+      expect(n.shouldPoll(T0 + 1_000)).toBe(false); // sem rajada mínima, nada pode disparar
     });
   });
 });

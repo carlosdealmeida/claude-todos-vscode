@@ -108,6 +108,8 @@ export class SessionNotifier {
 | `allComplete` numa sessão que já abriu 100% completa | `prevAllComplete` inicializa com o valor da primeira observação — sem toast de estreia. |
 | Setting desligado | Notifier continua alimentado (barato), toasts suprimidos. Religar não dispara nada retroativo. |
 | Duas janelas do VS Code no mesmo projeto | Cada janela notifica pela SUA sessão exibida (escopo por workspace preservado). Foco é por janela — a janela focada suprime, a outra notifica. |
+| Modo auto com duas sessões no mesmo workspace | A escrita que completa a sessão B também a torna a mais recente → o display troca → o notifier reseta → o `allComplete` de estreia é engolido (deliberado: troca nunca notifica). Pinar a sessão evita. |
+| Atividade alternando entre duas sessões (modo auto) | Cada flip do display reseta o notifier; `ACTIVITY_MIN_MS` pode nunca acumular e o idle não dispara. Pinar a sessão evita. |
 
 ---
 

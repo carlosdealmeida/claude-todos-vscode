@@ -112,14 +112,15 @@ export function activate(context: vscode.ExtensionContext): void {
     const allComplete = main !== undefined
       && main.todos.length > 0
       && main.todos.every(td => td.status === 'completed');
+    const now = Date.now();
     const fired = notifier.observe({
       sessionId: snapshot.sessionId,
       mtime,
       allComplete,
-      now: Date.now(),
+      now,
     });
     maybeToast(fired, snapshot.title);
-    if (notifier.shouldPoll(Date.now())) startNotifyTimer(); else stopNotifyTimer();
+    if (notifier.shouldPoll(now)) startNotifyTimer(); else stopNotifyTimer();
   };
 
   const showSessionPicker = async (): Promise<void> => {
@@ -141,6 +142,7 @@ export function activate(context: vscode.ExtensionContext): void {
     await context.workspaceState.update('pinnedSessionId', picked.sessionId);
     viewProvider.pushSnapshot();
     panelProvider.pushSnapshot();
+    observeSession();
   };
 
   const handleMessage = (msg: WebviewMessage): void => {

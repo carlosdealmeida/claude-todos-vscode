@@ -68,10 +68,12 @@ export class SessionNotifier {
     return out;
   }
 
-  // O host mantém o timer de silêncio rodando só enquanto isto for true:
-  // ainda há um disparo de idle possível sem nova atividade.
+  // O host mantém o timer rodando só enquanto um disparo de idle é possível
+  // SEM nova atividade (rajada mínima já cumprida e silêncio ainda não vencido).
   shouldPoll(now: number): boolean {
     if (this.sessionId === null) return false;
-    return !this.idleNotified && now - this.lastChangeAt < IDLE_MS;
+    return !this.idleNotified
+      && this.lastChangeAt - this.activeSince >= ACTIVITY_MIN_MS
+      && now - this.lastChangeAt < IDLE_MS;
   }
 }
