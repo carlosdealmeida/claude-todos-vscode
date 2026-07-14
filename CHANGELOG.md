@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.0] - 2026-07-14
+
+### Added
+- **Session notifications.** A native VS Code toast fires when the tracked session goes idle after sustained activity (the agent stopped and is waiting for you — covers both "finished" and "stuck on a question") or when the main agent completes all its tasks. Anti-noise rules: at least 60s of continuous activity before "idle" applies, 45s of silence to fire, one notification per activity cycle, and the completion toast only fires on the transition. Toasts only appear while the VS Code window is unfocused; the detection itself always runs. Buttons: **Open panel** and **Don't notify** (turns the feature off globally). Controlled by the new `claudeTodos.notifications` setting (default on), localized in en/pt-br/es. Detection is a pure, fully unit-tested state machine fed by the existing file watcher plus a 10s silence timer that only runs while a notification is still possible (zero cost at rest). Spec: `docs/specs/2026-07-14-session-notifications-design.md`.
+
 ## [0.9.0] - 2026-07-13
 
 ### Added
