@@ -88,10 +88,12 @@ export type ExtensionMessage =
   | { type: 'snapshot'; snapshot: SessionSnapshot | null }
   | { type: 'theme'; theme: 'dark' | 'light' | 'high-contrast' }
   | { type: 'locale'; locale: Locale }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  | { type: 'projectUsage'; usage: ProjectUsage | null };
 
 export type WebviewMessage =
   | { type: 'ready' }
   | { type: 'refresh' }
   | { type: 'openPanel' }
-  | { type: 'pickSession' };
+  | { type: 'pickSession' }
+  | { type: 'projectUsage' };

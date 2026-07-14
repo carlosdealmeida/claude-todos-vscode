@@ -7,6 +7,7 @@ import { TodosParser } from './services/todosParser';
 import { SessionResolver } from './services/sessionResolver';
 import { SnapshotService } from './services/snapshotService';
 import { UsageParser } from './services/usageParser';
+import { ProjectUsageService } from './services/projectUsageService';
 import { TodosWatcher } from './services/todosWatcher';
 import { HookInstaller, type HookEvent } from './services/hookInstaller';
 import { TodosViewProvider } from './providers/todosViewProvider';
@@ -17,6 +18,7 @@ import { resolveLocale } from './localeResolver';
 import { SessionNotifier, type NotificationKind } from './services/sessionNotifier';
 
 const HOOK_EVENTS: HookEvent[] = ['SessionStart', 'UserPromptSubmit'];
+const SEVEN_DAYS_MS = 7 * 24 * 3600 * 1000;
 
 // Matches commands pointing at the *versioned* extension directory used in
 // 0.1.x / 0.2.0 (e.g. `.../carlosjunior1992.claude-todos-0.1.0/...`). These
@@ -56,6 +58,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const bridge = new BridgeFile(bridgePath);
   const parser = new TodosParser(claudeDir);
   const usageParser = new UsageParser(claudeDir);
+  const projectUsageService = new ProjectUsageService(claudeDir);
   const resolver = new SessionResolver(bridge, () => {
     const folders = vscode.workspace.workspaceFolders;
     return folders?.[0]?.uri.fsPath ?? null;
@@ -151,6 +154,12 @@ export function activate(context: vscode.ExtensionContext): void {
     } else if (msg.type === 'refresh') {
       viewProvider.pushSnapshot();
       panelProvider.pushSnapshot();
+    } else if (msg.type === 'projectUsage') {
+      const folders = vscode.workspace.workspaceFolders;
+      const cwd = folders?.[0]?.uri.fsPath ?? null;
+      const usage = cwd ? projectUsageService.usageForProject(cwd, Date.now() - SEVEN_DAYS_MS) : null;
+      viewProvider.pushProjectUsage(usage);
+      panelProvider.pushProjectUsage(usage);
     } else if (msg.type === 'pickSession') {
       void showSessionPicker();
     }

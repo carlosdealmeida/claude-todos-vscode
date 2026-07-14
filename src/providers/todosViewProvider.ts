@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { buildWebviewHtml } from '../webview/html';
 import type { SnapshotService } from '../services/snapshotService';
-import type { ExtensionMessage, WebviewMessage } from '../types';
+import type { ExtensionMessage, WebviewMessage, ProjectUsage } from '../types';
 import { resolveLocale } from '../localeResolver';
 
 export class TodosViewProvider implements vscode.WebviewViewProvider {
@@ -41,6 +41,12 @@ export class TodosViewProvider implements vscode.WebviewViewProvider {
   pushLocale(): void {
     if (!this.view) return;
     const msg: ExtensionMessage = { type: 'locale', locale: resolveLocale() };
+    this.view.webview.postMessage(msg);
+  }
+
+  pushProjectUsage(usage: ProjectUsage | null): void {
+    if (!this.view) return;
+    const msg: ExtensionMessage = { type: 'projectUsage', usage };
     this.view.webview.postMessage(msg);
   }
 }

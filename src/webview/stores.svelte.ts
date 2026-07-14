@@ -1,4 +1,4 @@
-import type { SessionSnapshot, ExtensionMessage, WebviewMessage } from '../types';
+import type { SessionSnapshot, ExtensionMessage, WebviewMessage, ProjectUsage } from '../types';
 import { createT } from '../i18n/t';
 import type { Locale } from '../i18n/locale';
 
@@ -16,6 +16,8 @@ class TodosStore {
   loading = $state(true);
   locale = $state<Locale>('en');
   t = $derived(createT(this.locale));
+  projectUsage = $state<ProjectUsage | null | undefined>(undefined);
+  projectUsageLoading = $state(false);
 
   constructor() {
     window.addEventListener('message', (event) => {
@@ -39,6 +41,10 @@ class TodosStore {
       case 'locale':
         this.locale = msg.locale;
         break;
+      case 'projectUsage':
+        this.projectUsage = msg.usage;
+        this.projectUsageLoading = false;
+        break;
     }
   }
 
@@ -48,6 +54,11 @@ class TodosStore {
 
   refresh(): void {
     this.post({ type: 'refresh' });
+  }
+
+  requestProjectUsage(): void {
+    this.projectUsageLoading = true;
+    this.post({ type: 'projectUsage' });
   }
 
   openPanel(): void {
