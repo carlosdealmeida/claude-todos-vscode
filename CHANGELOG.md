@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.0] - 2026-07-14
+
+### Added
+- **Project usage block ("Last 7 days · this project").** A collapsed-by-default section below the session token table aggregates usage across every workspace session active in the last 7 days: session count, tokens per model, and the aggregated cache-reuse bar with the usual traffic light. Aggregation is lazy — it only runs when you expand the block — and memoized per transcript file, so re-opening it is near-instant (real-world measurement: 1.5s cold → ~18ms warm). The session snapshot protocol is untouched; the block uses its own request/response message pair. Localized in en/pt-br/es. Spec: `docs/specs/2026-07-14-project-usage-dashboard-design.md`.
+
+### Fixed
+- Synthetic API-error entries (`<synthetic>` model, zero usage) no longer show up as a garbage row in the token tables, and no longer zero the context badge when a session ends on an API error. This also fixes the latent issue on the per-session table.
+
 ## [0.10.0] - 2026-07-14
 
 ### Added
