@@ -95,7 +95,6 @@ describe('ProjectUsageService', () => {
 
   it('memo: same (mtime, size) is NOT re-read; changed mtime is', () => {
     const p = writeSession('s1', [assistant('claude-opus-4-8', { input: 100, output: 10 })], NOW - 5000);
-    const stat = fs.statSync(p);
     expect(service.usageForProject(CWD, SINCE).byModel[0].input).toBe(100);
 
     // Conteúdo diferente com o MESMO tamanho em bytes e mesmo mtime → memo hit
@@ -104,7 +103,9 @@ describe('ProjectUsageService', () => {
     const tweaked = original.replace('"input_tokens":100', '"input_tokens":900');
     expect(tweaked.length).toBe(original.length);
     fs.writeFileSync(p, tweaked);
-    fs.utimesSync(p, new Date(stat.mtimeMs), new Date(stat.mtimeMs));
+    // Restaura pelo MESMO instante de entrada da criação: new Date(stat.mtimeMs)
+    // truncaria a fração sub-ms do ext4 e quebraria a chave do memo no Linux.
+    fs.utimesSync(p, new Date(NOW - 5000), new Date(NOW - 5000));
     expect(service.usageForProject(CWD, SINCE).byModel[0].input).toBe(100);
 
     // mtime novo → invalida e relê
