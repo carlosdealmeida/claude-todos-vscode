@@ -35,7 +35,7 @@
 </script>
 
 <section class="project">
-  <button class="header" onclick={toggle} aria-expanded={expanded}>
+  <button class="header" onclick={toggle} aria-expanded={expanded} aria-controls="project-usage-body">
     <span class="chevron" class:open={expanded}><Icon name="chevron" size={12} /></span>
     <span class="title">{todosStore.t('project.title')}</span>
     {#if expanded && usage && usage.sessions > 0}
@@ -44,7 +44,7 @@
   </button>
 
   {#if expanded}
-    <div class="body" transition:slide={{ duration: 180 }}>
+    <div class="body" id="project-usage-body" transition:slide={{ duration: 180 }}>
       {#if loading && usage === undefined}
         <p class="note">{todosStore.t('project.loading')}</p>
       {:else if !usage || usage.sessions === 0}

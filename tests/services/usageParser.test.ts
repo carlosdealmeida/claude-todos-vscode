@@ -218,6 +218,15 @@ describe('UsageParser', () => {
       const usage = parser.usageForSession(SID, CWD, [mainRef]);
       expect(usage.context).toBeUndefined();
     });
+
+    it('context ignores a trailing synthetic entry', () => {
+      writeMain([
+        assistant('claude-opus-4-8', { input: 100, output: 10, cacheRead: 50 }),
+        assistant('<synthetic>', {}),
+      ]);
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      expect(usage.context?.tokens).toBe(150);
+    });
   });
 
   describe('cache stats', () => {
@@ -271,6 +280,16 @@ describe('UsageParser', () => {
     it('returns empty usage for a missing file', () => {
       expect(readFileUsage(path.join(claudeDir, 'nope.jsonl'), true))
         .toEqual({ models: [], cache: { input: 0, read: 0, creation: 0 } });
+    });
+
+    it('skips synthetic error entries (<synthetic> model)', () => {
+      writeMain([
+        assistant('claude-opus-4-8', { input: 100, output: 10 }),
+        assistant('<synthetic>', {}),
+      ]);
+      const filePath = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD), `${SID}.jsonl`);
+      const usage = readFileUsage(filePath, true);
+      expect(usage.models).toEqual([{ model: 'claude-opus-4-8', input: 100, output: 10, cache: 0 }]);
     });
   });
 });

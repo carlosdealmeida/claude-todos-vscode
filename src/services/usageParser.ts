@@ -70,6 +70,8 @@ export function readFileUsage(filePath: string, skipSidechain: boolean): { model
     if (skipSidechain && entry.isSidechain) continue;
     const msg = entry.message;
     if (!msg || !msg.usage || typeof msg.model !== 'string') continue;
+    // Entradas sintéticas de erro de API não são uso real do modelo.
+    if (msg.model === '<synthetic>') continue;
     const u = msg.usage;
     const input = num(u.input_tokens);
     const read = num(u.cache_read_input_tokens);
@@ -103,7 +105,7 @@ export class UsageParser {
         : this.subAgentFile(sessionId, cwd, agent.agentId);
       if (!filePath) continue;
 
-      const { models, cache } = this.modelsAndCacheForFile(filePath, agent.isMain);
+      const { models, cache } = readFileUsage(filePath, agent.isMain);
       if (models.length === 0) continue;
 
       byAgent.push({ agentId: agent.agentId, name: agent.name, isMain: agent.isMain, models });
@@ -132,14 +134,6 @@ export class UsageParser {
     return fs.existsSync(file) ? file : null;
   }
 
-  // Reads one transcript file in a single pass. For the main transcript,
-  // isSidechain entries are skipped (sub-agent turns come from their own
-  // agent-*.jsonl). Returns one ModelUsage per distinct model AND the cache
-  // breakdown (non-cached input, cache read, cache creation) for the file.
-  private modelsAndCacheForFile(filePath: string, skipSidechain: boolean): { models: ModelUsage[]; cache: CacheStats } {
-    return readFileUsage(filePath, skipSidechain);
-  }
-
   // The current context size = input + cache of the LAST usage-bearing message
   // in the main transcript (output is excluded; sidechain entries are skipped).
   // Returns undefined when the transcript has no usage yet.
@@ -159,6 +153,7 @@ export class UsageParser {
       if (entry.isSidechain) continue;
       const msg = entry.message;
       if (!msg || !msg.usage || typeof msg.model !== 'string') continue;
+      if (msg.model === '<synthetic>') continue;
       last = { usage: msg.usage, model: msg.model };
     }
     if (!last) return undefined;
