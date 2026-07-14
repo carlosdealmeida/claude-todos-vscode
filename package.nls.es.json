@@ -10,5 +10,6 @@
   "config.language.auto": "Seguir el idioma de visualización de VS Code",
   "config.language.en": "Inglés",
   "config.language.ptBr": "Portugués (Brasil)",
-  "config.language.es": "Español"
+  "config.language.es": "Español",
+  "config.notifications.description": "Notifica cuando la sesión seguida queda inactiva tras un período de actividad, o completa todas las tareas (solo con la ventana de VS Code sin foco)."
 }

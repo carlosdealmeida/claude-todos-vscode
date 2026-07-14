@@ -10,5 +10,6 @@
   "config.language.auto": "Seguir o idioma de exibição do VS Code",
   "config.language.en": "Inglês",
   "config.language.ptBr": "Português (Brasil)",
-  "config.language.es": "Espanhol"
+  "config.language.es": "Espanhol",
+  "config.notifications.description": "Notifica quando a sessão acompanhada fica ociosa após um período de atividade, ou completa todas as tasks (somente com a janela do VS Code sem foco)."
 }

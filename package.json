@@ -111,6 +111,11 @@
           ],
           "default": "auto",
           "description": "%config.language.description%"
+        },
+        "claudeTodos.notifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.notifications.description%"
         }
       }
     }

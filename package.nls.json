@@ -10,5 +10,6 @@
   "config.language.auto": "Follow VS Code's display language",
   "config.language.en": "English",
   "config.language.ptBr": "Portuguese (Brazil)",
-  "config.language.es": "Spanish"
+  "config.language.es": "Spanish",
+  "config.notifications.description": "Show a notification when the tracked session goes idle after activity, or completes all tasks (only while the VS Code window is unfocused)."
 }
