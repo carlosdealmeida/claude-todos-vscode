@@ -160,7 +160,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   e agent teams (item 17).
 - **Status (2026-07):** implementado — spec: [docs/specs/2026-07-11-agent-tree-design.md](specs/2026-07-11-agent-tree-design.md) · plano: [docs/plans/2026-07-11-agent-tree.md](plans/2026-07-11-agent-tree.md). Matching por `toolUseId` com fallback por prompt; agentes aninhados (`spawnDepth ≥ 2`) exibidos sob quem os disparou; badge de tipo + tokens por nó. Falta: release 0.9.0.
 
-### 14. Notificações — sessão terminou / aguardando input 📐 a planejar — prioridade #2
+### 14. Notificações — sessão terminou / aguardando input 🚧 implementado — aguardando release 0.10.0
 - **Origem:** dor nº 1 de sessões longas — o agente termina (ou fica parado numa pergunta) e o
   usuário só percebe minutos depois. Demanda comprovada: usuários montam pontes externas de
   notificação (WhatsApp, push) por fora.
@@ -168,6 +168,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   (b) todas as tasks completam. Já detectamos `mtime` do transcript + estado das tasks; falta
   só a regra de disparo e o `window.showInformationMessage`. Opt-in via setting.
 - **Custo/benefício:** baixíssimo custo, retenção altíssima.
+- **Status (2026-07):** implementado — spec: [docs/specs/2026-07-14-session-notifications-design.md](specs/2026-07-14-session-notifications-design.md) · plano: [docs/plans/2026-07-14-session-notifications.md](plans/2026-07-14-session-notifications.md). `SessionNotifier` puro (idle após ≥60s de atividade + 45s de silêncio; allComplete na transição), timer de 10s armado só em atividade, gate de setting+foco no disparo, toast com "Abrir painel"/"Não notificar". Falta: release 0.10.0.
 
 ### 15. Publicar no Open VSX 📐 a planejar — prioridade #3
 - **Origem:** Cursor, Windsurf e VSCodium não acessam o marketplace da Microsoft — e são

@@ -14,6 +14,7 @@ import { TodosPanelProvider } from './providers/todosPanelProvider';
 import type { WebviewMessage } from './types';
 import { createT } from './i18n/t';
 import { resolveLocale } from './localeResolver';
+import { SessionNotifier, type NotificationKind } from './services/sessionNotifier';
 
 const HOOK_EVENTS: HookEvent[] = ['SessionStart', 'UserPromptSubmit'];
 
@@ -64,8 +65,62 @@ export function activate(context: vscode.ExtensionContext): void {
   const watcher = new TodosWatcher(claudeDir);
   context.subscriptions.push(watcher);
 
+  const notifier = new SessionNotifier();
+  let notifyTimer: NodeJS.Timeout | null = null;
+
   let viewProvider!: TodosViewProvider;
   let panelProvider!: TodosPanelProvider;
+
+  const stopNotifyTimer = (): void => {
+    if (notifyTimer) { clearInterval(notifyTimer); notifyTimer = null; }
+  };
+
+  const startNotifyTimer = (): void => {
+    if (!notifyTimer) notifyTimer = setInterval(() => observeSession(), 10_000);
+  };
+
+  // Gate de exibição (setting + foco) na hora do disparo — a detecção roda
+  // sempre, para o estado do notifier não depender do foco da janela.
+  const maybeToast = (kinds: NotificationKind[], title: string): void => {
+    if (kinds.length === 0) return;
+    const enabled = vscode.workspace.getConfiguration('claudeTodos').get<boolean>('notifications', true);
+    if (!enabled || vscode.window.state.focused) return;
+    const t = createT(resolveLocale());
+    // Os dois no mesmo observe: exibe só allComplete (menos ruído).
+    const message = kinds.includes('allComplete')
+      ? t('notify.allComplete', { title })
+      : t('notify.idle', { title });
+    void vscode.window.showInformationMessage(message, t('notify.openPanel'), t('notify.disable'))
+      .then(choice => {
+        if (choice === t('notify.openPanel')) {
+          void vscode.commands.executeCommand('claudeTodos.openPanel');
+        } else if (choice === t('notify.disable')) {
+          void vscode.workspace.getConfiguration('claudeTodos')
+            .update('notifications', false, vscode.ConfigurationTarget.Global);
+        }
+      });
+  };
+
+  // Alimenta o notifier com a sessão exibida (a mesma que o snapshot escolhe).
+  // Chamada em cada onChange do watcher e em cada tick do timer; o timer só
+  // fica armado enquanto um disparo de idle ainda é possível (shouldPoll).
+  const observeSession = (): void => {
+    const snapshot = snapshotService.build();
+    if (!snapshot) { stopNotifyTimer(); return; }
+    const mtime = parser.transcriptMtime(snapshot.sessionId, snapshot.cwd) ?? 0;
+    const main = snapshot.agents.find(a => a.isMain);
+    const allComplete = main !== undefined
+      && main.todos.length > 0
+      && main.todos.every(td => td.status === 'completed');
+    const fired = notifier.observe({
+      sessionId: snapshot.sessionId,
+      mtime,
+      allComplete,
+      now: Date.now(),
+    });
+    maybeToast(fired, snapshot.title);
+    if (notifier.shouldPoll(Date.now())) startNotifyTimer(); else stopNotifyTimer();
+  };
 
   const showSessionPicker = async (): Promise<void> => {
     const t = createT(resolveLocale());
@@ -110,6 +165,7 @@ export function activate(context: vscode.ExtensionContext): void {
     watcher.onChange(() => {
       viewProvider.pushSnapshot();
       panelProvider.pushSnapshot();
+      observeSession();
     }),
   );
 
@@ -141,6 +197,8 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   void maybePromptInstallHook(context, hookInstaller, hookCommand);
+  context.subscriptions.push({ dispose: stopNotifyTimer });
+  observeSession();
 }
 
 export function deactivate(): void {}
