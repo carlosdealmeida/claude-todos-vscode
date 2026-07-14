@@ -20,10 +20,12 @@ function makeTodo(
   status: TodoStatus,
   startedAt?: number,
   completedAt?: number,
+  sourceLine?: number,
 ): Todo {
   const todo: Todo = { content, activeForm, status };
   if (startedAt !== undefined) todo.startedAt = startedAt;
   if (completedAt !== undefined) todo.completedAt = completedAt;
+  if (sourceLine !== undefined) todo.sourceLine = sourceLine;
   return todo;
 }
 
@@ -347,7 +349,7 @@ export class TodosParser {
       return todos.map(t => {
         const timing = timings.get(t.content);
         return timing
-          ? makeTodo(t.content, t.activeForm, t.status, timing.startedAt, timing.completedAt)
+          ? makeTodo(t.content, t.activeForm, t.status, timing.startedAt, timing.completedAt, timing.sourceLine)
           : t;
       });
     }
@@ -356,21 +358,20 @@ export class TodosParser {
   }
 
   // Varre os snapshots do TodoWrite em ordem cronológica e registra, por
-  // `content`, o primeiro instante em que cada task apareceu in_progress e
-  // completed (first-write-wins). Casa por `content` por ser estável a
+  // `content`: timings (primeiro in_progress/completed do streak — ver regras
+  // de reset abaixo) e a linha da ÚLTIMA transição de status (`sourceLine`),
+  // para o clique "abrir no transcript". Casa por `content` por ser estável a
   // reordenações da lista entre snapshots.
   private extractTodoWriteTimings(
     lines: string[],
     skipSidechain: boolean,
-  ): Map<string, { startedAt?: number; completedAt?: number }> {
-    const timings = new Map<string, { startedAt?: number; completedAt?: number }>();
-    // Último status observado por content. Serve para detectar a TRANSIÇÃO para
-    // in_progress: quando uma task entra em in_progress vindo de qualquer outro
-    // estado (pending, completed, ausente ou nova), começa um novo streak e o
-    // timing é zerado — assim uma rodada que reutiliza a mesma descrição não
-    // herda o tempo de uma rodada anterior. 'absent' = não estava no snapshot.
+  ): Map<string, { startedAt?: number; completedAt?: number; sourceLine?: number }> {
+    const timings = new Map<string, { startedAt?: number; completedAt?: number; sourceLine?: number }>();
+    // Último status observado por content — detecta TRANSIÇÕES. 'absent' =
+    // sumiu do snapshot; uma reaparição conta como transição (novo streak).
     const prevStatus = new Map<string, TodoStatus | 'absent'>();
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       if (!line || line.indexOf('"name":"TodoWrite"') < 0) continue;
       let entry: TranscriptEntry;
       try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
@@ -388,21 +389,24 @@ export class TodosParser {
           if (!this.isValidTodo(item)) continue;
           seen.add(item.content);
           const prev = prevStatus.get(item.content);
+          const changed = prev !== item.status; // task nova/reaparecida também conta
           if (item.status === 'in_progress') {
-            // Entrou agora em in_progress (não estava in_progress antes) → novo streak.
-            if (prev !== 'in_progress') timings.set(item.content, { startedAt: ts });
+            // Entrou agora em in_progress → novo streak (zera timing anterior).
+            if (prev !== 'in_progress') timings.set(item.content, { startedAt: ts, sourceLine: i });
           } else if (item.status === 'completed') {
             const rec = timings.get(item.content) ?? {};
             if (rec.completedAt === undefined) rec.completedAt = ts;
+            if (changed) rec.sourceLine = i;
             timings.set(item.content, rec);
           } else {
-            // pending = ainda não começou nesta rodada.
-            timings.set(item.content, {});
+            // pending = ainda não começou nesta rodada (zera timings); guarda a
+            // linha em que ENTROU em pending, mantendo-a enquanto repetir.
+            const kept = changed ? i : timings.get(item.content)?.sourceLine;
+            timings.set(item.content, kept !== undefined ? { sourceLine: kept } : {});
           }
           prevStatus.set(item.content, item.status);
         }
-        // Tasks que sumiram deste snapshot: marca como ausentes para que uma
-        // reaparição futura em in_progress conte como novo streak.
+        // Tasks que sumiram deste snapshot: reaparição futura = novo streak.
         for (const key of prevStatus.keys()) {
           if (!seen.has(key)) prevStatus.set(key, 'absent');
         }
@@ -457,13 +461,14 @@ export class TodosParser {
   private readTaskStream(lines: string[], skipSidechain: boolean): Todo[] {
     const tasks = new Map<string, {
       content: string; activeForm: string; status: TodoStatus;
-      startedAt?: number; completedAt?: number;
+      startedAt?: number; completedAt?: number; sourceLine?: number;
     }>();
     const order: string[] = [];
     // tool_use_id of TaskCreate awaiting its tool_result, where the assigned id is revealed.
-    const pendingCreates = new Map<string, { content: string; activeForm: string }>();
+    const pendingCreates = new Map<string, { content: string; activeForm: string; createLine: number }>();
 
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       if (!line) continue;
       let entry: TranscriptEntry;
       try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
@@ -480,6 +485,7 @@ export class TodosParser {
               pendingCreates.set(block.id, {
                 content: subject,
                 activeForm: typeof activeForm === 'string' ? activeForm : subject,
+                createLine: i,
               });
             }
           } else if (block.name === 'TaskUpdate') {
@@ -490,6 +496,7 @@ export class TodosParser {
               const t = tasks.get(taskId);
               if (t) {
                 t.status = status as TodoStatus;
+                t.sourceLine = i;
                 const ts = parseEpoch(entry.timestamp);
                 if (ts !== undefined) {
                   if (status === 'in_progress' && t.startedAt === undefined) t.startedAt = ts;
@@ -503,7 +510,12 @@ export class TodosParser {
           if (!pending) continue;
           const taskId = this.resolveCreatedTaskId(entry, block);
           if (taskId && !tasks.has(taskId)) {
-            tasks.set(taskId, { ...pending, status: 'pending' });
+            tasks.set(taskId, {
+              content: pending.content,
+              activeForm: pending.activeForm,
+              status: 'pending',
+              sourceLine: pending.createLine,
+            });
             order.push(taskId);
           }
           pendingCreates.delete(block.tool_use_id);
@@ -513,7 +525,7 @@ export class TodosParser {
 
     return order.map(id => {
       const t = tasks.get(id)!;
-      return makeTodo(t.content, t.activeForm, t.status, t.startedAt, t.completedAt);
+      return makeTodo(t.content, t.activeForm, t.status, t.startedAt, t.completedAt, t.sourceLine);
     });
   }
 

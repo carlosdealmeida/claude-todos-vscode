@@ -8,6 +8,8 @@ export interface Todo {
   activeForm: string;
   startedAt?: number;    // epoch ms — 1ª vez observada in_progress
   completedAt?: number;  // epoch ms — 1ª vez observada completed
+  sourceLine?: number;   // linha (0-based) no transcript DO AGENTE onde a task
+                         // atingiu o status atual; ausente se não determinável
 }
 
 export interface AgentTodos {

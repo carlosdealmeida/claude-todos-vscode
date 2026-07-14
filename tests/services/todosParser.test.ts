@@ -516,6 +516,49 @@ describe('TodosParser', () => {
     });
   });
 
+  describe('sourceLine (todos clicáveis)', () => {
+    it('points to the line of the LAST status transition (TodoWrite)', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'pending' }], { timestamp: '2026-06-12T10:00:00.000Z' }),     // linha 0
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'in_progress' }], { timestamp: '2026-06-12T10:01:00.000Z' }), // linha 1
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'completed' }], { timestamp: '2026-06-12T10:02:00.000Z' }),   // linha 2
+      ]);
+      expect(parser.listForSession('s1', CWD)[0].todos[0].sourceLine).toBe(2);
+    });
+
+    it('keeps the transition line when later snapshots repeat the status', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'in_progress' }], { timestamp: '2026-06-12T10:00:00.000Z' }), // linha 0 (transição)
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'in_progress' }], { timestamp: '2026-06-12T10:05:00.000Z' }), // linha 1 (repete)
+      ]);
+      expect(parser.listForSession('s1', CWD)[0].todos[0].sourceLine).toBe(0);
+    });
+
+    it('reused content in a new round points to the new round', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'x', activeForm: 'X', status: 'in_progress' }], { timestamp: '2026-06-12T10:00:00.000Z' }), // linha 0
+        todoWriteEntry([{ content: 'x', activeForm: 'X', status: 'completed' }], { timestamp: '2026-06-12T10:01:00.000Z' }),   // linha 1
+        todoWriteEntry([{ content: 'x', activeForm: 'X', status: 'in_progress' }], { timestamp: '2026-06-12T10:10:00.000Z' }), // linha 2 (reabre)
+      ]);
+      expect(parser.listForSession('s1', CWD)[0].todos[0].sourceLine).toBe(2);
+    });
+
+    it('is undefined when snapshots have no timestamp', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'in_progress' }]),
+      ]);
+      expect(parser.listForSession('s1', CWD)[0].todos[0].sourceLine).toBeUndefined();
+    });
+
+    it('pending task keeps the line where it entered the list (TodoWrite)', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'pending' }], { timestamp: '2026-06-12T10:00:00.000Z' }), // linha 0 (nova)
+        todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'pending' }], { timestamp: '2026-06-12T10:01:00.000Z' }), // linha 1 (repete)
+      ]);
+      expect(parser.listForSession('s1', CWD)[0].todos[0].sourceLine).toBe(0);
+    });
+  });
+
   describe('TaskCreate/TaskUpdate schema (AGENT_TEAMS)', () => {
     it('reconstructs todos from a stream of TaskCreate calls (all pending)', () => {
       writeTranscript('s1', CWD, [
@@ -529,9 +572,9 @@ describe('TodosParser', () => {
       const agents = parser.listForSession('s1', CWD);
       expect(agents).toHaveLength(1);
       expect(agents[0].todos).toEqual([
-        { content: 'first task', activeForm: 'Doing first', status: 'pending' },
-        { content: 'second task', activeForm: 'Doing second', status: 'pending' },
-        { content: 'third task', activeForm: 'Doing third', status: 'pending' },
+        { content: 'first task', activeForm: 'Doing first', status: 'pending', sourceLine: 0 },
+        { content: 'second task', activeForm: 'Doing second', status: 'pending', sourceLine: 2 },
+        { content: 'third task', activeForm: 'Doing third', status: 'pending', sourceLine: 4 },
       ]);
     });
 
@@ -547,8 +590,8 @@ describe('TodosParser', () => {
       ]);
       const agents = parser.listForSession('s1', CWD);
       expect(agents[0].todos).toEqual([
-        { content: 'a', activeForm: 'A', status: 'completed' },
-        { content: 'b', activeForm: 'B', status: 'in_progress' },
+        { content: 'a', activeForm: 'A', status: 'completed', sourceLine: 5 },
+        { content: 'b', activeForm: 'B', status: 'in_progress', sourceLine: 6 },
       ]);
     });
 
@@ -567,7 +610,7 @@ describe('TodosParser', () => {
       ]);
       const agents = parser.listForSession('s1', CWD);
       expect(agents[0].todos).toEqual([
-        { content: 'only task', activeForm: 'Only', status: 'completed' },
+        { content: 'only task', activeForm: 'Only', status: 'completed', sourceLine: 2 },
       ]);
     });
 
@@ -579,7 +622,7 @@ describe('TodosParser', () => {
       ]);
       const agents = parser.listForSession('s1', CWD);
       expect(agents[0].todos).toEqual([
-        { content: 'a', activeForm: 'A', status: 'pending' },
+        { content: 'a', activeForm: 'A', status: 'pending', sourceLine: 0 },
       ]);
     });
 
@@ -604,7 +647,7 @@ describe('TodosParser', () => {
       expect(agents).toHaveLength(1);
       expect(agents[0].isMain).toBe(true);
       expect(agents[0].todos).toEqual([
-        { content: 'main task', activeForm: 'Doing main', status: 'pending' },
+        { content: 'main task', activeForm: 'Doing main', status: 'pending', sourceLine: 0 },
       ]);
     });
 
@@ -617,7 +660,7 @@ describe('TodosParser', () => {
       ]);
       const agents = parser.listForSession('s1', CWD);
       expect(agents[0].todos).toEqual([
-        { content: 'new schema', activeForm: 'New', status: 'pending' },
+        { content: 'new schema', activeForm: 'New', status: 'pending', sourceLine: 1 },
       ]);
     });
 
@@ -677,7 +720,7 @@ describe('TodosParser', () => {
       const subAgent = agents.find(a => a.name === 'subagent-x');
       expect(subAgent).toBeDefined();
       expect(subAgent!.todos).toEqual([
-        { content: 'sub item', activeForm: 'Doing sub item', status: 'in_progress' },
+        { content: 'sub item', activeForm: 'Doing sub item', status: 'in_progress', sourceLine: 3 },
       ]);
     });
   });
