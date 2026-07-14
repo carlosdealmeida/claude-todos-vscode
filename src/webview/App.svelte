@@ -2,6 +2,7 @@
   import { todosStore } from './stores.svelte';
   import EmptyState from './lib/EmptyState.svelte';
   import UsageTable from './lib/UsageTable.svelte';
+  import ProjectUsageSection from './lib/ProjectUsageSection.svelte';
   import Icon from './lib/Icon.svelte';
   import AgentTree from './lib/AgentTree.svelte';
   import { buildTree, isHistory } from './tree';
@@ -32,6 +33,7 @@
     {#if snapshot.usage}
       <UsageTable usage={snapshot.usage} />
     {/if}
+    <ProjectUsageSection />
     {#if snapshot.agents.length > 0}
       <div class="agents">
         {#each buildTree(snapshot.agents) as root (root.agent.agentId)}

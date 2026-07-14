@@ -183,13 +183,14 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   [EclipseFdn/open-vsx.org](https://github.com/EclipseFdn/open-vsx.org/issues) — não afeta a
   instalação.
 
-### 16. Dashboard de uso/custo agregado (projeto/semana) 🔍 a investigar
+### 16. Dashboard de uso/custo agregado (projeto/semana) 🚧 implementado — aguardando release 0.11.0
 - **Origem:** o sucesso do `ccusage` (CLI que lê os mesmos JSONL) prova a demanda por visão
   agregada de tokens/custo.
 - **Ideia:** aba/comando "esta semana neste projeto": N sessões, tokens por modelo, % de cache
   reaproveitado. Reaproveita o `usageParser` inteiro; o novo é a agregação multi-sessão.
 - **Tensão:** mesma do item 8 — manter o escopo-por-workspace como default; agregado além do
   projeto atual só se for opt-in.
+- **Status (2026-07):** implementado — spec: [docs/specs/2026-07-14-project-usage-dashboard-design.md](specs/2026-07-14-project-usage-dashboard-design.md) · plano: [docs/plans/2026-07-14-project-usage.md](plans/2026-07-14-project-usage.md). Bloco "Últimos 7 dias · este projeto" colapsável no painel (N sessões, tokens por modelo, cache agregado), agregação lazy com memo por arquivo, protocolo dedicado sem tocar o snapshot. Falta: release 0.11.0.
 
 ### 17. Agent teams: dono por task 🔍 aguardar schema estabilizar
 - **Origem:** o schema `TaskCreate`/`TaskUpdate` que já suportamos é a fundação do modo teams
