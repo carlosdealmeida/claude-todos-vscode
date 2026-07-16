@@ -70,17 +70,19 @@ de tokens do 0.3.0).
   sessão morta pinada segue mostrando `in_progress` até o usuário voltar para "Auto". É UX
   intencional; endurecer só se houver pedido.
 
-### 5. Seletor de sessão melhor: vivas/ativas, atalhos, sem corte 📐 a planejar
+### 5. Seletor de sessão melhor: vivas/ativas, atalhos, sem corte 🚧 (d)+(b) implementadas
 - **Issues:** [#28147](https://github.com/anthropics/claude-code/issues/28147) (`NOT_PLANNED`, `keybindings`) indicadores de atividade + atalhos · [#24435](https://github.com/anthropics/claude-code/issues/24435) (`NOT_PLANNED`) picker corta em ~8 sessões mais recentes · [#23275](https://github.com/anthropics/claude-code/issues/23275) (`NOT_PLANNED`) nomear sessões
-- **Status:** 📐 investigado (2026-07-15) — viável; fatiar em 4 sub-features com esforços distintos.
+- **Status:** 📐 investigado (2026-07-15); fatias (d)+(b) 🚧 implementadas (2026-07-15) —
+  aguardando release 0.13.0. Restam (a) e (c).
 - **Achados:**
   - **(b) não cortar lista:** ✅ já não cortamos — `listSessions()` não tem limite
     ([snapshotService.ts:19-33](../src/services/snapshotService.ts#L19)); o corte em ~8 é do
-    picker nativo do Claude Code. Bônus de higiene: `BridgeFile.prune()` existe mas **nunca é
-    chamado** ([bridgeFile.ts:41-45](../src/services/bridgeFile.ts#L41)) — chamar no `activate`.
-  - **(d) atalho/comando para alternar sessão:** esforço **baixo** — `pickSession` hoje só é
-    acessível pelo botão do webview; não é comando registrado. Registrar
-    `claudeTodos.pickSession` + keybinding expõe na Paleta de graça.
+    picker nativo do Claude Code. **Entregue junto:** `BridgeFile.prune(30d)` agora é chamado
+    no `activate` (era órfão) e virou no-op quando não há nada a remover (encolhe a janela do
+    lost-update R1a).
+  - **(d) atalho/comando para alternar sessão:** ✅ implementado — comando
+    `claudeTodos.pickSession` registrado (Paleta) + keybinding `Ctrl+Alt+S` / `Cmd+Alt+S`;
+    antes o picker só existia no botão do webview.
   - **(a) marcar sessões vivas:** esforço **médio** — `terminalPid` já é gravado no bridge mas
     nada checa liveness (`process.kill(pid, 0)` + cruzar `startedAt` contra PID reuse); expor
     `alive` no `SessionSummary` e usar ícone/`detail` no picker.
@@ -119,21 +121,22 @@ de tokens do 0.3.0).
   - Listener de mudança de `display language` propaga o locale ao webview via `pushLocale`; store derivado no Svelte reage sem reload.
 - **Caveat — Paleta de Comandos:** os títulos de comando exibidos na Paleta (`Ctrl+Shift+P`) seguem **exclusivamente** o idioma de exibição do VS Code; o override `claudeTodos.language` não os afeta. É uma limitação do VS Code: os `package.nls.*` são resolvidos na inicialização pelo host, sem acesso a settings da extensão.
 
-### 6. Tokens por sub-agent (sessão + semanal) — 6a ✅ · 6b 📐
+### 6. Tokens por sub-agent (sessão + semanal) — 6a ✅ · 6b 🚧 implementado
 - **Issue:** [#59412](https://github.com/anthropics/claude-code/issues/59412) — labels `area:cost`, `area:agent-view`
-- **Status:** investigado (2026-07-15) — metade resolvida pelas 0.9.0/0.11.0; resta uma entrega pequena.
+- **Status:** 6a já coberto pelas 0.9.0/0.11.0; 6b 🚧 implementado (2026-07-15) — aguardando
+  release 0.13.0.
 - **6a — por sub-agent na sessão: ✅ resolvido.** A árvore (0.9.0) mostra o total por nó
   ([AgentTree.svelte:25](../src/webview/lib/AgentTree.svelte#L25)) e a `UsageTable` tem o
   toggle "por agente" com breakdown input/output/cache por modelo
   ([UsageTable.svelte:74-86](../src/webview/lib/UsageTable.svelte#L74)). A atribuição é
   correta: o main pula entradas `isSidechain`; sub-agents vêm dos próprios `agent-*.jsonl`
   ([usageParser.ts:98-128](../src/services/usageParser.ts#L98)).
-- **6b — agregado semanal por tipo de agente: 📐 aberto, barato.** O dashboard 7 dias já
-  **varre** os `agent-*.jsonl` ([projectUsageService.ts:58-74](../src/services/projectUsageService.ts#L58)),
-  mas colapsa tudo em `byModel` e ignora os `.meta.json`. Fechar = ler o `agentType` do meta
-  ao lado de cada arquivo + dimensão `byAgentType` no acumulador/`ProjectUsage` + agrupamento
-  na `ProjectUsageSection`. O memo por arquivo continua válido. Eixo por `agentType` (não por
-  `agentId`, que é efêmero por sessão). Esforço baixo/médio.
+- **6b — agregado semanal por tipo de agente: 🚧 implementado (2026-07-15).**
+  `ProjectUsage.byAgentType` (baldes `main` / `agentType` do meta.json / `subagent` quando o
+  meta falta, ordenados por total) somado no mesmo scan do dashboard; `agentType` memoizado
+  junto do parse por arquivo. Toggle "por tipo de agente" na `ProjectUsageSection`, no padrão
+  da `UsageTable`. Eixo por `agentType` (não por `agentId`, efêmero por sessão), como
+  planejado. Falta: release 0.13.0.
 
 ### 7. Deep linking `vscode://` para abrir uma sessão/todo ⏸️ adiado
 - **Issue:** [#10366](https://github.com/anthropics/claude-code/issues/10366) (`NOT_PLANNED`) — labels `area:core`, `area:ide`
@@ -160,9 +163,15 @@ de tokens do 0.3.0).
   privacidade (duas janelas nunca veem os todos uma da outra). Se entrar, tem que ser opt-in
   explícito e bem isolado. Decidir posicionamento antes de planejar.
 
-### 9. Multi-root: escolher a pasta ativa 📐 a planejar
+### 9. Multi-root: escolher a pasta ativa 🚧 implementado
 - **Issues:** [#58044](https://github.com/anthropics/claude-code/issues/58044) sem como selecionar a pasta ativa · [#36949](https://github.com/anthropics/claude-code/issues/36949) setting `workingDirectory` · [#12808](https://github.com/anthropics/claude-code/issues/12808) (20c) "sempre começa na primeira pasta" · [#18814](https://github.com/anthropics/claude-code/issues/18814) (`NOT_PLANNED`)
-- **Status:** 📐 investigado (2026-07-15) — mais barato do que parecia; o acoplamento é pontual.
+- **Status:** 🚧 implementado (2026-07-15) — aguardando release 0.13.0. Spec:
+  [docs/specs/2026-07-15-multi-root-design.md](specs/2026-07-15-multi-root-design.md) · plano:
+  [docs/plans/2026-07-15-multi-root.md](plans/2026-07-15-multi-root.md). O painel segue a
+  sessão mais ativa (mtime) entre **todas** as pastas do workspace; setting
+  `claudeTodos.activeFolder` fixa uma pasta; picker desambigua com o basename da pasta;
+  `openTodoSource` e o dashboard 7 dias resolvem a cwd pela sessão exibida. READMEs
+  atualizados (limitação nº 1 removida).
 - **Achados:** só **3 pontos** de produção dependem de `workspaceFolders[0]`, todos em
   `extension.ts` (callback do `SessionResolver` [L63-66](../src/extension.ts#L63), handler do
   `projectUsage` [L159-160](../src/extension.ts#L159), `openTodoSource` [L228](../src/extension.ts#L228)).
