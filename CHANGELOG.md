@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.0] - 2026-07-16
+
+### Added
+- **Stale-list hint.** When the main agent stops updating its task list for 5+ minutes while sub-agents are still running, a subtle note under the main agent's header says how long the list has been static ("list not updated for 17m"), with a tooltip explaining that actual progress may be in the sub-agent cards below. The panel stays a faithful mirror of the transcript — nothing is hidden or "corrected". Powered by a new `todosUpdatedAt` field extracted from the transcript (timestamp of the last `TodoWrite` snapshot, or the newest `TaskCreate`/`TaskUpdate` event); old transcripts without timestamps simply never show the hint. Roadmap item 19, born from a real session where an orchestrator created 8 tasks and delegated everything without ever updating the list.
+- **Getting-started walkthrough.** A native VS Code walkthrough ("Get started with Claude Todos") guides new users through the five steps that matter: install the session hook, start a Claude Code session, open the panel (`Ctrl+Alt+T`), choose the session (`Ctrl+Alt+S`) and explore the agent tree + usage dashboard. Command steps complete automatically when the command runs. Localized in en/pt-br/es.
+
+### Changed
+- **README repositioned around agent observability.** All three READMEs (pt/en/es) now lead with what the extension actually shows — live agent tree, per-task timings, tokens/context/cache, 7-day dashboard, notifications, clickable tasks — instead of only the todo list. Install section organized per editor (VS Code → Marketplace; Cursor/Windsurf/VSCodium → Open VSX; `.vsix` fallback), dynamic version badges for both marketplaces, and the commands/settings tables are finally complete. Marketplace listing updated accordingly (description + new keywords: observability, monitoring, token usage, dashboard, multi-agent).
+
 ## [0.13.0] - 2026-07-16
 
 ### Added
