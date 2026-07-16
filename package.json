@@ -91,6 +91,69 @@
         "mac": "cmd+alt+s"
       }
     ],
+    "walkthroughs": [
+      {
+        "id": "claudeTodos.gettingStarted",
+        "title": "%walkthrough.title%",
+        "description": "%walkthrough.description%",
+        "steps": [
+          {
+            "id": "installHook",
+            "title": "%walkthrough.installHook.title%",
+            "description": "%walkthrough.installHook.description%",
+            "media": {
+              "svg": "media/icon.svg",
+              "altText": "Claude Todos"
+            },
+            "completionEvents": [
+              "onCommand:claudeTodos.installHook"
+            ]
+          },
+          {
+            "id": "startSession",
+            "title": "%walkthrough.startSession.title%",
+            "description": "%walkthrough.startSession.description%",
+            "media": {
+              "svg": "media/icon.svg",
+              "altText": "Claude Todos"
+            }
+          },
+          {
+            "id": "openPanel",
+            "title": "%walkthrough.openPanel.title%",
+            "description": "%walkthrough.openPanel.description%",
+            "media": {
+              "svg": "media/icon.svg",
+              "altText": "Claude Todos"
+            },
+            "completionEvents": [
+              "onCommand:claudeTodos.openPanel"
+            ]
+          },
+          {
+            "id": "pickSession",
+            "title": "%walkthrough.pickSession.title%",
+            "description": "%walkthrough.pickSession.description%",
+            "media": {
+              "svg": "media/icon.svg",
+              "altText": "Claude Todos"
+            },
+            "completionEvents": [
+              "onCommand:claudeTodos.pickSession"
+            ]
+          },
+          {
+            "id": "explore",
+            "title": "%walkthrough.explore.title%",
+            "description": "%walkthrough.explore.description%",
+            "media": {
+              "svg": "media/icon.svg",
+              "altText": "Claude Todos"
+            }
+          }
+        ]
+      }
+    ],
     "configuration": {
       "title": "Claude Todos",
       "properties": {

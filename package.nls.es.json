@@ -13,5 +13,17 @@
   "config.language.ptBr": "Portugués (Brasil)",
   "config.language.es": "Español",
   "config.notifications.description": "Notifica cuando la sesión seguida queda inactiva tras un período de actividad, o completa todas las tareas (solo con la ventana de VS Code sin foco).",
-  "config.activeFolder.description": "Solo multi-root: nombre (o ruta absoluta) de la carpeta del workspace a seguir. Vacío = seguir la sesión más activa entre todas las carpetas."
+  "config.activeFolder.description": "Solo multi-root: nombre (o ruta absoluta) de la carpeta del workspace a seguir. Vacío = seguir la sesión más activa entre todas las carpetas.",
+  "walkthrough.title": "Empieza con Claude Todos",
+  "walkthrough.description": "Observability en vivo de tus agentes Claude Code — configura el hook de sesión y explora el panel.",
+  "walkthrough.installHook.title": "Instala el hook de sesión",
+  "walkthrough.installHook.description": "El hook le indica al panel qué sesión de Claude Code pertenece a este workspace. Agrega dos entradas en ~/.claude/settings.json; los hooks y ajustes existentes se preservan.\n[Instalar Hook](command:claudeTodos.installHook)",
+  "walkthrough.startSession.title": "Inicia una sesión de Claude Code",
+  "walkthrough.startSession.description": "Ejecuta ``claude`` en cualquier terminal — integrado o externo — en la carpeta de este workspace. Las sesiones que ya estaban corriendo se detectan con el próximo mensaje que les envíes.",
+  "walkthrough.openPanel.title": "Abre el panel",
+  "walkthrough.openPanel.description": "Tareas, agentes y uso de tokens se actualizan en vivo mientras el agente trabaja.\n[Abrir Panel](command:claudeTodos.openPanel)\nConsejo: ``Ctrl+Alt+T`` (``Cmd+Alt+T`` en macOS).",
+  "walkthrough.pickSession.title": "Elige la sesión",
+  "walkthrough.pickSession.description": "El panel sigue la sesión más activa automáticamente — fija una específica cuando quieras.\n[Elegir Sesión](command:claudeTodos.pickSession)\nConsejo: ``Ctrl+Alt+S`` (``Cmd+Alt+S`` en macOS).",
+  "walkthrough.explore.title": "Explora el árbol de agentes y el uso",
+  "walkthrough.explore.description": "Expande los subagentes para ver agentes anidados, tiempo por tarea y tokens por agente. El bloque \"Últimos 7 días\" agrega el uso del proyecto por modelo y por tipo de agente."
 }

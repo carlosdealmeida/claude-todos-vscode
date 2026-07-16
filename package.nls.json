@@ -13,5 +13,17 @@
   "config.language.ptBr": "Portuguese (Brazil)",
   "config.language.es": "Spanish",
   "config.notifications.description": "Show a notification when the tracked session goes idle after activity, or completes all tasks (only while the VS Code window is unfocused).",
-  "config.activeFolder.description": "Multi-root only: name (or absolute path) of the workspace folder to track. Empty = follow the most recently active session across all folders."
+  "config.activeFolder.description": "Multi-root only: name (or absolute path) of the workspace folder to track. Empty = follow the most recently active session across all folders.",
+  "walkthrough.title": "Get started with Claude Todos",
+  "walkthrough.description": "Live observability for your Claude Code agents — set up the session hook and explore the panel.",
+  "walkthrough.installHook.title": "Install the session hook",
+  "walkthrough.installHook.description": "The hook tells the panel which Claude Code session belongs to this workspace. It adds two entries to ~/.claude/settings.json; existing hooks and settings are preserved.\n[Install Hook](command:claudeTodos.installHook)",
+  "walkthrough.startSession.title": "Start a Claude Code session",
+  "walkthrough.startSession.description": "Run ``claude`` in any terminal — integrated or external — inside this workspace's folder. Sessions that were already running are detected on the next message you send them.",
+  "walkthrough.openPanel.title": "Open the panel",
+  "walkthrough.openPanel.description": "Tasks, agents and token usage update live as the agent works.\n[Open Panel](command:claudeTodos.openPanel)\nTip: ``Ctrl+Alt+T`` (``Cmd+Alt+T`` on macOS).",
+  "walkthrough.pickSession.title": "Choose the session",
+  "walkthrough.pickSession.description": "The panel follows the most active session automatically — pin a specific one whenever you want.\n[Choose Session](command:claudeTodos.pickSession)\nTip: ``Ctrl+Alt+S`` (``Cmd+Alt+S`` on macOS).",
+  "walkthrough.explore.title": "Explore the agent tree and usage",
+  "walkthrough.explore.description": "Expand sub-agents to see nested agents, per-task timing and per-agent tokens. The \"Last 7 days\" block aggregates project usage by model and by agent type."
 }
