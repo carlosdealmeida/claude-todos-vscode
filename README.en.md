@@ -76,7 +76,7 @@ To run the extension in a development host: open the folder in VSCode and press 
 
 ## Known limitations
 
-- Multi-root workspaces use only the first folder.
+- Multi-root workspaces: the panel follows the most recently active session across all folders; use the `claudeTodos.activeFolder` setting to pin one folder.
 - The hook script must be reachable from the path stored in `~/.claude/settings.json`. If you delete the extension manually without uninstalling, those hook commands stay behind as no-ops — remove them by hand or reinstall and use `Claude Todos: Install Session Hook` again.
 
 ## Contributing

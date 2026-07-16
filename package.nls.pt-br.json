@@ -11,5 +11,6 @@
   "config.language.en": "Inglês",
   "config.language.ptBr": "Português (Brasil)",
   "config.language.es": "Espanhol",
-  "config.notifications.description": "Notifica quando a sessão acompanhada fica ociosa após um período de atividade, ou completa todas as tasks (somente com a janela do VS Code sem foco)."
+  "config.notifications.description": "Notifica quando a sessão acompanhada fica ociosa após um período de atividade, ou completa todas as tasks (somente com a janela do VS Code sem foco).",
+  "config.activeFolder.description": "Somente multi-root: nome (ou caminho absoluto) da pasta do workspace a acompanhar. Vazio = seguir a sessão mais ativa entre todas as pastas."
 }

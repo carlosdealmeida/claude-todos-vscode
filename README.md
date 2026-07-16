@@ -76,7 +76,7 @@ Para rodar a extensão em um host de desenvolvimento: abra a pasta no VSCode e p
 
 ## Limitações conhecidas
 
-- Workspaces multi-root usam apenas a primeira pasta.
+- Workspaces multi-root: o painel segue a sessão mais ativa entre todas as pastas; use o setting `claudeTodos.activeFolder` para fixar uma pasta.
 - O script de hook precisa estar acessível pelo caminho armazenado em `~/.claude/settings.json`. Se você apagar a extensão manualmente sem desinstalá-la, esses comandos de hook permanecem como no-ops — remova-os à mão ou reinstale e use `Claude Todos: Install Session Hook` novamente.
 
 ## Contribuindo

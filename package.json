@@ -116,6 +116,11 @@
           "type": "boolean",
           "default": true,
           "description": "%config.notifications.description%"
+        },
+        "claudeTodos.activeFolder": {
+          "type": "string",
+          "default": "",
+          "description": "%config.activeFolder.description%"
         }
       }
     }

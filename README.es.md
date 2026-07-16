@@ -76,7 +76,7 @@ Para ejecutar la extensión en un host de desarrollo: abre la carpeta en VSCode 
 
 ## Limitaciones conocidas
 
-- Los workspaces multi-raíz solo usan la primera carpeta.
+- Workspaces multi-raíz: el panel sigue la sesión más activa entre todas las carpetas; usa el setting `claudeTodos.activeFolder` para fijar una carpeta.
 - El script de hook debe ser alcanzable desde la ruta guardada en `~/.claude/settings.json`. Si borras la extensión manualmente sin desinstalarla, esos comandos de hook quedan como no-ops — elimínalos a mano o reinstala y usa `Claude Todos: Install Session Hook` de nuevo.
 
 ## Contribuir

@@ -11,5 +11,6 @@
   "config.language.en": "English",
   "config.language.ptBr": "Portuguese (Brazil)",
   "config.language.es": "Spanish",
-  "config.notifications.description": "Show a notification when the tracked session goes idle after activity, or completes all tasks (only while the VS Code window is unfocused)."
+  "config.notifications.description": "Show a notification when the tracked session goes idle after activity, or completes all tasks (only while the VS Code window is unfocused).",
+  "config.activeFolder.description": "Multi-root only: name (or absolute path) of the workspace folder to track. Empty = follow the most recently active session across all folders."
 }
