@@ -17,6 +17,7 @@ import { createT } from './i18n/t';
 import { resolveLocale } from './localeResolver';
 import { SessionNotifier, type NotificationKind } from './services/sessionNotifier';
 import { transcriptPath, subAgentsDir, SAFE_SESSION_ID } from './services/transcriptPaths';
+import { pickWorkspaceCwds } from './services/workspaceFolders';
 
 const HOOK_EVENTS: HookEvent[] = ['SessionStart', 'UserPromptSubmit'];
 const SEVEN_DAYS_MS = 7 * 24 * 3600 * 1000;
@@ -60,10 +61,11 @@ export function activate(context: vscode.ExtensionContext): void {
   const parser = new TodosParser(claudeDir);
   const usageParser = new UsageParser(claudeDir);
   const projectUsageService = new ProjectUsageService(claudeDir);
-  const resolver = new SessionResolver(bridge, () => {
-    const folders = vscode.workspace.workspaceFolders;
-    return folders?.[0]?.uri.fsPath ?? null;
-  });
+  const workspaceCwds = (): string[] => pickWorkspaceCwds(
+    (vscode.workspace.workspaceFolders ?? []).map(f => ({ name: f.name, fsPath: f.uri.fsPath })),
+    vscode.workspace.getConfiguration('claudeTodos').get<string>('activeFolder', ''),
+  );
+  const resolver = new SessionResolver(bridge, workspaceCwds);
   const snapshotService = new SnapshotService(resolver, parser, usageParser);
   snapshotService.setPinnedSession(context.workspaceState.get<string | null>('pinnedSessionId', null));
   const watcher = new TodosWatcher(claudeDir);
@@ -130,11 +132,15 @@ export function activate(context: vscode.ExtensionContext): void {
   const showSessionPicker = async (): Promise<void> => {
     const t = createT(resolveLocale());
     const sessions = snapshotService.listSessions();
+    // Em multi-root, o basename da pasta desambigua sessões de pastas distintas.
+    const multiRoot = workspaceCwds().length > 1;
     const items: SessionPickItem[] = [
       { label: t('picker.auto'), description: t('picker.autoDesc'), sessionId: null },
       ...sessions.map(s => ({
         label: s.title,
-        description: `${s.sessionId.slice(0, 8)} · ${relativeTime(s.updatedAt, t)}`,
+        description: multiRoot
+          ? `${s.sessionId.slice(0, 8)} · ${path.basename(s.cwd)} · ${relativeTime(s.updatedAt, t)}`
+          : `${s.sessionId.slice(0, 8)} · ${relativeTime(s.updatedAt, t)}`,
         sessionId: s.sessionId,
       })),
     ];
@@ -156,13 +162,15 @@ export function activate(context: vscode.ExtensionContext): void {
       viewProvider.pushSnapshot();
       panelProvider.pushSnapshot();
     } else if (msg.type === 'projectUsage') {
-      const folders = vscode.workspace.workspaceFolders;
-      const cwd = folders?.[0]?.uri.fsPath ?? null;
+      // Segue a pasta da sessão exibida — painel e dashboard sempre na mesma pasta.
+      const cwd = snapshotService.activeCwd() ?? workspaceCwds()[0] ?? null;
       const usage = cwd ? projectUsageService.usageForProject(cwd, Date.now() - SEVEN_DAYS_MS) : null;
       viewProvider.pushProjectUsage(usage);
       panelProvider.pushProjectUsage(usage);
     } else if (msg.type === 'openTodoSource') {
-      void openTodoSource(claudeDir, msg);
+      const cwd = snapshotService.listSessions()
+        .find(s => s.sessionId === msg.sessionId)?.cwd ?? null;
+      void openTodoSource(claudeDir, cwd, msg);
     } else if (msg.type === 'pickSession') {
       void showSessionPicker();
     }
@@ -196,6 +204,11 @@ export function activate(context: vscode.ExtensionContext): void {
         viewProvider.pushLocale();
         panelProvider.pushLocale();
       }
+      if (e.affectsConfiguration('claudeTodos.activeFolder')) {
+        viewProvider.pushSnapshot();
+        panelProvider.pushSnapshot();
+        observeSession();
+      }
     }),
   );
 
@@ -217,15 +230,16 @@ export function activate(context: vscode.ExtensionContext): void {
 
 // Abre o transcript do agente no editor, com a linha da mensagem selecionada.
 // agentId igual ao sessionId = main agent (transcript principal); qualquer
-// outro = sub-agent (agent-<id>.jsonl). Ids fora do padrão seguro são
-// ignorados (defesa contra path traversal). Linha além do fim do arquivo:
-// o VS Code posiciona no fim — aceitável (transcripts são append-only).
+// outro = sub-agent (agent-<id>.jsonl). A cwd vem da sessão (bridge), não da
+// pasta [0] — em multi-root abre o transcript da pasta certa. Ids fora do
+// padrão seguro são ignorados (defesa contra path traversal). Linha além do
+// fim do arquivo: o VS Code posiciona no fim — aceitável (append-only).
 async function openTodoSource(
   claudeDir: string,
+  cwd: string | null,
   msg: { sessionId: string; agentId: string; line: number },
 ): Promise<void> {
   if (!SAFE_SESSION_ID.test(msg.agentId)) return;
-  const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (!cwd) return;
 
   let filePath: string | null = null;

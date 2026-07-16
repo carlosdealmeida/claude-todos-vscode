@@ -133,6 +133,38 @@ describe('SnapshotService', () => {
     ]);
   });
 
+  it('activeCwd returns the cwd of the session that would be displayed', () => {
+    const resolver = {
+      resolveCandidates: () => [
+        { cwd: '/work/api', sessionId: 'api-1', terminalPid: null, startedAt: 1 },
+        { cwd: '/work/web', sessionId: 'web-1', terminalPid: null, startedAt: 2 },
+      ],
+    };
+    const parser = makeParser({ mtimes: { 'api-1': 1000, 'web-1': 5000 } });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
+    expect(svc.activeCwd()).toBe('/work/web');
+  });
+
+  it('activeCwd honors the pinned session', () => {
+    const resolver = {
+      resolveCandidates: () => [
+        { cwd: '/work/api', sessionId: 'api-1', terminalPid: null, startedAt: 1 },
+        { cwd: '/work/web', sessionId: 'web-1', terminalPid: null, startedAt: 2 },
+      ],
+    };
+    const parser = makeParser({ mtimes: { 'api-1': 1000, 'web-1': 5000 } });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
+    svc.setPinnedSession('api-1');
+    expect(svc.activeCwd()).toBe('/work/api');
+  });
+
+  it('activeCwd returns null when there is no session', () => {
+    const resolver = { resolveCandidates: () => [] };
+    const parser = makeParser({ mtimes: {} });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
+    expect(svc.activeCwd()).toBeNull();
+  });
+
   it('attaches usage from the usageParser', () => {
     const resolver = {
       resolveCandidates: () => [

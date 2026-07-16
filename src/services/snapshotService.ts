@@ -34,12 +34,8 @@ export class SnapshotService {
 
   build(): SessionSnapshot | null {
     const sessions = this.listSessions();
-    if (sessions.length === 0) return null;
-
-    const pinned = this.pinnedSessionId
-      ? sessions.find(s => s.sessionId === this.pinnedSessionId)
-      : undefined;
-    const chosen = pinned ?? sessions[0];
+    const chosen = this.choose(sessions);
+    if (!chosen) return null;
 
     const agents = this.parser.listForSession(chosen.sessionId, chosen.cwd);
     // Desacopla "tem sessão" de "tem todo": antes de qualquer TodoWrite, ainda
@@ -58,10 +54,23 @@ export class SnapshotService {
       sessionId: chosen.sessionId,
       cwd: chosen.cwd,
       title: chosen.title,
-      pinned: pinned !== undefined,
+      pinned: chosen.sessionId === this.pinnedSessionId,
       agents,
       usage: this.usageParser.usageForSession(chosen.sessionId, chosen.cwd, usageAgents),
     };
+  }
+
+  // cwd da sessão que o painel exibe (pin respeitado) — usada pelo dashboard
+  // de projeto para manter painel e agregado apontando para a mesma pasta.
+  activeCwd(): string | null {
+    return this.choose(this.listSessions())?.cwd ?? null;
+  }
+
+  private choose(sessions: SessionSummary[]): SessionSummary | undefined {
+    const pinned = this.pinnedSessionId
+      ? sessions.find(s => s.sessionId === this.pinnedSessionId)
+      : undefined;
+    return pinned ?? sessions[0];
   }
 
   private resolveTitle(sessionId: string, cwd: string): string {
