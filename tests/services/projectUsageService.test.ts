@@ -55,8 +55,15 @@ describe('ProjectUsageService', () => {
     fs.writeFileSync(path.join(dir, `agent-${agentId}.jsonl`), lines.map(l => JSON.stringify(l)).join('\n'));
   }
 
+  function writeSubAgentMeta(sessionId: string, agentId: string, agentType?: string): void {
+    const dir = path.join(projDir(), sessionId, 'subagents');
+    fs.mkdirSync(dir, { recursive: true });
+    const meta = { toolUseId: `toolu_${agentId}`, ...(agentType ? { agentType } : {}) };
+    fs.writeFileSync(path.join(dir, `agent-${agentId}.meta.json`), JSON.stringify(meta));
+  }
+
   it('returns zeroed usage when the project dir does not exist', () => {
-    expect(service.usageForProject(CWD, SINCE)).toEqual({ sessions: 0, byModel: [] });
+    expect(service.usageForProject(CWD, SINCE)).toEqual({ sessions: 0, byModel: [], byAgentType: [] });
   });
 
   it('aggregates sessions inside the window and ignores older ones', () => {
@@ -111,6 +118,34 @@ describe('ProjectUsageService', () => {
     // mtime novo → invalida e relê
     fs.utimesSync(p, new Date(NOW - 1000), new Date(NOW - 1000));
     expect(service.usageForProject(CWD, SINCE).byModel[0].input).toBe(900);
+  });
+
+  it('byAgentType groups main, typed sub-agents and untyped sub-agents', () => {
+    writeSession('s1', [assistant('claude-opus-4-8', { input: 100, output: 10 })], NOW - 1000);
+    writeSubAgent('s1', 'a1', [assistant('claude-haiku-4-5', { input: 30, output: 3, cacheRead: 70 })]);
+    writeSubAgentMeta('s1', 'a1', 'Explore');
+    writeSubAgent('s1', 'a2', [assistant('claude-haiku-4-5', { input: 5, output: 1 })]);
+    // a2 sem meta.json → balde "subagent"
+    const usage = service.usageForProject(CWD, SINCE);
+    expect(usage.byAgentType).toEqual([
+      { agentType: 'main', input: 100, output: 10, cache: 0 },
+      { agentType: 'Explore', input: 30, output: 3, cache: 70 },
+      { agentType: 'subagent', input: 5, output: 1, cache: 0 },
+    ]);
+  });
+
+  it('byAgentType merges sub-agents of the same type across sessions', () => {
+    writeSession('s1', [assistant('claude-opus-4-8', { input: 10, output: 1 })], NOW - 1000);
+    writeSubAgent('s1', 'a1', [assistant('claude-haiku-4-5', { input: 30, output: 3 })]);
+    writeSubAgentMeta('s1', 'a1', 'Explore');
+    writeSession('s2', [assistant('claude-opus-4-8', { input: 20, output: 2 })], NOW - 2000);
+    writeSubAgent('s2', 'b1', [assistant('claude-haiku-4-5', { input: 40, output: 4 })]);
+    writeSubAgentMeta('s2', 'b1', 'Explore');
+    const usage = service.usageForProject(CWD, SINCE);
+    expect(usage.byAgentType).toEqual([
+      { agentType: 'Explore', input: 70, output: 7, cache: 0 },
+      { agentType: 'main', input: 30, output: 3, cache: 0 },
+    ]);
   });
 
   it('repeated aggregation does not double-count (memo values are not mutated)', () => {

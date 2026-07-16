@@ -57,10 +57,18 @@ export interface SessionUsage {
   cache?: CacheStats;
 }
 
+export interface AgentTypeUsage {
+  agentType: string;  // "main" | agentType do meta.json | "subagent" (meta ausente)
+  input: number;
+  output: number;
+  cache: number;
+}
+
 export interface ProjectUsage {
-  sessions: number;        // sessões com atividade (mtime) na janela
-  byModel: ModelUsage[];   // totais agregados por modelo
-  cache?: CacheStats;      // agregado read/creation/input; undefined se zero
+  sessions: number;              // sessões com atividade (mtime) na janela
+  byModel: ModelUsage[];         // totais agregados por modelo
+  byAgentType: AgentTypeUsage[]; // totais por tipo de agente, maiores primeiro
+  cache?: CacheStats;            // agregado read/creation/input; undefined se zero
 }
 
 export interface SessionSnapshot {

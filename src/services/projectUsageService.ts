@@ -3,13 +3,15 @@ import * as path from 'path';
 import { cwdCandidates } from './transcriptPaths';
 import { encodeCwdToProjectDir } from './projectDir';
 import { readFileUsage } from './usageParser';
-import type { CacheStats, ModelUsage, ProjectUsage } from '../types';
+import { readSubAgentMeta } from './subAgentMeta';
+import type { AgentTypeUsage, CacheStats, ModelUsage, ProjectUsage } from '../types';
 
 interface FileMemo {
   mtimeMs: number;
   size: number;
   models: ModelUsage[];
   cache: CacheStats;
+  agentType: string;
 }
 
 // Agrega o uso de todas as sessões do projeto com atividade na janela.
@@ -23,33 +25,40 @@ export class ProjectUsageService {
 
   usageForProject(cwd: string, sinceMs: number): ProjectUsage {
     const dir = this.projectDir(cwd);
-    if (!dir) return { sessions: 0, byModel: [] };
+    if (!dir) return { sessions: 0, byModel: [], byAgentType: [] };
 
     let files: string[];
     try {
       files = fs.readdirSync(dir).filter(f => f.endsWith('.jsonl'));
     } catch {
-      return { sessions: 0, byModel: [] };
+      return { sessions: 0, byModel: [], byAgentType: [] };
     }
 
     const seen = new Set<string>();
     const byModel = new Map<string, ModelUsage>();
+    const byType = new Map<string, AgentTypeUsage>();
     const cache: CacheStats = { input: 0, read: 0, creation: 0 };
     let sessions = 0;
 
     // Soma um arquivo no acumulador. Os objetos do memo nunca são mutados —
     // os acumuladores são sempre instâncias novas deste scan.
-    const addFile = (filePath: string, skipSidechain: boolean): void => {
-      const usage = this.readCached(filePath, skipSidechain);
+    const addFile = (filePath: string, skipSidechain: boolean, resolveType: () => string): void => {
+      const usage = this.readCached(filePath, skipSidechain, resolveType);
       if (!usage) return;
       seen.add(filePath);
+      const typeAcc = byType.get(usage.agentType)
+        ?? { agentType: usage.agentType, input: 0, output: 0, cache: 0 };
       for (const m of usage.models) {
         const acc = byModel.get(m.model) ?? { model: m.model, input: 0, output: 0, cache: 0 };
         acc.input += m.input;
         acc.output += m.output;
         acc.cache += m.cache;
         byModel.set(m.model, acc);
+        typeAcc.input += m.input;
+        typeAcc.output += m.output;
+        typeAcc.cache += m.cache;
       }
+      if (usage.models.length > 0) byType.set(usage.agentType, typeAcc);
       cache.input += usage.cache.input;
       cache.read += usage.cache.read;
       cache.creation += usage.cache.creation;
@@ -62,7 +71,7 @@ export class ProjectUsageService {
       if (stat.mtimeMs < sinceMs) continue;
       // Sessão qualifica por atividade (mtime), mesmo que ainda não tenha usage.
       sessions++;
-      addFile(mainPath, true);
+      addFile(mainPath, true, () => 'main');
 
       const sessionId = file.slice(0, -'.jsonl'.length);
       const subDir = path.join(dir, sessionId, 'subagents');
@@ -70,7 +79,10 @@ export class ProjectUsageService {
       try {
         subFiles = fs.readdirSync(subDir).filter(f => f.startsWith('agent-') && f.endsWith('.jsonl'));
       } catch { /* sessão sem subagents */ }
-      for (const sub of subFiles) addFile(path.join(subDir, sub), false);
+      for (const sub of subFiles) {
+        const subPath = path.join(subDir, sub);
+        addFile(subPath, false, () => readSubAgentMeta(subPath)?.agentType ?? 'subagent');
+      }
     }
 
     // Poda: arquivos fora da janela ou removidos saem do memo (se voltarem a
@@ -83,20 +95,28 @@ export class ProjectUsageService {
     return {
       sessions,
       byModel: [...byModel.values()],
+      byAgentType: [...byType.values()]
+        .sort((a, b) => (b.input + b.output + b.cache) - (a.input + a.output + a.cache)),
       ...(total > 0 ? { cache } : {}),
     };
   }
 
-  private readCached(filePath: string, skipSidechain: boolean): { models: ModelUsage[]; cache: CacheStats } | null {
+  private readCached(
+    filePath: string,
+    skipSidechain: boolean,
+    resolveType: () => string,
+  ): { models: ModelUsage[]; cache: CacheStats; agentType: string } | null {
     let stat: fs.Stats;
     try { stat = fs.statSync(filePath); } catch { return null; }
     const hit = this.memo.get(filePath);
     if (hit && hit.mtimeMs === stat.mtimeMs && hit.size === stat.size) {
-      return { models: hit.models, cache: hit.cache };
+      return { models: hit.models, cache: hit.cache, agentType: hit.agentType };
     }
-    const usage = readFileUsage(filePath, skipSidechain);
-    this.memo.set(filePath, { mtimeMs: stat.mtimeMs, size: stat.size, ...usage });
-    return usage;
+    // agentType resolvido junto da leitura e memoizado: o meta.json é gravado
+    // no spawn e não muda; evita um readFileSync por sub-agent a cada scan.
+    const entry = { ...readFileUsage(filePath, skipSidechain), agentType: resolveType() };
+    this.memo.set(filePath, { mtimeMs: stat.mtimeMs, size: stat.size, ...entry });
+    return entry;
   }
 
   private projectDir(cwd: string): string | null {

@@ -6,12 +6,20 @@
   import Icon from './Icon.svelte';
 
   let expanded = $state(false);
+  let byType = $state(false);
 
   // Lazy por design: a agregação só roda quando o usuário expande; expandir de
   // novo re-pede (dados frescos — o memo do serviço torna isso barato).
   function toggle(): void {
     expanded = !expanded;
     if (expanded) todosStore.requestProjectUsage();
+  }
+
+  // "main"/"subagent" são baldes sentinela do serviço; tipos reais exibem cru.
+  function typeLabel(agentType: string): string {
+    if (agentType === 'main') return todosStore.t('project.typeMain');
+    if (agentType === 'subagent') return todosStore.t('project.typeUntyped');
+    return agentType;
   }
 
   let usage = $derived(todosStore.projectUsage);
@@ -61,24 +69,40 @@
             <div class="seg new" style="width: {pctOf(cache.input)}%"></div>
           </div>
         {/if}
+        <div class="table-head">
+          <button class="toggle" onclick={() => byType = !byType} aria-pressed={byType}>
+            {byType ? '◂ ' + todosStore.t('usage.byModel') : todosStore.t('project.byAgentType') + ' ▸'}
+          </button>
+        </div>
         <table>
           <thead>
             <tr>
-              <th class="name">{todosStore.t('usage.colModel')}</th>
+              <th class="name">{byType ? todosStore.t('project.colAgentType') : todosStore.t('usage.colModel')}</th>
               <th>{todosStore.t('usage.colInput')}</th>
               <th>{todosStore.t('usage.colOutput')}</th>
               <th>{todosStore.t('usage.cache')}</th>
             </tr>
           </thead>
           <tbody>
-            {#each usage.byModel as m (m.model)}
-              <tr>
-                <td class="name" title={m.model}>{shortModel(m.model)}</td>
-                <td title={String(m.input)}>{formatCompact(m.input)}</td>
-                <td title={String(m.output)}>{formatCompact(m.output)}</td>
-                <td title={String(m.cache)}>{formatCompact(m.cache)}</td>
-              </tr>
-            {/each}
+            {#if byType}
+              {#each usage.byAgentType as a (a.agentType)}
+                <tr>
+                  <td class="name" title={a.agentType}>{typeLabel(a.agentType)}</td>
+                  <td title={String(a.input)}>{formatCompact(a.input)}</td>
+                  <td title={String(a.output)}>{formatCompact(a.output)}</td>
+                  <td title={String(a.cache)}>{formatCompact(a.cache)}</td>
+                </tr>
+              {/each}
+            {:else}
+              {#each usage.byModel as m (m.model)}
+                <tr>
+                  <td class="name" title={m.model}>{shortModel(m.model)}</td>
+                  <td title={String(m.input)}>{formatCompact(m.input)}</td>
+                  <td title={String(m.output)}>{formatCompact(m.output)}</td>
+                  <td title={String(m.cache)}>{formatCompact(m.cache)}</td>
+                </tr>
+              {/each}
+            {/if}
           </tbody>
           <tfoot>
             <tr>
@@ -135,6 +159,18 @@
     font-variant-numeric: tabular-nums;
   }
   .body { padding: 0 var(--sp-2) 0.4rem; }
+  .table-head { display: flex; justify-content: flex-end; margin: 0.1rem 0; }
+  .toggle {
+    background: transparent;
+    border: 1px solid var(--vscode-panel-border);
+    color: inherit;
+    font: inherit;
+    font-size: 0.9em;
+    padding: 0 0.4rem;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .toggle:hover { background: var(--vscode-list-hoverBackground); }
   .note {
     padding: 0.2rem 0 0.3rem;
     color: var(--vscode-descriptionForeground);
