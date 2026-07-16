@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatCompact, shortModel, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone } from '../../src/webview/format';
+import { formatCompact, shortModel, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness } from '../../src/webview/format';
 import type { Todo, TodoStatus, AgentUsage } from '../../src/types';
 
 function todo(status: TodoStatus, startedAt?: number, completedAt?: number): Todo {
@@ -235,5 +235,39 @@ describe('agentTypeTone', () => {
 
   it('maps empty string to neutral', () => {
     expect(agentTypeTone('')).toBe('neutral');
+  });
+});
+
+describe('listStaleness', () => {
+  const NOW = Date.parse('2026-07-16T12:00:00.000Z');
+  const base = {
+    isMain: true,
+    todosUpdatedAt: NOW - 17 * 60_000,
+    todos: [todo('completed'), todo('in_progress')],
+  };
+
+  it('returns the age when every condition holds', () => {
+    expect(listStaleness(base, true, NOW)).toBe(17 * 60_000);
+  });
+
+  it('returns null below the 5-minute threshold', () => {
+    expect(listStaleness({ ...base, todosUpdatedAt: NOW - 4 * 60_000 }, true, NOW)).toBeNull();
+  });
+
+  it('returns null without a running sub-agent', () => {
+    expect(listStaleness(base, false, NOW)).toBeNull();
+  });
+
+  it('returns null for non-main agents', () => {
+    expect(listStaleness({ ...base, isMain: false }, true, NOW)).toBeNull();
+  });
+
+  it('returns null without todosUpdatedAt', () => {
+    expect(listStaleness({ ...base, todosUpdatedAt: undefined }, true, NOW)).toBeNull();
+  });
+
+  it('returns null when the list is empty or fully completed', () => {
+    expect(listStaleness({ ...base, todos: [] }, true, NOW)).toBeNull();
+    expect(listStaleness({ ...base, todos: [todo('completed')] }, true, NOW)).toBeNull();
   });
 });

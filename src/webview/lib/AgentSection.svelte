@@ -3,13 +3,15 @@
   import type { AgentTodos } from '../../types';
   import TodoItem from './TodoItem.svelte';
   import Icon from './Icon.svelte';
-  import { summarizeTiming, formatDuration, completedTaskDurations, formatCompact, agentTypeTone } from '../format';
+  import { summarizeTiming, formatDuration, completedTaskDurations, formatCompact, agentTypeTone, listStaleness } from '../format';
   import { clock } from '../clock.svelte';
   import { todosStore } from '../stores.svelte';
 
-  let { agent, defaultExpanded = true, history = false, tokens = null }:
-    { agent: AgentTodos; defaultExpanded?: boolean; history?: boolean; tokens?: number | null } = $props();
+  let { agent, defaultExpanded = true, history = false, tokens = null, hasRunningSubAgent = false }:
+    { agent: AgentTodos; defaultExpanded?: boolean; history?: boolean; tokens?: number | null; hasRunningSubAgent?: boolean } = $props();
   let expanded = $state(defaultExpanded);
+
+  let stale = $derived(listStaleness(agent, hasRunningSubAgent, clock.now));
 
   let counts = $derived({
     total: agent.todos.length,
@@ -48,6 +50,13 @@
       {#if counts.inProgress > 0}<span class="badge">{todosStore.t('agent.activeBadge', { count: counts.inProgress })}</span>{/if}
     </span>
   </button>
+
+  {#if stale !== null}
+    <div class="stale" title={todosStore.t('todos.staleListHint')}>
+      <Icon name="clock" size={10} />
+      <span>{todosStore.t('todos.staleList', { d: formatDuration(stale) })}</span>
+    </div>
+  {/if}
 
   {#if expanded}
     {#if timing.elapsedMs > 0 || timing.hasEstimate}
@@ -165,6 +174,18 @@
     border-radius: 10px;
     font-size: 0.82em;
     font-weight: 600;
+  }
+  /* Hint de lista defasada: informativo, não alarmante — o painel continua
+     espelho fiel; só sinaliza que o progresso real pode estar nos sub-agents. */
+  .stale {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px var(--sp-3) var(--sp-1);
+    font-size: 0.78em;
+    font-style: italic;
+    color: var(--muted);
+    cursor: help;
   }
   .timing {
     display: flex;

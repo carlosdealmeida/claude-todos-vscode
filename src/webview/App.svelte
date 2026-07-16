@@ -8,6 +8,10 @@
   import { buildTree, isHistory } from './tree';
 
   let snapshot = $derived(todosStore.snapshot);
+  // Alimenta o hint de lista defasada do main (condição cruza agentes).
+  let hasRunningSubAgent = $derived(
+    snapshot?.agents.some(a => !a.isMain && a.status === 'running') ?? false,
+  );
 </script>
 
 <main>
@@ -37,7 +41,7 @@
     {#if snapshot.agents.length > 0}
       <div class="agents">
         {#each buildTree(snapshot.agents) as root (root.agent.agentId)}
-          <AgentTree node={root} usage={snapshot.usage} history={isHistory(root.agent)} />
+          <AgentTree node={root} usage={snapshot.usage} history={isHistory(root.agent)} {hasRunningSubAgent} />
         {/each}
       </div>
     {:else}

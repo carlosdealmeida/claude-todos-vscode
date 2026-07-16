@@ -6,8 +6,8 @@
   import { todosStore } from '../stores.svelte';
   import type { SessionUsage } from '../../types';
 
-  let { node, level = 0, usage, history = false }:
-    { node: AgentNode; level?: number; usage?: SessionUsage; history?: boolean } = $props();
+  let { node, level = 0, usage, history = false, hasRunningSubAgent = false }:
+    { node: AgentNode; level?: number; usage?: SessionUsage; history?: boolean; hasRunningSubAgent?: boolean } = $props();
 
   // Cap de recuo: a partir do 4º nível a árvore achata (o painel é estreito e
   // spawnDepth > 3 é raríssimo).
@@ -23,6 +23,7 @@
   {history}
   defaultExpanded={node.agent.isMain || node.agent.status === 'running'}
   tokens={agentTotalTokens(usage?.byAgent, node.agent.agentId)}
+  {hasRunningSubAgent}
 />
 {#if node.children.length > 0}
   <div class="kids" class:railed={level < 3}>

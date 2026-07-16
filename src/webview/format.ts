@@ -158,3 +158,22 @@ export function agentTypeTone(agentType: string): AgentTypeTone {
   if (t.startsWith('general')) return 'general';
   return 'neutral';
 }
+
+export const STALE_LIST_THRESHOLD_MS = 5 * 60_000;
+
+// Idade (ms) da lista do main quando ela está "defasada": o main não emite um
+// evento de lista há ≥5min ENQUANTO algum sub-agent segue rodando — o progresso
+// real pode estar nos cards dos sub-agents. Null quando qualquer condição falha
+// (inclui lista vazia ou 100% concluída, que não enganam ninguém).
+export function listStaleness(
+  agent: { isMain: boolean; todos: Todo[]; todosUpdatedAt?: number },
+  hasRunningSubAgent: boolean,
+  now: number,
+): number | null {
+  if (!agent.isMain || agent.todosUpdatedAt === undefined) return null;
+  if (agent.todos.length === 0) return null;
+  if (!agent.todos.some(t => t.status !== 'completed')) return null;
+  if (!hasRunningSubAgent) return null;
+  const age = now - agent.todosUpdatedAt;
+  return age >= STALE_LIST_THRESHOLD_MS ? age : null;
+}
