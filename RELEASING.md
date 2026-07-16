@@ -37,11 +37,22 @@ npm version patch    # or minor, major. updates package.json + creates a tag
 $EDITOR CHANGELOG.md
 git add CHANGELOG.md
 git commit --amend --no-edit   # fold the changelog into the version-bump commit
-git tag -f v$(node -p "require('./package.json').version")
+VERSION=$(node -p "require('./package.json').version")
+git tag -fa "v$VERSION" -m "v$VERSION"   # -a matters: see note below
 
 # 3. Push
 git push origin master --follow-tags
+
+# 4. Confirm the tag reached the remote (this is what triggers the workflow)
+git ls-remote --tags origin "v$VERSION"
 ```
+
+> **Why `-fa` and not `-f`:** the amend in step 2 moves the branch, so the tag
+> `npm version` created must be recreated. A plain `git tag -f` produces a
+> *lightweight* tag, and `git push --follow-tags` only pushes *annotated* tags —
+> the tag silently never leaves your machine and the Release workflow never
+> fires (this happened on 0.13.0). `-a` keeps the tag annotated. If step 4
+> prints nothing, push the tag explicitly: `git push origin "v$VERSION"`.
 
 The `Release` workflow will:
 1. Verify the tag matches `package.json` version.
