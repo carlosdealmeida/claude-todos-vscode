@@ -4,18 +4,17 @@ import type { BridgeRecord } from '../types';
 export class SessionResolver {
   constructor(
     private readonly bridge: BridgeFile,
-    private readonly getWorkspaceCwd: () => string | null,
+    private readonly getWorkspaceCwds: () => string[],
   ) {}
 
-  resolve(): BridgeRecord | null {
-    const cwd = this.getWorkspaceCwd();
-    if (!cwd) return null;
-    return this.bridge.latestForCwd(cwd);
-  }
-
+  // União dos registros do bridge de todas as pastas do workspace. Sem
+  // ordenação global aqui: quem escolhe a sessão exibida é o SnapshotService,
+  // por mtime do transcript.
   resolveCandidates(): BridgeRecord[] {
-    const cwd = this.getWorkspaceCwd();
-    if (!cwd) return [];
-    return this.bridge.allForCwd(cwd);
+    const out: BridgeRecord[] = [];
+    for (const cwd of this.getWorkspaceCwds()) {
+      out.push(...this.bridge.allForCwd(cwd));
+    }
+    return out;
   }
 }
