@@ -4,6 +4,7 @@
   "command.openPanel.title": "Claude Todos: Abrir en el Editor",
   "command.installHook.title": "Claude Todos: Instalar Hook de Sesión",
   "command.refresh.title": "Claude Todos: Actualizar",
+  "command.pickSession.title": "Claude Todos: Elegir Sesión",
   "config.claudeDir.description": "Sobrescribe la ruta ~/.claude (vacío = detectar automáticamente)",
   "config.autoInstallHook.description": "Preguntar si se debe instalar el hook de sesión en el primer inicio",
   "config.language.description": "Idioma de la UI del panel Claude Todos. 'auto' sigue el idioma de visualización de VS Code. Nota: los títulos de comando en la Paleta de Comandos siempre siguen el idioma de visualización de VS Code.",

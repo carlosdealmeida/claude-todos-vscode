@@ -21,6 +21,9 @@ import { pickWorkspaceCwds } from './services/workspaceFolders';
 
 const HOOK_EVENTS: HookEvent[] = ['SessionStart', 'UserPromptSubmit'];
 const SEVEN_DAYS_MS = 7 * 24 * 3600 * 1000;
+// Retenção dos registros do bridge. Sessões saem do picker quando o transcript
+// some; isto só remove o lixo acumulado no sessions.json (cap de 200 do hook).
+const BRIDGE_MAX_AGE_MS = 30 * 24 * 3600 * 1000;
 
 // Matches commands pointing at the *versioned* extension directory used in
 // 0.1.x / 0.2.0 (e.g. `.../carlosjunior1992.claude-todos-0.1.0/...`). These
@@ -58,6 +61,7 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   const bridge = new BridgeFile(bridgePath);
+  bridge.prune(BRIDGE_MAX_AGE_MS);
   const parser = new TodosParser(claudeDir);
   const usageParser = new UsageParser(claudeDir);
   const projectUsageService = new ProjectUsageService(claudeDir);
@@ -220,6 +224,9 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand('claudeTodos.installHook', async () => {
       await promptInstallHook(hookInstaller, hookCommand);
+    }),
+    vscode.commands.registerCommand('claudeTodos.pickSession', () => {
+      void showSessionPicker();
     }),
   );
 

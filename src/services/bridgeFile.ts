@@ -38,9 +38,13 @@ export class BridgeFile {
       .sort((a, b) => b.startedAt - a.startedAt);
   }
 
+  // No-op quando não há nada a remover: evita reescrever o arquivo à toa e
+  // encolhe a janela de lost-update com o hook que faz append concorrente.
   prune(maxAgeMs: number): void {
     const cutoff = Date.now() - maxAgeMs;
-    const all = this.readAll().filter(r => r.startedAt >= cutoff);
-    atomicWriteFileSync(this.filePath, JSON.stringify(all, null, 2));
+    const all = this.readAll();
+    const kept = all.filter(r => r.startedAt >= cutoff);
+    if (kept.length === all.length) return;
+    atomicWriteFileSync(this.filePath, JSON.stringify(kept, null, 2));
   }
 }

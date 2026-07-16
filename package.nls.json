@@ -4,6 +4,7 @@
   "command.openPanel.title": "Claude Todos: Open in Editor",
   "command.installHook.title": "Claude Todos: Install Session Hook",
   "command.refresh.title": "Claude Todos: Refresh",
+  "command.pickSession.title": "Claude Todos: Choose Session",
   "config.claudeDir.description": "Override ~/.claude path (empty = auto-detect)",
   "config.autoInstallHook.description": "Prompt to install session hook on first launch",
   "config.language.description": "UI language for the Claude Todos panel. 'auto' follows VS Code's display language. Note: command titles in the Command Palette always follow VS Code's display language.",

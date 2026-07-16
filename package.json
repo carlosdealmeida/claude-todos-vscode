@@ -73,6 +73,10 @@
       {
         "command": "claudeTodos.refresh",
         "title": "%command.refresh.title%"
+      },
+      {
+        "command": "claudeTodos.pickSession",
+        "title": "%command.pickSession.title%"
       }
     ],
     "keybindings": [
@@ -80,6 +84,11 @@
         "command": "claudeTodos.openPanel",
         "key": "ctrl+alt+t",
         "mac": "cmd+alt+t"
+      },
+      {
+        "command": "claudeTodos.pickSession",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s"
       }
     ],
     "configuration": {

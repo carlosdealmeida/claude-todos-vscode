@@ -52,6 +52,22 @@ describe('BridgeFile', () => {
     expect(bridge.readAll()[0].sessionId).toBe('new');
   });
 
+  it('prune does not create the file when it does not exist', () => {
+    bridge.prune(7 * 86400_000);
+    expect(fs.existsSync(bridgePath)).toBe(false);
+  });
+
+  it('prune does not rewrite the file when nothing is stale', () => {
+    // Conteúdo compacto (não pretty-printed): uma reescrita re-serializaria
+    // com indentação e mudaria os bytes — o teste detecta qualquer write.
+    const compact = JSON.stringify([
+      { cwd: '/p', sessionId: 'fresh', terminalPid: 1, startedAt: Date.now() },
+    ]);
+    fs.writeFileSync(bridgePath, compact);
+    bridge.prune(7 * 86400_000);
+    expect(fs.readFileSync(bridgePath, 'utf-8')).toBe(compact);
+  });
+
   it('handles corrupt file by treating as empty', () => {
     fs.writeFileSync(bridgePath, 'not json{{{');
     expect(bridge.readAll()).toEqual([]);
