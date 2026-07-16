@@ -253,12 +253,12 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   do teammate). Deixa a extensão pronta para o hype de swarms antes de todo mundo.
 - **Depende de:** observar transcripts reais de teams para cravar o formato.
 
-### 18. Onboarding walkthrough + reposicionamento do README 🚧 implementado
+### 18. Onboarding walkthrough + reposicionamento do README ✅ ENTREGUE (0.14.0)
 - **Ideia:** (a) walkthrough nativo do VS Code (`contributes.walkthroughs`) guiando a
   instalação do hook — reduz abandono de quem instala e não configura; (b) README reposicionado
   de "veja seus todos" para "observability dos seus agentes Claude Code" (árvore + tempos +
   tokens + custo), o termo que as pessoas vão buscar.
-- **Status:** 🚧 implementado (2026-07-16) — aguardando release 0.14.0. Spec:
+- **Status:** ✅ entregue na 0.14.0. Spec:
   [docs/specs/2026-07-16-onboarding-repositioning-design.md](specs/2026-07-16-onboarding-repositioning-design.md).
   (a) Walkthrough "Get started" de 5 passos (hook → sessão → painel → picker → árvore/dashboard),
   botões via `command:` e auto-complete via `onCommand:`, i18n ×3. (b) READMEs ×3 reescritos:
@@ -267,7 +267,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   comandos/settings completas; keywords + `extension.description` novos no manifesto.
   Pendência: conferência manual do walkthrough num Extension Development Host (F5).
 
-### 19. Hint de lista defasada (main parado + sub-agent rodando) 🚧 implementado
+### 19. Hint de lista defasada (main parado + sub-agent rodando) ✅ ENTREGUE (0.14.0)
 - **Origem:** caso real (2026-07-14) — orquestrador criou a lista de 8 tasks, nunca mais
   chamou `TodoWrite` e delegou tudo a sub-agents; o painel mostrava fielmente "0/8, Task 1
   in_progress há 17min" enquanto os cards de sub-agents avançavam (Task 2 concluída, Task 3
@@ -280,7 +280,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   + status `running` dos sub-agents no snapshot.
 - **Cuidado:** limiar generoso (ex.: ≥5min) e só com sub-agent ativo, para não virar ruído em
   sessões normais de task longa.
-- **Status:** 🚧 implementado (2026-07-16) — aguardando release 0.14.0. Spec:
+- **Status:** ✅ entregue na 0.14.0. Spec:
   [docs/specs/2026-07-16-stale-list-hint-design.md](specs/2026-07-16-stale-list-hint-design.md).
   `todosUpdatedAt` extraído do transcript (timestamp do último TodoWrite / maior timestamp de
   TaskCreate·TaskUpdate); `listStaleness` pura (main + ≥1 não-completed + sub-agent running +
