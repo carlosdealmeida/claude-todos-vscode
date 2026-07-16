@@ -4,7 +4,15 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.12.0] - 2026-07-14
+## [0.13.0] - 2026-07-16
+
+### Added
+- **Multi-root workspace support.** The panel now follows the most recently active session across **all** workspace folders instead of only the first one — sessions started in any folder of a multi-root workspace show up automatically. A new `claudeTodos.activeFolder` setting (folder name or absolute path; empty = automatic) pins the panel to one folder; an invalid value safely falls back to automatic. The session picker disambiguates entries with the folder's basename when more than one folder is in play, and both task-click-to-transcript and the 7-day usage block resolve the folder from the displayed session. Addresses [#12808](https://github.com/anthropics/claude-code/issues/12808), [#58044](https://github.com/anthropics/claude-code/issues/58044), [#36949](https://github.com/anthropics/claude-code/issues/36949) and [#18814](https://github.com/anthropics/claude-code/issues/18814). Spec: `docs/specs/2026-07-15-multi-root-design.md`.
+- **"Choose Session" command and keyboard shortcut.** The session picker — previously reachable only through the panel button — is now a real command (`Claude Todos: Choose Session`) available from the Command Palette and bound to `Ctrl+Alt+S` (`Cmd+Alt+S` on macOS).
+- **7-day usage by agent type.** The "Last 7 days · this project" block gained a toggle that regroups the aggregate by agent type (Main, Explore, general-purpose, …) instead of by model, sorted by total tokens. Sub-agent types come from the `agent-*.meta.json` files; sub-agents without one land in a generic "Sub-agent" bucket. Completes the weekly half of [#59412](https://github.com/anthropics/claude-code/issues/59412) (the per-session half shipped in 0.9.0).
+
+### Changed
+- The session bridge file is now pruned on activation: records older than 30 days are dropped (sessions themselves were never affected — the picker already ignored entries without a transcript). Pruning skips the write entirely when there is nothing to remove.
 
 ### Added
 - **Clickable tasks → jump to the transcript.** Clicking a task in the panel opens the agent's `.jsonl` transcript in the editor with the line of the task's last status change selected — for the main agent and for sub-agents (each opens its own transcript). Works with both task schemas (`TodoWrite` snapshots and `TaskCreate`/`TaskUpdate` streams). Tasks whose origin can't be determined (e.g., very old transcripts without timestamps) simply stay non-clickable. Addresses the request in [anthropics/claude-code#61543](https://github.com/anthropics/claude-code/issues/61543). A readable transcript viewer building on this same infrastructure is planned separately.
