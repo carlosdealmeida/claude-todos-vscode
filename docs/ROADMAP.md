@@ -5,7 +5,7 @@ de issues abertas no repositório oficial do Claude Code (`anthropics/claude-cod
 alinham ao que a extensão faz: ler os transcripts em `~/.claude/projects` e mostrar, ao vivo e
 restrito ao workspace, a lista `TodoWrite` (main agent + sub-agents) e o uso de tokens.
 
-> **Status legenda:** 🔍 a investigar · 📐 a planejar · 🚧 em andamento · ✅ entregue · ❄️ descartado
+> **Status legenda:** 🔍 a investigar · 📐 a planejar · 🚧 em andamento · ✅ entregue · ⏸️ adiado (aguardando gatilho) · ❄️ descartado
 >
 > Aderência = quão diretamente a extensão pode resolver a issue **do nosso lado**, sem depender
 > de mudança no harness do Claude Code.
@@ -32,9 +32,9 @@ material para README/divulgação. Comentários já postados com disclosure de a
 Implementáveis 100% do nosso lado, reaproveitando a infra atual (parser de transcript + tabela
 de tokens do 0.3.0).
 
-### 1. Todos clicáveis → pular para a mensagem de origem
+### 1. Todos clicáveis → pular para a mensagem de origem ✅ ENTREGUE (0.12.0)
 - **Issue:** [#61543](https://github.com/anthropics/claude-code/issues/61543) — labels oficiais `area:ide`, `platform:vscode`, `area:ui`
-- **Status:** 🚧 implementado — aguardando release 0.12.0. Spec: [docs/specs/2026-07-14-clickable-todos-design.md](specs/2026-07-14-clickable-todos-design.md) · plano: [docs/plans/2026-07-14-clickable-todos.md](plans/2026-07-14-clickable-todos.md). `sourceLine` (última transição de status) nos dois schemas; clique abre o `.jsonl` na linha. Viewer legível: spec futuro sobre a mesma infra.
+- **Status:** ✅ entregue na 0.12.0. Spec: [docs/specs/2026-07-14-clickable-todos-design.md](specs/2026-07-14-clickable-todos-design.md) · plano: [docs/plans/2026-07-14-clickable-todos.md](plans/2026-07-14-clickable-todos.md). `sourceLine` (última transição de status) nos dois schemas; clique abre o `.jsonl` na linha. Viewer legível: spec futuro sobre a mesma infra.
 - **Ideia:** ao percorrer o transcript buscando o último `TodoWrite`, guardar o `uuid`/índice da
   mensagem onde cada item apareceu ou mudou de status; tornar o item clicável → abre o `.jsonl`
   naquela posição.
@@ -58,20 +58,36 @@ de tokens do 0.3.0).
 - **Junto (bugfix 0.5.0):** corrigida a detecção da janela 1M no indicador de contexto (o `100%/200k` falso para `opus-4-8` etc.) — ver nota no item 2.
 - **Custo em $:** continua fora de escopo (tabela de preços envelhece). 🔍 só se pedirem.
 
-### 4. Ordenar/filtrar todos por recência (evitar tasks fantasma)
+### 4. Ordenar/filtrar todos por recência (evitar tasks fantasma) ✅ JÁ IMUNE
 - **Issue:** [#59900](https://github.com/anthropics/claude-code/issues/59900) — labels `bug`, `area:tui`, `area:tools`
-- **Status:** 🔍 a investigar (verificar se já estamos imunes)
-- **Ideia:** a sugestão (c) da issue — ordenar por `updatedAt DESC` em vez de `createdAt` — para
-  não exibir `in_progress` fantasma de sessões antigas. Precisa checar como nosso parser escolhe
-  e ordena os itens antes de cravar se é necessário.
+- **Status:** ✅ investigado (2026-07-15) — **estruturalmente imunes**, nenhuma mudança necessária.
+- **Por quê:** (1) a seleção de sessão já ordena por mtime do transcript DESC
+  ([snapshotService.ts:31](../src/services/snapshotService.ts#L31)) — exatamente a correção
+  que a issue propõe; (2) nunca há merge de listas entre sessões — exibimos só o último
+  snapshot `TodoWrite` da sessão escolhida ([todosParser.ts:440-459](../src/services/todosParser.ts#L440)),
+  e o TodoWrite reescreve a lista inteira, sem resíduo.
+- **Gap residual (por design, fora da issue):** sessão **fixada** (pin) não expira — uma
+  sessão morta pinada segue mostrando `in_progress` até o usuário voltar para "Auto". É UX
+  intencional; endurecer só se houver pedido.
 
-### 5. Seletor de sessão melhor: vivas/ativas, atalhos, sem corte
+### 5. Seletor de sessão melhor: vivas/ativas, atalhos, sem corte 📐 a planejar
 - **Issues:** [#28147](https://github.com/anthropics/claude-code/issues/28147) (`NOT_PLANNED`, `keybindings`) indicadores de atividade + atalhos · [#24435](https://github.com/anthropics/claude-code/issues/24435) (`NOT_PLANNED`) picker corta em ~8 sessões mais recentes · [#23275](https://github.com/anthropics/claude-code/issues/23275) (`NOT_PLANNED`) nomear sessões
-- **Status:** 🔍 a investigar
-- **Ideia:** no nosso seletor de sessão (`pickSession`): marcar quais sessões estão **vivas/ativas**
-  vs antigas (temos `bridgeFile` com `terminalPid`/`startedAt`); não cortar a lista; permitir
-  nomear/apelidar sessões; atalho de teclado para alternar.
-- **Sinergia:** o `bridgeFile` já sabe quais sessões pertencem à janela.
+- **Status:** 📐 investigado (2026-07-15) — viável; fatiar em 4 sub-features com esforços distintos.
+- **Achados:**
+  - **(b) não cortar lista:** ✅ já não cortamos — `listSessions()` não tem limite
+    ([snapshotService.ts:19-33](../src/services/snapshotService.ts#L19)); o corte em ~8 é do
+    picker nativo do Claude Code. Bônus de higiene: `BridgeFile.prune()` existe mas **nunca é
+    chamado** ([bridgeFile.ts:41-45](../src/services/bridgeFile.ts#L41)) — chamar no `activate`.
+  - **(d) atalho/comando para alternar sessão:** esforço **baixo** — `pickSession` hoje só é
+    acessível pelo botão do webview; não é comando registrado. Registrar
+    `claudeTodos.pickSession` + keybinding expõe na Paleta de graça.
+  - **(a) marcar sessões vivas:** esforço **médio** — `terminalPid` já é gravado no bridge mas
+    nada checa liveness (`process.kill(pid, 0)` + cruzar `startedAt` contra PID reuse); expor
+    `alive` no `SessionSummary` e usar ícone/`detail` no picker.
+  - **(c) nomear sessões:** esforço **médio/alto** — não existe storage de alias; exigiria
+    `globalState['sessionAliases']`, comando de rename e precedência alias > título derivado.
+- **Ordem sugerida:** (d)+(b) como quick win → (a) → (c). (a) e (c) mexem nos mesmos pontos
+  (`SessionSummary`/`resolveTitle`/`showSessionPicker`), fazer em sequência.
 
 ### 10. Mostrar o uso da sessão mesmo sem todos (painel "early") ✅ ENTREGUE (0.6.0)
 - **Origem:** observação de uso — antes o painel só aparecia quando havia `TodoWrite`; sem todos, caía no `EmptyState`. Mas agora temos tokens/contexto/cache, que existem assim que a sessão tem qualquer atividade.
@@ -103,19 +119,37 @@ de tokens do 0.3.0).
   - Listener de mudança de `display language` propaga o locale ao webview via `pushLocale`; store derivado no Svelte reage sem reload.
 - **Caveat — Paleta de Comandos:** os títulos de comando exibidos na Paleta (`Ctrl+Shift+P`) seguem **exclusivamente** o idioma de exibição do VS Code; o override `claudeTodos.language` não os afeta. É uma limitação do VS Code: os `package.nls.*` são resolvidos na inicialização pelo host, sem acesso a settings da extensão.
 
-### 6. Tokens por sub-agent (sessão + semanal)
+### 6. Tokens por sub-agent (sessão + semanal) — 6a ✅ · 6b 📐
 - **Issue:** [#59412](https://github.com/anthropics/claude-code/issues/59412) — labels `area:cost`, `area:agent-view`
-- **Status:** 🔍 a investigar
-- **Ideia:** já mostramos tokens por modelo; estender para **por sub-agent** é natural. O
-  "semanal" exigiria agregar várias sessões do mesmo projeto — escopo bem maior, possível fase 2.
+- **Status:** investigado (2026-07-15) — metade resolvida pelas 0.9.0/0.11.0; resta uma entrega pequena.
+- **6a — por sub-agent na sessão: ✅ resolvido.** A árvore (0.9.0) mostra o total por nó
+  ([AgentTree.svelte:25](../src/webview/lib/AgentTree.svelte#L25)) e a `UsageTable` tem o
+  toggle "por agente" com breakdown input/output/cache por modelo
+  ([UsageTable.svelte:74-86](../src/webview/lib/UsageTable.svelte#L74)). A atribuição é
+  correta: o main pula entradas `isSidechain`; sub-agents vêm dos próprios `agent-*.jsonl`
+  ([usageParser.ts:98-128](../src/services/usageParser.ts#L98)).
+- **6b — agregado semanal por tipo de agente: 📐 aberto, barato.** O dashboard 7 dias já
+  **varre** os `agent-*.jsonl` ([projectUsageService.ts:58-74](../src/services/projectUsageService.ts#L58)),
+  mas colapsa tudo em `byModel` e ignora os `.meta.json`. Fechar = ler o `agentType` do meta
+  ao lado de cada arquivo + dimensão `byAgentType` no acumulador/`ProjectUsage` + agrupamento
+  na `ProjectUsageSection`. O memo por arquivo continua válido. Eixo por `agentType` (não por
+  `agentId`, que é efêmero por sessão). Esforço baixo/médio.
 
-### 7. Deep linking `vscode://` para abrir uma sessão/todo
+### 7. Deep linking `vscode://` para abrir uma sessão/todo ⏸️ adiado
 - **Issue:** [#10366](https://github.com/anthropics/claude-code/issues/10366) (`NOT_PLANNED`) — labels `area:core`, `area:ide`
-- **Status:** 🔍 a investigar
-- **Ideia:** registrar um handler de URI (`vscode://CarlosJunior1992.claude-todos/session/{id}`)
-  para abrir nosso painel já apontando para uma sessão específica. Sinergia forte com #61543
-  (todos clicáveis): um todo poderia virar um link compartilhável/abrível.
-- **Risco:** util principalmente para integração com ferramentas externas; valor isolado é menor.
+- **Status:** ⏸️ investigado (2026-07-15) — **adiar, não descartar**: esforço baixo, mas zero
+  consumidor hoje.
+- **Achados:** não há `onUri`/`registerUriHandler` no código. A infra de destino já existe
+  inteira: pin de sessão (`setPinnedSession` + os 5 passos do `showSessionPicker`,
+  [extension.ts:130-150](../src/extension.ts#L130)) e `openTodoSource` da 0.12.0
+  ([extension.ts:223-252](../src/extension.ts#L223), já com validação `SAFE_SESSION_ID` contra
+  path traversal). Um handler `vscode://CarlosJunior1992.claude-todos/session/{id}` ou
+  `/todo?session=X&agent=Y&line=Z` seria só parse + fan-out para essas funções.
+- **Por que adiar:** todo consumo interno já usa comando in-process (o toast de notificação
+  abre o painel via `executeCommand('claudeTodos.openPanel')`); o valor é exclusivamente para
+  integração externa, que ainda não existe. Adicionar superfície de URI externo (input
+  não-confiável) sem usuário contraria o princípio de privacidade. Reabrir quando surgir um
+  consumidor concreto; nessa hora, extrair `selectSession(id)` compartilhado com o picker.
 
 ### 8. Visão global de histórico entre todos os projetos
 - **Issue:** [#49095](https://github.com/anthropics/claude-code/issues/49095) (`NOT_PLANNED`) — labels `platform:vscode`, `area:ide`
@@ -126,13 +160,25 @@ de tokens do 0.3.0).
   privacidade (duas janelas nunca veem os todos uma da outra). Se entrar, tem que ser opt-in
   explícito e bem isolado. Decidir posicionamento antes de planejar.
 
-### 9. Multi-root: escolher a pasta ativa
+### 9. Multi-root: escolher a pasta ativa 📐 a planejar
 - **Issues:** [#58044](https://github.com/anthropics/claude-code/issues/58044) sem como selecionar a pasta ativa · [#36949](https://github.com/anthropics/claude-code/issues/36949) setting `workingDirectory` · [#12808](https://github.com/anthropics/claude-code/issues/12808) (20c) "sempre começa na primeira pasta" · [#18814](https://github.com/anthropics/claude-code/issues/18814) (`NOT_PLANNED`)
-- **Status:** 🔍 a investigar
-- **Ideia:** hoje, em workspace multi-root, usamos só a **primeira pasta** (limitação no README).
-  Poderíamos detectar qual pasta tem sessão ativa e/ou oferecer um seletor/setting de pasta ativa.
-  Endereça uma limitação real e ecoa um pedido popular (#12808 com 20 comentários).
-- **Sinergia:** resolve a nossa "Limitação conhecida" nº 1.
+- **Status:** 📐 investigado (2026-07-15) — mais barato do que parecia; o acoplamento é pontual.
+- **Achados:** só **3 pontos** de produção dependem de `workspaceFolders[0]`, todos em
+  `extension.ts` (callback do `SessionResolver` [L63-66](../src/extension.ts#L63), handler do
+  `projectUsage` [L159-160](../src/extension.ts#L159), `openTodoSource` [L228](../src/extension.ts#L228)).
+  Todo o resto já recebe `cwd` como parâmetro, e o hook grava no bridge a `cwd` **real** de
+  cada sessão (vinda do Claude Code) — ou seja, sessões em subpastas de multi-root já são
+  registradas corretamente; só a extensão não olha para elas.
+- **Estratégia recomendada:** (a) detecção automática — resolver contra **todas** as pastas e
+  seguir a de sessão com mtime mais recente (generalizar o callback + `SessionResolver` para
+  multi-cwd) — **combinada com** (c) QuickPick de pasta como override explícito (reusa o padrão
+  `showSessionPicker` + `workspaceState`, igual ao `pinnedSessionId`). (b) setting
+  `claudeTodos.activeFolder` só como conveniência opcional. (d) agregar todas as pastas foi
+  descartada: mexe no modelo de dados/webview e as issues pedem a pasta *ativa*, não a soma.
+- **Risco a tratar:** oscilação da "pasta ativa" quando há sessões vivas em duas pastas —
+  desempate estável por mtime do transcript.
+- **Ao entregar:** atualizar [README.md:79](../README.md#L79) (limitação nº 1) e ampliar
+  `tests/services/sessionResolver.test.ts` (único teste acoplado à assinatura do resolver).
 
 ---
 
@@ -146,7 +192,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 > **Fila de brainstorming (prioridade):** 1º item 13 (árvore de agentes) · 2º item 14
 > (notificações) · 3º item 15 (Open VSX). Os demais aguardam.
 
-### 13. Árvore de agentes ao vivo ("mission control") 🚧 implementado — aguardando release 0.9.0
+### 13. Árvore de agentes ao vivo ("mission control") ✅ ENTREGUE (0.9.0)
 - **Origem:** descoberta de 2026-07-10 durante o debug do 0.8.2 — cada sub-agent agora tem um
   `agent-*.meta.json` ao lado do `.jsonl`, com `toolUseId`, `agentType` e `spawnDepth`.
 - **Ideia:** exibir a sessão como árvore expansível — main → sub-agents → agentes aninhados
@@ -158,9 +204,9 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   `spawnDepth: 2` é descartado por design).
 - **Sinergia:** resolve parcialmente o item 6 (tokens por sub-agent); fundação para workflows
   e agent teams (item 17).
-- **Status (2026-07):** implementado — spec: [docs/specs/2026-07-11-agent-tree-design.md](specs/2026-07-11-agent-tree-design.md) · plano: [docs/plans/2026-07-11-agent-tree.md](plans/2026-07-11-agent-tree.md). Matching por `toolUseId` com fallback por prompt; agentes aninhados (`spawnDepth ≥ 2`) exibidos sob quem os disparou; badge de tipo + tokens por nó. Falta: release 0.9.0.
+- **Status:** ✅ entregue na 0.9.0 — spec: [docs/specs/2026-07-11-agent-tree-design.md](specs/2026-07-11-agent-tree-design.md) · plano: [docs/plans/2026-07-11-agent-tree.md](plans/2026-07-11-agent-tree.md). Matching por `toolUseId` com fallback por prompt; agentes aninhados (`spawnDepth ≥ 2`) exibidos sob quem os disparou; badge de tipo + tokens por nó.
 
-### 14. Notificações — sessão terminou / aguardando input 🚧 implementado — aguardando release 0.10.0
+### 14. Notificações — sessão terminou / aguardando input ✅ ENTREGUE (0.10.0)
 - **Origem:** dor nº 1 de sessões longas — o agente termina (ou fica parado numa pergunta) e o
   usuário só percebe minutos depois. Demanda comprovada: usuários montam pontes externas de
   notificação (WhatsApp, push) por fora.
@@ -168,7 +214,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   (b) todas as tasks completam. Já detectamos `mtime` do transcript + estado das tasks; falta
   só a regra de disparo e o `window.showInformationMessage`. Opt-in via setting.
 - **Custo/benefício:** baixíssimo custo, retenção altíssima.
-- **Status (2026-07):** implementado — spec: [docs/specs/2026-07-14-session-notifications-design.md](specs/2026-07-14-session-notifications-design.md) · plano: [docs/plans/2026-07-14-session-notifications.md](plans/2026-07-14-session-notifications.md). `SessionNotifier` puro (idle após ≥60s de atividade + 45s de silêncio; allComplete na transição), timer de 10s armado só em atividade, gate de setting+foco no disparo, toast com "Abrir painel"/"Não notificar". Falta: release 0.10.0.
+- **Status:** ✅ entregue na 0.10.0 — spec: [docs/specs/2026-07-14-session-notifications-design.md](specs/2026-07-14-session-notifications-design.md) · plano: [docs/plans/2026-07-14-session-notifications.md](plans/2026-07-14-session-notifications.md). `SessionNotifier` puro (idle após ≥60s de atividade + 45s de silêncio; allComplete na transição), timer de 10s armado só em atividade, gate de setting+foco no disparo, toast com "Abrir painel"/"Não notificar".
 
 ### 15. Publicar no Open VSX ✅ ENTREGUE (2026-07-14)
 - **Origem:** Cursor, Windsurf e VSCodium não acessam o marketplace da Microsoft — e são
@@ -183,14 +229,14 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   [EclipseFdn/open-vsx.org](https://github.com/EclipseFdn/open-vsx.org/issues) — não afeta a
   instalação.
 
-### 16. Dashboard de uso/custo agregado (projeto/semana) 🚧 implementado — aguardando release 0.11.0
+### 16. Dashboard de uso/custo agregado (projeto/semana) ✅ ENTREGUE (0.11.0)
 - **Origem:** o sucesso do `ccusage` (CLI que lê os mesmos JSONL) prova a demanda por visão
   agregada de tokens/custo.
 - **Ideia:** aba/comando "esta semana neste projeto": N sessões, tokens por modelo, % de cache
   reaproveitado. Reaproveita o `usageParser` inteiro; o novo é a agregação multi-sessão.
 - **Tensão:** mesma do item 8 — manter o escopo-por-workspace como default; agregado além do
   projeto atual só se for opt-in.
-- **Status (2026-07):** implementado — spec: [docs/specs/2026-07-14-project-usage-dashboard-design.md](specs/2026-07-14-project-usage-dashboard-design.md) · plano: [docs/plans/2026-07-14-project-usage.md](plans/2026-07-14-project-usage.md). Bloco "Últimos 7 dias · este projeto" colapsável no painel (N sessões, tokens por modelo, cache agregado), agregação lazy com memo por arquivo, protocolo dedicado sem tocar o snapshot. Falta: release 0.11.0.
+- **Status:** ✅ entregue na 0.11.0 — spec: [docs/specs/2026-07-14-project-usage-dashboard-design.md](specs/2026-07-14-project-usage-dashboard-design.md) · plano: [docs/plans/2026-07-14-project-usage.md](plans/2026-07-14-project-usage.md). Bloco "Últimos 7 dias · este projeto" colapsável no painel (N sessões, tokens por modelo, cache agregado), agregação lazy com memo por arquivo, protocolo dedicado sem tocar o snapshot.
 
 ### 17. Agent teams: dono por task 🔍 aguardar schema estabilizar
 - **Origem:** o schema `TaskCreate`/`TaskUpdate` que já suportamos é a fundação do modo teams
