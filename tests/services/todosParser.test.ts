@@ -198,6 +198,33 @@ describe('TodosParser', () => {
     expect(agents[0].todos[0].content).toBe('new1');
   });
 
+  it('exposes todosUpdatedAt from the last TodoWrite snapshot line', () => {
+    writeTranscript('s-ts', CWD, [
+      todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'pending' }], { timestamp: '2026-07-16T10:00:00.000Z' }),
+      todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'in_progress' }], { timestamp: '2026-07-16T10:07:00.000Z' }),
+    ]);
+    const agents = parser.listForSession('s-ts', CWD);
+    expect(agents[0].todosUpdatedAt).toBe(Date.parse('2026-07-16T10:07:00.000Z'));
+  });
+
+  it('leaves todosUpdatedAt undefined when TodoWrite lines have no timestamp', () => {
+    writeTranscript('s-nots', CWD, [
+      todoWriteEntry([{ content: 'a', activeForm: 'A', status: 'pending' }]),
+    ]);
+    expect(parser.listForSession('s-nots', CWD)[0].todosUpdatedAt).toBeUndefined();
+  });
+
+  it('exposes todosUpdatedAt as the newest Task-schema event timestamp', () => {
+    writeTranscript('s-task', CWD, [
+      taskCreateToolUse('t1', 'task one', 'Doing one'),
+      taskCreateResult('t1', '1', 'task one'),
+      taskUpdateToolUse('t2', '1', 'in_progress', { timestamp: '2026-07-16T11:00:00.000Z' }),
+      taskUpdateToolUse('t3', '1', 'completed', { timestamp: '2026-07-16T11:20:00.000Z' }),
+    ]);
+    const agents = parser.listForSession('s-task', CWD);
+    expect(agents[0].todosUpdatedAt).toBe(Date.parse('2026-07-16T11:20:00.000Z'));
+  });
+
   it('labels the main agent', () => {
     writeTranscript('s1', CWD, [
       todoWriteEntry([{ content: 'task', activeForm: 'Task', status: 'pending' }]),

@@ -76,16 +76,17 @@ export class TodosParser {
 
     const result: AgentTodos[] = [];
 
-    const mainTodos = this.readLastTodos(transcriptPath, true);
-    if (mainTodos) {
+    const main = this.readLastTodos(transcriptPath, true);
+    if (main) {
       const stat = fs.statSync(transcriptPath);
       result.push({
         sessionId,
         agentId: sessionId,
         name: 'Main agent',
         isMain: true,
-        todos: mainTodos,
+        todos: main.todos,
         updatedAt: stat.mtimeMs,
+        ...(main.updatedAt !== undefined ? { todosUpdatedAt: main.updatedAt } : {}),
       });
     }
 
@@ -143,6 +144,7 @@ export class TodosParser {
       agentId: string;
       prompt: string | null;
       todos: Todo[];
+      todosUpdatedAt?: number;
       updatedAt: number;
       meta: SubAgentMeta | null;
       dispatches: Map<string, Dispatch>;
@@ -153,10 +155,12 @@ export class TodosParser {
       const lines = this.readLines(filePath);
       let updatedAt = 0;
       try { updatedAt = fs.statSync(filePath).mtimeMs; } catch { /* ignore */ }
+      const parsed = this.readLastTodosFromLines(lines, false);
       infos.push({
         agentId: file.slice('agent-'.length, -'.jsonl'.length),
         prompt: this.firstUserPrompt(lines),
-        todos: this.readLastTodosFromLines(lines, false) ?? [],
+        todos: parsed?.todos ?? [],
+        todosUpdatedAt: parsed?.updatedAt,
         updatedAt,
         meta: readSubAgentMeta(filePath),
         dispatches: this.collectDispatches(lines, false),
@@ -196,6 +200,7 @@ export class TodosParser {
           isMain: false,
           todos: info.todos,
           updatedAt: info.updatedAt,
+          ...(info.todosUpdatedAt !== undefined ? { todosUpdatedAt: info.todosUpdatedAt } : {}),
         };
         if (entry) {
           agent.status = entry.dispatch.result === 'completed' ? 'completed' : 'running';
@@ -231,6 +236,7 @@ export class TodosParser {
           status: matched.entry.dispatch.result === 'completed' ? 'completed' : 'running',
           todos: info.todos,
           updatedAt: info.updatedAt,
+          ...(info.todosUpdatedAt !== undefined ? { todosUpdatedAt: info.todosUpdatedAt } : {}),
         },
         ordinal: matched.entry.ordinal,
       });
@@ -335,23 +341,30 @@ export class TodosParser {
   //   - legacy `TodoWrite`: a single event carrying the full snapshot.
   //   - new `TaskCreate` / `TaskUpdate` (enabled by `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`):
   //     an event stream — TaskCreate adds one task, TaskUpdate mutates a task by id.
-  private readLastTodos(transcriptPath: string, skipSidechain: boolean): Todo[] | null {
+  private readLastTodos(
+    transcriptPath: string,
+    skipSidechain: boolean,
+  ): { todos: Todo[]; updatedAt?: number } | null {
     return this.readLastTodosFromLines(this.readLines(transcriptPath), skipSidechain);
   }
 
-  private readLastTodosFromLines(lines: string[], skipSidechain: boolean): Todo[] | null {
+  private readLastTodosFromLines(
+    lines: string[],
+    skipSidechain: boolean,
+  ): { todos: Todo[]; updatedAt?: number } | null {
     if (lines.length === 0) return null;
     const schema = this.detectSchema(lines, skipSidechain);
     if (schema === 'TodoWrite') {
-      const todos = this.readLastTodoWriteSnapshot(lines, skipSidechain);
-      if (!todos) return null;
+      const snap = this.readLastTodoWriteSnapshot(lines, skipSidechain);
+      if (!snap) return null;
       const timings = this.extractTodoWriteTimings(lines, skipSidechain);
-      return todos.map(t => {
+      const todos = snap.todos.map(t => {
         const timing = timings.get(t.content);
         return timing
           ? makeTodo(t.content, t.activeForm, t.status, timing.startedAt, timing.completedAt, timing.sourceLine)
           : t;
       });
+      return { todos, updatedAt: snap.updatedAt };
     }
     if (schema === 'Task') return this.readTaskStream(lines, skipSidechain);
     return null;
@@ -437,7 +450,10 @@ export class TodosParser {
     return null;
   }
 
-  private readLastTodoWriteSnapshot(lines: string[], skipSidechain: boolean): Todo[] | null {
+  private readLastTodoWriteSnapshot(
+    lines: string[],
+    skipSidechain: boolean,
+  ): { todos: Todo[]; updatedAt?: number } | null {
     for (let i = lines.length - 1; i >= 0; i--) {
       const line = lines[i];
       if (!line || line.indexOf('"name":"TodoWrite"') < 0) continue;
@@ -450,7 +466,9 @@ export class TodosParser {
           const block = content[j];
           if (block?.type === 'tool_use' && block.name === 'TodoWrite') {
             const raw = block.input?.todos;
-            if (Array.isArray(raw)) return raw.filter(this.isValidTodo);
+            if (Array.isArray(raw)) {
+              return { todos: raw.filter(this.isValidTodo), updatedAt: parseEpoch(entry.timestamp) };
+            }
           }
         }
       } catch { /* skip malformed line */ }
@@ -458,7 +476,10 @@ export class TodosParser {
     return null;
   }
 
-  private readTaskStream(lines: string[], skipSidechain: boolean): Todo[] {
+  private readTaskStream(
+    lines: string[],
+    skipSidechain: boolean,
+  ): { todos: Todo[]; updatedAt?: number } {
     const tasks = new Map<string, {
       content: string; activeForm: string; status: TodoStatus;
       startedAt?: number; completedAt?: number; sourceLine?: number;
@@ -466,6 +487,12 @@ export class TodosParser {
     const order: string[] = [];
     // tool_use_id of TaskCreate awaiting its tool_result, where the assigned id is revealed.
     const pendingCreates = new Map<string, { content: string; activeForm: string; createLine: number }>();
+    // Maior timestamp entre os eventos válidos do stream (TaskCreate/TaskUpdate).
+    let lastEventTs: number | undefined;
+    const noteEvent = (entry: TranscriptEntry): void => {
+      const ts = parseEpoch(entry.timestamp);
+      if (ts !== undefined && (lastEventTs === undefined || ts > lastEventTs)) lastEventTs = ts;
+    };
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -487,12 +514,14 @@ export class TodosParser {
                 activeForm: typeof activeForm === 'string' ? activeForm : subject,
                 createLine: i,
               });
+              noteEvent(entry);
             }
           } else if (block.name === 'TaskUpdate') {
             const taskId = block.input?.taskId;
             const status = block.input?.status;
             if (typeof taskId === 'string' && typeof status === 'string'
                 && VALID_STATUSES.includes(status as TodoStatus)) {
+              noteEvent(entry);
               const t = tasks.get(taskId);
               if (t) {
                 t.status = status as TodoStatus;
@@ -523,10 +552,13 @@ export class TodosParser {
       }
     }
 
-    return order.map(id => {
-      const t = tasks.get(id)!;
-      return makeTodo(t.content, t.activeForm, t.status, t.startedAt, t.completedAt, t.sourceLine);
-    });
+    return {
+      todos: order.map(id => {
+        const t = tasks.get(id)!;
+        return makeTodo(t.content, t.activeForm, t.status, t.startedAt, t.completedAt, t.sourceLine);
+      }),
+      updatedAt: lastEventTs,
+    };
   }
 
   private resolveCreatedTaskId(entry: TranscriptEntry, block: ContentBlock): string | null {

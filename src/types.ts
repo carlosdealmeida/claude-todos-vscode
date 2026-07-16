@@ -23,6 +23,8 @@ export interface AgentTodos {
   agentType?: string;      // do meta.json (ex.: "general-purpose", "Explore")
   parentAgentId?: string;  // agentId do agente que disparou este; ausente = filho do main
   depth?: number;          // spawnDepth do meta.json (1 = disparado pelo main)
+  todosUpdatedAt?: number; // epoch ms do último evento que mutou a lista (TodoWrite/
+                           // TaskCreate/TaskUpdate); ausente se as linhas não têm timestamp
 }
 
 export interface ModelUsage {
