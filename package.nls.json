@@ -1,5 +1,5 @@
 {
-  "extension.description": "Live view of Claude Code TodoWrite tool for the current workspace",
+  "extension.description": "Live observability for your Claude Code agents: tasks, agent tree, tokens and cache — scoped to the current workspace",
   "view.todos.name": "Todos",
   "command.openPanel.title": "Claude Todos: Open in Editor",
   "command.installHook.title": "Claude Todos: Install Session Hook",
