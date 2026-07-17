@@ -1,14 +1,9 @@
 import type { SessionSnapshot, ExtensionMessage, WebviewMessage, ProjectUsage } from '../types';
 import { createT } from '../i18n/t';
 import type { Locale } from '../i18n/locale';
+import { createBridge } from './bridge';
 
-declare function acquireVsCodeApi(): {
-  postMessage(msg: WebviewMessage): void;
-  getState<T>(): T | undefined;
-  setState<T>(state: T): void;
-};
-
-const vscode = acquireVsCodeApi();
+const bridge = createBridge();
 
 class TodosStore {
   snapshot = $state<SessionSnapshot | null>(null);
@@ -20,10 +15,7 @@ class TodosStore {
   projectUsageLoading = $state(false);
 
   constructor() {
-    window.addEventListener('message', (event) => {
-      const msg = event.data as ExtensionMessage;
-      this.handle(msg);
-    });
+    bridge.onMessage((msg) => this.handle(msg));
     this.post({ type: 'ready' });
   }
 
@@ -49,7 +41,7 @@ class TodosStore {
   }
 
   post(msg: WebviewMessage): void {
-    vscode.postMessage(msg);
+    bridge.post(msg);
   }
 
   refresh(): void {
