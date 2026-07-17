@@ -317,7 +317,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   ≥5min); faixa sutil "lista sem atualização há X" sob o cabeçalho do main, tooltip
   explicativo, i18n ×3. Validado visualmente (3 casos).
 
-### 20. Badge de modelo por agente (main + nós da árvore) 🔍 a investigar
+### 20. Badge de modelo por agente (main + nós da árvore) ✅ implementado — aguardando release
 - **Issues (varredura 2026-07-16):** [#28986](https://github.com/anthropics/claude-code/issues/28986)
   (**58 reações**, `platform:vscode`) mostrar modelo ativo no painel do VS Code ·
   [#76018](https://github.com/anthropics/claude-code/issues/76018) /
@@ -330,6 +330,12 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   `UsageTable`); falta só um badge compacto no cabeçalho do main e em cada nó da árvore
   (ex.: `opus-4-8`, com o sufixo `[1m]` quando for o caso). Custo baixo, dado já parseado.
 - **Bônus:** cobre a dor de "modelo trocou sem eu ver" (#62199) — o badge muda na hora.
+- **Status:** ✅ implementado — aguardando release. Spec:
+  [docs/specs/2026-07-17-model-badge-design.md](specs/2026-07-17-model-badge-design.md). Plano:
+  [docs/plans/2026-07-17-model-badge-and-awaiting-input.md](plans/2026-07-17-model-badge-and-awaiting-input.md).
+  `lastModel` por transcript (`AgentUsage.currentModel`), `shortModel` compatível com dados
+  legados e `modelBadge` no webview — badge sempre no main, e nos sub-agents só quando o
+  modelo difere do main. Validado visualmente via `preview-webview`.
 
 ### 21. Fontes de dados novas em `~/.claude` (tasks persistentes + dependências) 🔍 a investigar
 - **Origem:** varredura 2026-07-16 + inspeção local do disco.
@@ -346,7 +352,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   dependência na lista; (c) o painel nativo tem bugs de dessincronização — nós podemos acertar.
 - **Cuidado:** `.lock` presente no diretório — ler sem travar, read-only como sempre.
 
-### 22. Notificação "aguardando sua resposta" (AskUserQuestion) 🔍 a investigar
+### 22. Notificação "aguardando sua resposta" (AskUserQuestion) ✅ implementado — aguardando release
 - **Issues (varredura 2026-07-16):** [#57230](https://github.com/anthropics/claude-code/issues/57230)
   (20r) toasts nativos quando "Claude needs attention" ·
   [#26581](https://github.com/anthropics/claude-code/issues/26581) (27r) idem ·
@@ -357,6 +363,14 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   esperando sua resposta". Hoje o idle-notifier cobre isso indiretamente (45s de silêncio);
   o gatilho explícito é mais rápido e com mensagem mais útil.
 - **Custo:** baixo — parser já varre `tool_use`; é uma regra a mais no notifier + i18n.
+- **Status:** ✅ implementado — aguardando release. Spec:
+  [docs/specs/2026-07-17-awaiting-input-notification-design.md](specs/2026-07-17-awaiting-input-notification-design.md).
+  Plano: [docs/plans/2026-07-17-model-badge-and-awaiting-input.md](plans/2026-07-17-model-badge-and-awaiting-input.md).
+  `detectAwaitingInput(lines, skipSidechain)` no parser (tool_use sem tool_result subsequente),
+  novo kind `awaitingInput` no `SessionNotifier` (transição imediata, idle suprimido com
+  pendência), toast + i18n ×3. Verificado com transcript real do próprio repo: sobre o arquivo
+  completo retorna `null`; truncado antes do `tool_result` do `AskUserQuestion`, retorna
+  `'question'`.
 
 ### 23. Background tasks (shells) no painel 🔍 a investigar / posicionamento
 - **Issues (varredura 2026-07-16):** [#75863](https://github.com/anthropics/claude-code/issues/75863)
