@@ -53,7 +53,7 @@ function num(v: unknown): number {
 // cache do arquivo. No transcript principal, entradas isSidechain são puladas
 // (os turnos de sub-agents vêm dos próprios agent-*.jsonl). Compartilhada entre
 // o uso por sessão (UsageParser) e o agregado do projeto (ProjectUsageService).
-export function readFileUsage(filePath: string, skipSidechain: boolean): { models: ModelUsage[]; cache: CacheStats } {
+export function readFileUsage(filePath: string, skipSidechain: boolean): { models: ModelUsage[]; cache: CacheStats; lastModel?: string } {
   let lines: string[];
   try {
     lines = fs.readFileSync(filePath, 'utf-8').split('\n');
@@ -63,6 +63,7 @@ export function readFileUsage(filePath: string, skipSidechain: boolean): { model
 
   const byModel = new Map<string, ModelUsage>();
   const cache: CacheStats = { input: 0, read: 0, creation: 0 };
+  let lastModel: string | undefined;
   for (const line of lines) {
     if (!line) continue;
     let entry: TranscriptEntry;
@@ -72,6 +73,7 @@ export function readFileUsage(filePath: string, skipSidechain: boolean): { model
     if (!msg || !msg.usage || typeof msg.model !== 'string') continue;
     // Entradas sintéticas de erro de API não são uso real do modelo.
     if (msg.model === '<synthetic>') continue;
+    lastModel = msg.model;
     const u = msg.usage;
     const input = num(u.input_tokens);
     const read = num(u.cache_read_input_tokens);
@@ -85,7 +87,7 @@ export function readFileUsage(filePath: string, skipSidechain: boolean): { model
     cache.read += read;
     cache.creation += creation;
   }
-  return { models: [...byModel.values()], cache };
+  return { models: [...byModel.values()], cache, lastModel };
 }
 
 export class UsageParser {
@@ -105,10 +107,16 @@ export class UsageParser {
         : this.subAgentFile(sessionId, cwd, agent.agentId);
       if (!filePath) continue;
 
-      const { models, cache } = readFileUsage(filePath, agent.isMain);
+      const { models, cache, lastModel } = readFileUsage(filePath, agent.isMain);
       if (models.length === 0) continue;
 
-      byAgent.push({ agentId: agent.agentId, name: agent.name, isMain: agent.isMain, models });
+      byAgent.push({
+        agentId: agent.agentId,
+        name: agent.name,
+        isMain: agent.isMain,
+        models,
+        ...(lastModel !== undefined ? { currentModel: lastModel } : {}),
+      });
       sessionCache.input += cache.input;
       sessionCache.read += cache.read;
       sessionCache.creation += cache.creation;

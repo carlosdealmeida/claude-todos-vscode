@@ -39,6 +39,7 @@ export interface AgentUsage {
   name: string;        // "Main agent" ou nome do sub-agent
   isMain: boolean;
   models: ModelUsage[];
+  currentModel?: string;  // modelo da ÚLTIMA entrada com usage do transcript
 }
 
 export interface ContextUsage {

@@ -313,3 +313,71 @@ describe('contextLimitFor', () => {
     expect(contextLimitFor('totally-unknown', 300_000)).toBe(1_000_000);
   });
 });
+
+describe('readFileUsage — lastModel', () => {
+  let dir: string;
+  beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lastmodel-')); });
+  afterEach(() => { fs.rmSync(dir, { recursive: true, force: true }); });
+
+  function entry(model: string, extra: object = {}): object {
+    return {
+      type: 'assistant',
+      ...extra,
+      message: { model, role: 'assistant', usage: { input_tokens: 10, output_tokens: 1 } },
+    };
+  }
+  function write(lines: object[]): string {
+    const p = path.join(dir, 't.jsonl');
+    fs.writeFileSync(p, lines.map(l => JSON.stringify(l)).join('\n'));
+    return p;
+  }
+
+  it('returns the model of the LAST usage-bearing entry (not the dominant one)', () => {
+    const p = write([entry('claude-opus-4-8'), entry('claude-opus-4-8'), entry('claude-sonnet-4-5')]);
+    expect(readFileUsage(p, false).lastModel).toBe('claude-sonnet-4-5');
+  });
+
+  it('is undefined when the file has no usage entries', () => {
+    const p = write([{ type: 'user', message: { role: 'user', content: 'oi' } }]);
+    expect(readFileUsage(p, false).lastModel).toBeUndefined();
+  });
+
+  it('skips synthetic entries', () => {
+    const p = write([entry('claude-opus-4-8'), entry('<synthetic>')]);
+    expect(readFileUsage(p, false).lastModel).toBe('claude-opus-4-8');
+  });
+
+  it('skips sidechain entries when skipSidechain', () => {
+    const p = write([entry('claude-opus-4-8'), entry('claude-haiku-4-5', { isSidechain: true })]);
+    expect(readFileUsage(p, true).lastModel).toBe('claude-opus-4-8');
+    expect(readFileUsage(p, false).lastModel).toBe('claude-haiku-4-5');
+  });
+});
+
+describe('usageForSession — currentModel', () => {
+  let claudeDir: string;
+  const CWD = '/home/user/proj';
+  const SID = 's1';
+  beforeEach(() => { claudeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'curmodel-')); });
+  afterEach(() => { fs.rmSync(claudeDir, { recursive: true, force: true }); });
+
+  function assistant(model: string): object {
+    return { type: 'assistant', message: { model, role: 'assistant', usage: { input_tokens: 5, output_tokens: 1 } } };
+  }
+
+  it('sets currentModel per agent from each transcript', () => {
+    const projDir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
+    fs.mkdirSync(path.join(projDir, SID, 'subagents'), { recursive: true });
+    fs.writeFileSync(path.join(projDir, `${SID}.jsonl`),
+      [assistant('claude-opus-4-8')].map(l => JSON.stringify(l)).join('\n'));
+    fs.writeFileSync(path.join(projDir, SID, 'subagents', 'agent-a1.jsonl'),
+      [assistant('claude-sonnet-4-5')].map(l => JSON.stringify(l)).join('\n'));
+
+    const usage = new UsageParser(claudeDir).usageForSession(SID, CWD, [
+      { agentId: SID, name: 'Main agent', isMain: true },
+      { agentId: 'a1', name: 'Sub', isMain: false },
+    ]);
+    expect(usage.byAgent[0].currentModel).toBe('claude-opus-4-8');
+    expect(usage.byAgent[1].currentModel).toBe('claude-sonnet-4-5');
+  });
+});
