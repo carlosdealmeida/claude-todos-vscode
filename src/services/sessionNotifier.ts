@@ -3,12 +3,15 @@
 // pelo watcher e por um timer, e decide COMO exibir; aqui só decidimos O QUE
 // disparar e quando, com as regras anti-ruído.
 
-export type NotificationKind = 'idle' | 'allComplete';
+import type { AwaitingInput } from '../types';
+
+export type NotificationKind = 'idle' | 'allComplete' | 'awaitingInput';
 
 export interface NotifierInput {
   sessionId: string;    // sessão exibida no painel
   mtime: number;        // transcriptMtime da sessão (0 se indisponível)
   allComplete: boolean; // main agent: todos.length > 0 && todas completed
+  awaitingInput?: AwaitingInput | null;  // pergunta/plano pendente no transcript
   now: number;          // epoch ms, injetado
 }
 
@@ -25,6 +28,7 @@ export class SessionNotifier {
   private activeSince = 0;    // início da rajada de atividade corrente
   private idleNotified = false;
   private prevAllComplete = false;
+  private prevAwaiting: AwaitingInput | null = null;
 
   // Observa o estado corrente. Chamada a cada onChange do watcher E a cada
   // tick do timer. Retorna as notificações a disparar AGORA (no máximo uma de
@@ -39,6 +43,7 @@ export class SessionNotifier {
       this.activeSince = input.now;
       this.idleNotified = false;
       this.prevAllComplete = input.allComplete;
+      this.prevAwaiting = input.awaitingInput ?? null;
       return [];
     }
 
@@ -48,6 +53,12 @@ export class SessionNotifier {
     if (input.allComplete && !this.prevAllComplete) out.push('allComplete');
     this.prevAllComplete = input.allComplete;
 
+    // awaitingInput: transição para pendente (ou troca de kind) = aviso novo;
+    // mesma pendência repetida não re-dispara.
+    const awaiting = input.awaitingInput ?? null;
+    if (awaiting !== null && awaiting !== this.prevAwaiting) out.push('awaitingInput');
+    this.prevAwaiting = awaiting;
+
     if (input.mtime !== this.lastMtime) {
       // Atividade. Se o silêncio anterior já tinha vencido IDLE_MS, esta
       // mudança abre uma NOVA rajada (o ciclo de idle rearma).
@@ -56,7 +67,8 @@ export class SessionNotifier {
       this.lastChangeAt = input.now;
       this.idleNotified = false;
     } else if (
-      !this.idleNotified
+      awaiting === null
+      && !this.idleNotified
       && this.lastChangeAt - this.activeSince >= ACTIVITY_MIN_MS
       && input.now - this.lastChangeAt >= IDLE_MS
     ) {

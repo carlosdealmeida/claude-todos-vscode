@@ -113,6 +113,68 @@ describe('SessionNotifier', () => {
     expect(n.observe({ sessionId: 's1', mtime: c1, allComplete: false, now: c1 + IDLE_MS })).toEqual(['idle']);
   });
 
+  it('fires awaitingInput on the null -> question transition', () => {
+    const n = new SessionNotifier();
+    n.observe({ sessionId: 's1', mtime: 1, allComplete: false, now: T0 });
+    expect(n.observe({ sessionId: 's1', mtime: 2, allComplete: false, awaitingInput: 'question', now: T0 + 1000 }))
+      .toEqual(['awaitingInput']);
+  });
+
+  it('does not re-fire while the same wait stays pending', () => {
+    const n = new SessionNotifier();
+    n.observe({ sessionId: 's1', mtime: 1, allComplete: false, now: T0 });
+    n.observe({ sessionId: 's1', mtime: 2, allComplete: false, awaitingInput: 'question', now: T0 + 1000 });
+    expect(n.observe({ sessionId: 's1', mtime: 2, allComplete: false, awaitingInput: 'question', now: T0 + 2000 }))
+      .toEqual([]);
+  });
+
+  it('re-fires when the wait kind changes (question -> plan)', () => {
+    const n = new SessionNotifier();
+    n.observe({ sessionId: 's1', mtime: 1, allComplete: false, now: T0 });
+    n.observe({ sessionId: 's1', mtime: 2, allComplete: false, awaitingInput: 'question', now: T0 + 1000 });
+    expect(n.observe({ sessionId: 's1', mtime: 3, allComplete: false, awaitingInput: 'plan', now: T0 + 2000 }))
+      .toEqual(['awaitingInput']);
+  });
+
+  it('re-fires after the wait resolves and a new one appears', () => {
+    const n = new SessionNotifier();
+    n.observe({ sessionId: 's1', mtime: 1, allComplete: false, now: T0 });
+    n.observe({ sessionId: 's1', mtime: 2, allComplete: false, awaitingInput: 'question', now: T0 + 1000 });
+    n.observe({ sessionId: 's1', mtime: 3, allComplete: false, awaitingInput: null, now: T0 + 2000 });
+    expect(n.observe({ sessionId: 's1', mtime: 4, allComplete: false, awaitingInput: 'question', now: T0 + 3000 }))
+      .toEqual(['awaitingInput']);
+  });
+
+  it('never fires awaitingInput on the first observation of a session', () => {
+    const n = new SessionNotifier();
+    expect(n.observe({ sessionId: 's1', mtime: 1, allComplete: false, awaitingInput: 'question', now: T0 }))
+      .toEqual([]);
+  });
+
+  it('suppresses idle while a wait is pending, and idle works again after it resolves', () => {
+    const n = new SessionNotifier();
+    n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
+    const c1 = burst(n, 's1', T0, ACTIVITY_MIN_MS);
+    // pendência surge junto da última atividade (o tool_use mudou o mtime)
+    expect(n.observe({ sessionId: 's1', mtime: c1 + 1, allComplete: false, awaitingInput: 'question', now: c1 + 1 }))
+      .toEqual(['awaitingInput']);
+    // silêncio vencido, mas pendente aberto: idle NÃO dispara
+    expect(n.observe({ sessionId: 's1', mtime: c1 + 1, allComplete: false, awaitingInput: 'question', now: c1 + 1 + IDLE_MS }))
+      .toEqual([]);
+    // resposta chega (mtime muda, pendência limpa); nova rajada + silêncio → idle volta a funcionar
+    const t2 = c1 + 1 + IDLE_MS + 120_000;
+    const c2 = burst(n, 's1', t2, ACTIVITY_MIN_MS);
+    expect(n.observe({ sessionId: 's1', mtime: c2, allComplete: false, awaitingInput: null, now: c2 + IDLE_MS }))
+      .toEqual(['idle']);
+  });
+
+  it('orders allComplete before awaitingInput in the same cycle', () => {
+    const n = new SessionNotifier();
+    n.observe({ sessionId: 's1', mtime: 1, allComplete: false, now: T0 });
+    expect(n.observe({ sessionId: 's1', mtime: 2, allComplete: true, awaitingInput: 'question', now: T0 + 1000 }))
+      .toEqual(['allComplete', 'awaitingInput']);
+  });
+
   describe('shouldPoll', () => {
     it('is false before any observation', () => {
       expect(new SessionNotifier().shouldPoll(T0)).toBe(false);
