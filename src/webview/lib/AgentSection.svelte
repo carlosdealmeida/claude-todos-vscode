@@ -3,13 +3,15 @@
   import type { AgentTodos } from '../../types';
   import TodoItem from './TodoItem.svelte';
   import Icon from './Icon.svelte';
-  import { summarizeTiming, formatDuration, completedTaskDurations, formatCompact, agentTypeTone, listStaleness } from '../format';
+  import { summarizeTiming, formatDuration, completedTaskDurations, formatCompact, agentTypeTone, listStaleness, modelBadge, shortModel } from '../format';
   import { clock } from '../clock.svelte';
   import { todosStore } from '../stores.svelte';
 
-  let { agent, defaultExpanded = true, history = false, tokens = null, hasRunningSubAgent = false }:
-    { agent: AgentTodos; defaultExpanded?: boolean; history?: boolean; tokens?: number | null; hasRunningSubAgent?: boolean } = $props();
+  let { agent, defaultExpanded = true, history = false, tokens = null, hasRunningSubAgent = false, currentModel, usedModels = [], mainModel }:
+    { agent: AgentTodos; defaultExpanded?: boolean; history?: boolean; tokens?: number | null; hasRunningSubAgent?: boolean; currentModel?: string; usedModels?: string[]; mainModel?: string } = $props();
   let expanded = $state(defaultExpanded);
+
+  let mBadge = $derived(modelBadge(currentModel, mainModel, agent.isMain));
 
   let stale = $derived(listStaleness(agent, hasRunningSubAgent, clock.now));
 
@@ -41,6 +43,9 @@
     <span class="title">{title}</span>
     {#if agent.agentType}
       <span class="type-badge tone-{agentTypeTone(agent.agentType)}" title={todosStore.t('agent.typeTooltip', { type: agent.agentType })}>{agent.agentType}</span>
+    {/if}
+    {#if mBadge}
+      <span class="model-badge" title={todosStore.t('agent.modelTooltip', { models: usedModels.map(shortModel).join(', ') })}>{mBadge}</span>
     {/if}
     {#if tokens !== null}
       <span class="tokens" title={todosStore.t('agent.tokensTooltip')}>{formatCompact(tokens)}</span>
@@ -161,6 +166,15 @@
   .tone-plan { --tone: var(--vscode-charts-yellow); }
   .tone-general { --tone: var(--vscode-charts-blue); }
   .tone-neutral { --tone: var(--vscode-descriptionForeground); }
+  .model-badge {
+    flex: none;
+    font-size: 0.68em;
+    padding: 1px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--vscode-panel-border);
+    color: var(--vscode-descriptionForeground);
+    white-space: nowrap;
+  }
   .tokens {
     flex: none;
     font-size: 0.8em;

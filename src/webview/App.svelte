@@ -12,6 +12,8 @@
   let hasRunningSubAgent = $derived(
     snapshot?.agents.some(a => !a.isMain && a.status === 'running') ?? false,
   );
+  // Modelo atual do main — referência para o badge dos sub-agents (só difere = mostra).
+  let mainModel = $derived(snapshot?.usage?.byAgent.find(a => a.isMain)?.currentModel);
 </script>
 
 <main>
@@ -41,7 +43,7 @@
     {#if snapshot.agents.length > 0}
       <div class="agents">
         {#each buildTree(snapshot.agents) as root (root.agent.agentId)}
-          <AgentTree node={root} usage={snapshot.usage} history={isHistory(root.agent)} {hasRunningSubAgent} />
+          <AgentTree node={root} usage={snapshot.usage} history={isHistory(root.agent)} {hasRunningSubAgent} {mainModel} />
         {/each}
       </div>
     {:else}

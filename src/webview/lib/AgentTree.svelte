@@ -6,12 +6,15 @@
   import { todosStore } from '../stores.svelte';
   import type { SessionUsage } from '../../types';
 
-  let { node, level = 0, usage, history = false, hasRunningSubAgent = false }:
-    { node: AgentNode; level?: number; usage?: SessionUsage; history?: boolean; hasRunningSubAgent?: boolean } = $props();
+  let { node, level = 0, usage, history = false, hasRunningSubAgent = false, mainModel }:
+    { node: AgentNode; level?: number; usage?: SessionUsage; history?: boolean; hasRunningSubAgent?: boolean; mainModel?: string } = $props();
 
   // Cap de recuo: a partir do 4º nível a árvore achata (o painel é estreito e
   // spawnDepth > 3 é raríssimo).
   let childLevel = $derived(Math.min(level + 1, 3));
+
+  // Usage deste nó — alimenta o badge de modelo do cabeçalho.
+  let agentUsage = $derived(usage?.byAgent.find(a => a.agentId === node.agent.agentId));
 
   function isFirstHistory(children: AgentNode[], i: number): boolean {
     return isHistory(children[i].agent) && (i === 0 || !isHistory(children[i - 1].agent));
@@ -24,6 +27,9 @@
   defaultExpanded={node.agent.isMain || node.agent.status === 'running'}
   tokens={agentTotalTokens(usage?.byAgent, node.agent.agentId)}
   {hasRunningSubAgent}
+  currentModel={agentUsage?.currentModel}
+  usedModels={agentUsage?.models.map(m => m.model) ?? []}
+  {mainModel}
 />
 {#if node.children.length > 0}
   <div class="kids" class:railed={level < 3}>
@@ -32,7 +38,7 @@
         <div class="history-divider">{todosStore.t('app.historyDivider')}</div>
       {/if}
       <div class="branch" class:railed={level < 3}>
-        <AgentTree node={child} level={childLevel} {usage} history={isHistory(child.agent)} />
+        <AgentTree node={child} level={childLevel} {usage} history={isHistory(child.agent)} {mainModel} />
       </div>
     {/each}
   </div>
