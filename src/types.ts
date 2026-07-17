@@ -2,6 +2,8 @@ import type { Locale } from './i18n/locale';
 
 export type TodoStatus = 'pending' | 'in_progress' | 'completed';
 
+export type AwaitingInput = 'question' | 'plan';
+
 export interface Todo {
   content: string;
   status: TodoStatus;
@@ -81,6 +83,7 @@ export interface SessionSnapshot {
   pinned: boolean;
   agents: AgentTodos[];
   usage?: SessionUsage;
+  awaitingInput?: AwaitingInput;
 }
 
 export interface SessionSummary {

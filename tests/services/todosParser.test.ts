@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { TodosParser } from '../../src/services/todosParser';
+import { TodosParser, detectAwaitingInput } from '../../src/services/todosParser';
 import { encodeCwdToProjectDir } from '../../src/services/projectDir';
 
 describe('TodosParser', () => {
@@ -900,5 +900,72 @@ describe('TodosParser', () => {
     const agents = parser.listForSession('s1', CWD);
     const ids = agents.map(a => a.agentId);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe('detectAwaitingInput', () => {
+  const ask = (id: string) => JSON.stringify({
+    type: 'assistant',
+    message: { role: 'assistant', content: [{ type: 'tool_use', id, name: 'AskUserQuestion', input: {} }] },
+  });
+  const plan = (id: string) => JSON.stringify({
+    type: 'assistant',
+    message: { role: 'assistant', content: [{ type: 'tool_use', id, name: 'ExitPlanMode', input: {} }] },
+  });
+  const answer = (id: string) => JSON.stringify({
+    type: 'user',
+    message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: 'ok' }] },
+  });
+  const sidechainAsk = (id: string) => JSON.stringify({
+    type: 'assistant', isSidechain: true,
+    message: { role: 'assistant', content: [{ type: 'tool_use', id, name: 'AskUserQuestion', input: {} }] },
+  });
+
+  it('detects a pending question', () => {
+    expect(detectAwaitingInput([ask('t1')], true)).toBe('question');
+  });
+  it('detects a pending plan approval', () => {
+    expect(detectAwaitingInput([plan('t1')], true)).toBe('plan');
+  });
+  it('clears when the tool_result arrives (answer or harness timeout)', () => {
+    expect(detectAwaitingInput([ask('t1'), answer('t1')], true)).toBeNull();
+  });
+  it('returns the most recent unresolved wait', () => {
+    expect(detectAwaitingInput([ask('t1'), answer('t1'), plan('t2')], true)).toBe('plan');
+    expect(detectAwaitingInput([plan('t1'), ask('t2'), answer('t1')], true)).toBe('question');
+  });
+  it('ignores sidechain questions when skipSidechain', () => {
+    expect(detectAwaitingInput([sidechainAsk('t1')], true)).toBeNull();
+  });
+  it('null on a transcript without wait tools', () => {
+    expect(detectAwaitingInput([JSON.stringify({ type: 'user', message: { role: 'user', content: 'oi' } })], true)).toBeNull();
+  });
+});
+
+describe('listSessionDetail', () => {
+  let claudeDir: string;
+  const CWD = '/home/user/proj';
+  const SID = 'sess-detail';
+  beforeEach(() => { claudeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'detail-')); });
+  afterEach(() => { fs.rmSync(claudeDir, { recursive: true, force: true }); });
+
+  function writeMain(lines: string[]): void {
+    const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, `${SID}.jsonl`), lines.join('\n'));
+  }
+
+  it('exposes awaitingInput from the main transcript alongside the agents', () => {
+    writeMain([JSON.stringify({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_use', id: 'q1', name: 'AskUserQuestion', input: {} }] },
+    })]);
+    const detail = new TodosParser(claudeDir).listSessionDetail(SID, CWD);
+    expect(detail.awaitingInput).toBe('question');
+    expect(Array.isArray(detail.agents)).toBe(true);
+  });
+
+  it('awaitingInput is null for a missing transcript', () => {
+    expect(new TodosParser(claudeDir).listSessionDetail(SID, CWD).awaitingInput).toBeNull();
   });
 });

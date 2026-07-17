@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { AgentTodos, Todo, TodoStatus } from '../types';
+import type { AgentTodos, AwaitingInput, Todo, TodoStatus } from '../types';
 import { transcriptPath as resolveTranscriptPath, subAgentsDir as resolveSubAgentsDir } from './transcriptPaths';
 import { readSubAgentMeta, type SubAgentMeta } from './subAgentMeta';
 
@@ -67,19 +67,57 @@ interface Dispatch {
   result: 'none' | 'completed' | 'rejected';
 }
 
+// tool_use que espera o usuário -> tipo da espera.
+const WAIT_TOOLS: Record<string, AwaitingInput> = {
+  AskUserQuestion: 'question',
+  ExitPlanMode: 'plan',
+};
+
+// Última espera por input do usuário ainda sem resposta: um tool_use de
+// AskUserQuestion/ExitPlanMode cujo tool_result não chegou (resposta, rejeição
+// e o timeout do harness geram tool_result — a pendência limpa sozinha).
+// Map preserva ordem de inserção → o último valor é o pendente mais recente.
+export function detectAwaitingInput(lines: string[], skipSidechain: boolean): AwaitingInput | null {
+  const pending = new Map<string, AwaitingInput>();
+  for (const line of lines) {
+    if (!line) continue;
+    let entry: TranscriptEntry;
+    try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
+    if (skipSidechain && entry.isSidechain) continue;
+    const content = entry.message?.content;
+    if (!Array.isArray(content)) continue;
+    for (const block of content) {
+      if (block?.type === 'tool_use' && typeof block.name === 'string'
+          && block.name in WAIT_TOOLS && typeof block.id === 'string') {
+        pending.set(block.id, WAIT_TOOLS[block.name]);
+      } else if (block?.type === 'tool_result' && typeof block.tool_use_id === 'string') {
+        pending.delete(block.tool_use_id);
+      }
+    }
+  }
+  let last: AwaitingInput | null = null;
+  for (const v of pending.values()) last = v;
+  return last;
+}
+
 export class TodosParser {
   constructor(private readonly claudeDir: string) {}
 
   listForSession(sessionId: string, cwd: string): AgentTodos[] {
+    return this.listSessionDetail(sessionId, cwd).agents;
+  }
+
+  listSessionDetail(sessionId: string, cwd: string): { agents: AgentTodos[]; awaitingInput: AwaitingInput | null } {
     const transcriptPath = this.transcriptPath(sessionId, cwd);
-    if (!transcriptPath) return [];
+    if (!transcriptPath) return { agents: [], awaitingInput: null };
 
-    const result: AgentTodos[] = [];
+    const mainLines = this.readLines(transcriptPath);
+    const agents: AgentTodos[] = [];
 
-    const main = this.readLastTodos(transcriptPath, true);
+    const main = this.readLastTodosFromLines(mainLines, true);
     if (main) {
       const stat = fs.statSync(transcriptPath);
-      result.push({
+      agents.push({
         sessionId,
         agentId: sessionId,
         name: 'Main agent',
@@ -90,8 +128,8 @@ export class TodosParser {
       });
     }
 
-    result.push(...this.listSubAgents(sessionId, cwd, transcriptPath));
-    return result;
+    agents.push(...this.listSubAgents(sessionId, cwd, mainLines));
+    return { agents, awaitingInput: detectAwaitingInput(mainLines, true) };
   }
 
   transcriptMtime(sessionId: string, cwd: string): number | null {
@@ -126,7 +164,7 @@ export class TodosParser {
     return null;
   }
 
-  private listSubAgents(sessionId: string, cwd: string, mainTranscriptPath: string): AgentTodos[] {
+  private listSubAgents(sessionId: string, cwd: string, mainLines: string[]): AgentTodos[] {
     const dir = this.subAgentsDir(sessionId, cwd);
     if (!dir) return [];
 
@@ -173,7 +211,7 @@ export class TodosParser {
     // de invocação para desempate estável na ordenação final.
     const index = new Map<string, { ownerAgentId: string; dispatch: Dispatch; ordinal: number }>();
     let ord = 0;
-    for (const [id, d] of this.collectDispatches(this.readLines(mainTranscriptPath), true)) {
+    for (const [id, d] of this.collectDispatches(mainLines, true)) {
       if (!index.has(id)) index.set(id, { ownerAgentId: sessionId, dispatch: d, ordinal: ord++ });
     }
     for (const info of infos) {
@@ -341,13 +379,6 @@ export class TodosParser {
   //   - legacy `TodoWrite`: a single event carrying the full snapshot.
   //   - new `TaskCreate` / `TaskUpdate` (enabled by `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`):
   //     an event stream — TaskCreate adds one task, TaskUpdate mutates a task by id.
-  private readLastTodos(
-    transcriptPath: string,
-    skipSidechain: boolean,
-  ): { todos: Todo[]; updatedAt?: number } | null {
-    return this.readLastTodosFromLines(this.readLines(transcriptPath), skipSidechain);
-  }
-
   private readLastTodosFromLines(
     lines: string[],
     skipSidechain: boolean,
