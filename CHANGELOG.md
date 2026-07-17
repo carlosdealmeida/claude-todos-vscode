@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.0] - 2026-07-17
+
+### Added
+- **Model badge per agent.** Each agent header now shows the model it is currently running (e.g. `opus-4-8`) — always on the main agent, and on sub-agents only when their model differs from the main's, so the exception is what stands out. The badge reflects the model of the agent's most recent transcript message, so silent model changes and automatic fallbacks become visible immediately; a tooltip lists every model the agent used. Reuses the token data the panel already parses (no extra I/O). Roadmap item 20, from issues [#28986](https://github.com/anthropics/claude-code/issues/28986), [#76018](https://github.com/anthropics/claude-code/issues/76018), [#77367](https://github.com/anthropics/claude-code/issues/77367) and [#76607](https://github.com/anthropics/claude-code/issues/76607) (the native panel shows the wrong model for sub-agents). Spec: `docs/specs/2026-07-17-model-badge-design.md`.
+- **"Awaiting your answer" notification.** When the agent asks a question (`AskUserQuestion`) or presents a plan for approval (`ExitPlanMode`) and the window is unfocused, a toast fires immediately ("waiting for your answer" / "plan awaiting approval") instead of waiting for the idle timer — the wait has an explicit signal in the transcript, so the notification is instant and specific. The pending state is detected from the main transcript (a wait tool call without its matching result — an answer, a rejection, or the harness timeout all clear it), suppresses the generic idle toast while open, and rearms once resolved. Opt-in via the existing `claudeTodos.notifications` setting; localized in en/pt-br/es. Roadmap item 22, from issues [#57230](https://github.com/anthropics/claude-code/issues/57230), [#26581](https://github.com/anthropics/claude-code/issues/26581) and [#8985](https://github.com/anthropics/claude-code/issues/8985) (the native `Notification` hook doesn't fire in the VS Code extension). Spec: `docs/specs/2026-07-17-awaiting-input-notification-design.md`.
+
 ## [0.14.0] - 2026-07-16
 
 ### Added
