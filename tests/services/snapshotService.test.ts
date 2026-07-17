@@ -8,13 +8,19 @@ const usageStub = {
 function makeParser(opts: {
   mtimes: Record<string, number | null>;
   titles?: Record<string, string | null>;
+  awaitingInput?: 'question' | 'plan' | null;
 }) {
+  const agentsFor = (sessionId: string) => [
+    { sessionId, agentId: sessionId, name: 'Main agent', isMain: true, todos: [], updatedAt: 0 },
+  ];
   return {
     transcriptMtime: (sessionId: string, _cwd: string) => opts.mtimes[sessionId] ?? null,
     readSessionTitle: (sessionId: string, _cwd: string) => opts.titles?.[sessionId] ?? null,
-    listForSession: (sessionId: string) => [
-      { sessionId, agentId: sessionId, name: 'Main agent', isMain: true, todos: [], updatedAt: 0 },
-    ],
+    listForSession: (sessionId: string) => agentsFor(sessionId),
+    listSessionDetail: (sessionId: string) => ({
+      agents: agentsFor(sessionId),
+      awaitingInput: opts.awaitingInput ?? null,
+    }),
   };
 }
 
@@ -113,6 +119,7 @@ describe('SnapshotService', () => {
       transcriptMtime: () => 1000,
       readSessionTitle: () => null,
       listForSession: () => [], // no TodoWrite yet → no agents
+      listSessionDetail: () => ({ agents: [], awaitingInput: null }),
     };
     let receivedAgents: any[] | undefined;
     const usage = {
@@ -181,5 +188,27 @@ describe('SnapshotService', () => {
     const svc = new SnapshotService(resolver as any, parser as any, usage as any);
     const snap = svc.build()!;
     expect(snap.usage?.byModel[0].model).toBe('claude-opus-4-8');
+  });
+
+  it('exposes awaitingInput on the snapshot when the parser reports a pending wait', () => {
+    const resolver = {
+      resolveCandidates: () => [
+        { cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 },
+      ],
+    };
+    const parser = makeParser({ mtimes: { a: 1000 }, awaitingInput: 'question' });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
+    expect(svc.build()!.awaitingInput).toBe('question');
+  });
+
+  it('omits awaitingInput when there is no pending wait', () => {
+    const resolver = {
+      resolveCandidates: () => [
+        { cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 },
+      ],
+    };
+    const parser = makeParser({ mtimes: { a: 1000 } });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
+    expect('awaitingInput' in svc.build()!).toBe(false);
   });
 });

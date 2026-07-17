@@ -37,7 +37,8 @@ export class SnapshotService {
     const chosen = this.choose(sessions);
     if (!chosen) return null;
 
-    const agents = this.parser.listForSession(chosen.sessionId, chosen.cwd);
+    const detail = this.parser.listSessionDetail(chosen.sessionId, chosen.cwd);
+    const agents = detail.agents;
     // Desacopla "tem sessão" de "tem todo": antes de qualquer TodoWrite, ainda
     // resolvemos o agente main para que tokens/contexto/cache apareçam assim que
     // a sessão tem atividade. A lista visível (`agents`) continua vazia — a UI
@@ -57,6 +58,7 @@ export class SnapshotService {
       pinned: chosen.sessionId === this.pinnedSessionId,
       agents,
       usage: this.usageParser.usageForSession(chosen.sessionId, chosen.cwd, usageAgents),
+      ...(detail.awaitingInput !== null ? { awaitingInput: detail.awaitingInput } : {}),
     };
   }
 

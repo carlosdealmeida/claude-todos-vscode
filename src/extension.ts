@@ -91,15 +91,17 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Gate de exibição (setting + foco) na hora do disparo — a detecção roda
   // sempre, para o estado do notifier não depender do foco da janela.
-  const maybeToast = (kinds: NotificationKind[], title: string): void => {
+  const maybeToast = (kinds: NotificationKind[], title: string, awaiting: 'question' | 'plan' | null = null): void => {
     if (kinds.length === 0) return;
     const enabled = vscode.workspace.getConfiguration('claudeTodos').get<boolean>('notifications', true);
     if (!enabled || vscode.window.state.focused) return;
     const t = createT(resolveLocale());
-    // Os dois no mesmo observe: exibe só allComplete (menos ruído).
+    // Vários no mesmo observe: exibe um só, do mais conclusivo ao mais genérico.
     const message = kinds.includes('allComplete')
       ? t('notify.allComplete', { title })
-      : t('notify.idle', { title });
+      : kinds.includes('awaitingInput')
+        ? t(awaiting === 'plan' ? 'notify.awaitingPlan' : 'notify.awaitingQuestion', { title })
+        : t('notify.idle', { title });
     void vscode.window.showInformationMessage(message, t('notify.openPanel'), t('notify.disable'))
       .then(choice => {
         if (choice === t('notify.openPanel')) {
@@ -127,9 +129,10 @@ export function activate(context: vscode.ExtensionContext): void {
       sessionId: snapshot.sessionId,
       mtime,
       allComplete,
+      awaitingInput: snapshot.awaitingInput ?? null,
       now,
     });
-    maybeToast(fired, snapshot.title);
+    maybeToast(fired, snapshot.title, snapshot.awaitingInput ?? null);
     if (notifier.shouldPoll(now)) startNotifyTimer(); else stopNotifyTimer();
   };
 
