@@ -40,8 +40,10 @@ class SessionCore {
   // Watcher: registra listener; começa/para o fs.watch internamente.
   onChange(listener: () => void): void;
   dispose(): void;
-  // Notificações: encapsula o SessionNotifier. Decide O QUE disparar (não COMO):
-  observeForNotifications(): { kinds: NotificationKind[]; awaitingInput: AwaitingInput | null };
+  // Notificações: encapsula o SessionNotifier. Decide O QUE disparar (não COMO).
+  // Constrói o snapshot internamente e devolve o `title` para o host montar o
+  // toast; `title` null = sem sessão (o host para o timer).
+  observeForNotifications(): { kinds: NotificationKind[]; awaitingInput: AwaitingInput | null; title: string | null };
   shouldPollNotifications(): boolean;
 }
 ```
@@ -59,6 +61,11 @@ class SessionCore {
   toast (mantendo `maybeToast` com os gates), e mapear os comandos para os métodos do core. O
   `HookInstaller`, a limpeza de hooks legados e o `ensureStableHookScript` **permanecem intactos
   no `extension.ts`** — o SP0 não os toca.
+- **Providers da webview:** hoje `TodosViewProvider`/`TodosPanelProvider` recebem o
+  `SnapshotService` e chamam `.build()`. Passam a receber uma função
+  `buildSnapshot: () => SessionSnapshot | null` (satisfeita por `core.buildSnapshot`), desacoplando
+  o provider do serviço concreto. Mudança mecânica de assinatura + call sites; comportamento
+  idêntico.
 
 ### 2. `todosWatcher` sem `vscode`
 
@@ -99,15 +106,16 @@ Entry do processo Node. Uma casca fina de stdin/stdout sobre um **dispatcher pur
   `{cmd:'init', claudeDir, cwds}` · `{cmd:'getSnapshot'}` · `{cmd:'watch', on:boolean}` ·
   `{cmd:'getProjectUsage'}` · `{cmd:'resolveTodoSource', sessionId, agentId, line}` ·
   `{cmd:'setPinned', sessionId}` · `{cmd:'listSessions'}`.
-  (Instalação de hook não entra no protocolo do SP0 — é do SP2.)
+  (Instalação de hook e loop de notificação não entram no protocolo do SP0 — são do SP2.)
 - **Eventos (stdout, um JSON por linha):**
   `{ev:'snapshot', snapshot}` · `{ev:'projectUsage', usage}` ·
-  `{ev:'notification', kinds, awaitingInput}` · `{ev:'todoSource', filePath, line}` ·
+  `{ev:'todoSource', filePath, line}` (ou `{ev:'todoSource', filePath:null}` quando não resolve) ·
   `{ev:'sessions', sessions}` · `{ev:'error', message}`.
-- **Watch + notificações:** com `watch:true` o sidecar liga `core.onChange` → emite `snapshot`;
-  roda seu próprio `setInterval` de 10s espelhando `observeSession` do host, emitindo
-  `notification` quando `observeForNotifications` retorna algo. Os gates (foco/setting) são do
-  plugin, não do sidecar.
+- **Watch:** com `watch:true` o sidecar liga `core.onChange` → emite `snapshot` a cada mudança.
+- **Notificações no sidecar (SP2, não agora):** o `observeForNotifications` do `SessionCore` já
+  existe e é usado pelo host VS Code no SP0; o *loop do sidecar* (timer de 10s + evento
+  `notification`) só ganha consumidor quando o plugin JetBrains exibir toasts nativos, então
+  chega no SP2. Incluí-lo agora seria código sem consumidor.
 - **cwds no sidecar:** o `workspaceCwds()` do core devolve os `cwds` recebidos no `init` (o plugin
   Kotlin passa o base path do projeto). No VS Code segue vindo de `workspaceFolders`.
 
