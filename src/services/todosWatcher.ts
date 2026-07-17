@@ -1,12 +1,11 @@
-import * as vscode from 'vscode';
+import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const DEBOUNCE_MS = 150;
 
-export class TodosWatcher implements vscode.Disposable {
-  private readonly emitter = new vscode.EventEmitter<void>();
-  readonly onChange = this.emitter.event;
+export class TodosWatcher {
+  private readonly emitter = new EventEmitter();
   private readonly watchers: fs.FSWatcher[] = [];
   private debounceHandle: NodeJS.Timeout | null = null;
 
@@ -16,6 +15,11 @@ export class TodosWatcher implements vscode.Disposable {
 
     this.tryWatch(projectsDir, { recursive: true });
     this.tryWatch(bridgeDir, { recursive: false });
+  }
+
+  onChange(listener: () => void): { dispose(): void } {
+    this.emitter.on('change', listener);
+    return { dispose: () => { this.emitter.off('change', listener); } };
   }
 
   private tryWatch(dir: string, opts: { recursive: boolean }): void {
@@ -34,7 +38,7 @@ export class TodosWatcher implements vscode.Disposable {
     if (this.debounceHandle) clearTimeout(this.debounceHandle);
     this.debounceHandle = setTimeout(() => {
       this.debounceHandle = null;
-      this.emitter.fire();
+      this.emitter.emit('change');
     }, DEBOUNCE_MS);
   }
 
@@ -43,6 +47,6 @@ export class TodosWatcher implements vscode.Disposable {
     for (const w of this.watchers) {
       try { w.close(); } catch { /* ignore */ }
     }
-    this.emitter.dispose();
+    this.emitter.removeAllListeners();
   }
 }
