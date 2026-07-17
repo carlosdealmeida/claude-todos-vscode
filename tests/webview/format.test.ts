@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatCompact, shortModel, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness } from '../../src/webview/format';
+import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness } from '../../src/webview/format';
 import type { Todo, TodoStatus, AgentUsage } from '../../src/types';
 
 function todo(status: TodoStatus, startedAt?: number, completedAt?: number): Todo {
@@ -153,10 +153,36 @@ describe('summarizeTiming', () => {
 describe('shortModel', () => {
   it('strips the claude- prefix', () => {
     expect(shortModel('claude-opus-4-8')).toBe('opus-4-8');
-    expect(shortModel('claude-sonnet-4-6')).toBe('sonnet-4-6');
   });
-  it('leaves unknown formats untouched', () => {
-    expect(shortModel('gpt-x')).toBe('gpt-x');
+  it('strips a legacy date suffix', () => {
+    expect(shortModel('claude-3-5-sonnet-20241022')).toBe('3-5-sonnet');
+  });
+  it('strips the date but keeps the [1m] suffix', () => {
+    expect(shortModel('claude-sonnet-4-5-20250929[1m]')).toBe('sonnet-4-5[1m]');
+  });
+  it('passes through an already-short id', () => {
+    expect(shortModel('opus-4-8')).toBe('opus-4-8');
+  });
+});
+
+describe('modelBadge', () => {
+  it('main: shows whenever a model exists', () => {
+    expect(modelBadge('claude-opus-4-8', undefined, true)).toBe('opus-4-8');
+  });
+  it('main: null without a model', () => {
+    expect(modelBadge(undefined, undefined, true)).toBeNull();
+  });
+  it('sub-agent: hidden when equal to the main model', () => {
+    expect(modelBadge('claude-opus-4-8', 'claude-opus-4-8', false)).toBeNull();
+  });
+  it('sub-agent: shown when it differs from the main model', () => {
+    expect(modelBadge('claude-sonnet-4-5', 'claude-opus-4-8', false)).toBe('sonnet-4-5');
+  });
+  it('sub-agent: shown when the main has no reference model', () => {
+    expect(modelBadge('claude-sonnet-4-5', undefined, false)).toBe('sonnet-4-5');
+  });
+  it('sub-agent: null without a model', () => {
+    expect(modelBadge(undefined, 'claude-opus-4-8', false)).toBeNull();
   });
 });
 

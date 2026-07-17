@@ -112,9 +112,25 @@ export function summarizeTiming(todos: Todo[], now: number): TimingSummary {
   return { elapsedMs, estimateMs, hasEstimate };
 }
 
-// "claude-opus-4-8" -> "opus-4-8"
+// "claude-opus-4-8" -> "opus-4-8"; sufixo de data legado cai, "[1m]" fica:
+// "claude-sonnet-4-5-20250929[1m]" -> "sonnet-4-5[1m]".
 export function shortModel(model: string): string {
-  return model.startsWith('claude-') ? model.slice('claude-'.length) : model;
+  return model
+    .replace(/^claude-/, '')
+    .replace(/-20\d{6}(?=\[1m\]$|$)/, '');
+}
+
+// Texto do badge de modelo de um nó da árvore, ou null quando não exibir.
+// Main: sempre que houver modelo. Sub-agent: só quando difere do main (a
+// exceção é o que salta aos olhos); sem referência do main, mostra o que há.
+export function modelBadge(
+  current: string | undefined,
+  mainModel: string | undefined,
+  isMain: boolean,
+): string | null {
+  if (current === undefined) return null;
+  if (!isMain && mainModel !== undefined && current === mainModel) return null;
+  return shortModel(current);
 }
 
 export type ContextLevel = 'ok' | 'warn' | 'danger';
