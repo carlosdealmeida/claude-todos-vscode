@@ -1,6 +1,5 @@
 import { SessionCore, type SessionCoreDeps } from './sessionCore';
-import type { SessionSnapshot, SessionSummary, ProjectUsage, AwaitingInput } from '../types';
-import type { NotificationKind } from '../services/sessionNotifier';
+import type { SessionSnapshot, SessionSummary, ProjectUsage } from '../types';
 
 export type CoreCommand =
   | { cmd: 'init'; claudeDir: string; cwds: string[] }
@@ -27,9 +26,13 @@ export function createDispatcher(
 ): (cmd: CoreCommand) => void {
   let core: SessionCore | null = null;
   let cwds: string[] = [];
+  let watchSub: { dispose(): void } | null = null;
 
   return (cmd: CoreCommand): void => {
     if (cmd.cmd === 'init') {
+      watchSub?.dispose();
+      watchSub = null;
+      core?.dispose();
       cwds = cmd.cwds;
       core = makeCore({ claudeDir: cmd.claudeDir, workspaceCwds: () => cwds });
       return;
@@ -40,7 +43,14 @@ export function createDispatcher(
         emit({ ev: 'snapshot', snapshot: core.buildSnapshot() });
         break;
       case 'watch':
-        if (cmd.on) core.onChange(() => emit({ ev: 'snapshot', snapshot: core!.buildSnapshot() }));
+        if (cmd.on) {
+          if (watchSub === null) {
+            watchSub = core.onChange(() => emit({ ev: 'snapshot', snapshot: core!.buildSnapshot() }));
+          }
+        } else {
+          watchSub?.dispose();
+          watchSub = null;
+        }
         break;
       case 'getProjectUsage':
         emit({ ev: 'projectUsage', usage: core.getProjectUsage() });

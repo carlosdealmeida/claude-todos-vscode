@@ -62,4 +62,47 @@ describe('createDispatcher', () => {
     const events = run([{ cmd: 'init', claudeDir: '/c', cwds: ['/p'] }, { cmd: 'nope' } as any]);
     expect(events.at(-1)).toEqual({ ev: 'error', message: 'unknown command: nope' });
   });
+
+  it('watch:true twice does not stack duplicate listeners', () => {
+    let registrations = 0;
+    let fire: (() => void) | null = null;
+    const core = fakeCore({ onChange: (l: () => void) => { registrations++; fire = l; return { dispose: vi.fn() }; } });
+    const events: CoreEvent[] = [];
+    const dispatch = createDispatcher((e) => events.push(e), () => core);
+    dispatch({ cmd: 'init', claudeDir: '/c', cwds: ['/p'] });
+    dispatch({ cmd: 'watch', on: true });
+    dispatch({ cmd: 'watch', on: true });
+    expect(registrations).toBe(1);
+    fire!();
+    expect(events.filter(e => e.ev === 'snapshot')).toHaveLength(1);
+  });
+
+  it('watch:false disposes the subscription and re-watch works', () => {
+    const dispose = vi.fn();
+    let fire: (() => void) | null = null;
+    const core = fakeCore({ onChange: (l: () => void) => { fire = l; return { dispose }; } });
+    const events: CoreEvent[] = [];
+    const dispatch = createDispatcher((e) => events.push(e), () => core);
+    dispatch({ cmd: 'init', claudeDir: '/c', cwds: ['/p'] });
+    dispatch({ cmd: 'watch', on: true });
+    dispatch({ cmd: 'watch', on: false });
+    expect(dispose).toHaveBeenCalledTimes(1);
+    dispatch({ cmd: 'watch', on: true }); // re-watch após desligar volta a funcionar
+    fire!();
+    expect(events.filter(e => e.ev === 'snapshot')).toHaveLength(1);
+  });
+
+  it('re-init disposes the previous core and its watch subscription', () => {
+    const coreDispose = vi.fn();
+    const subDispose = vi.fn();
+    const core1 = fakeCore({ dispose: coreDispose, onChange: () => ({ dispose: subDispose }) });
+    const core2 = fakeCore();
+    const cores = [core1, core2];
+    const dispatch = createDispatcher(() => {}, () => cores.shift()!);
+    dispatch({ cmd: 'init', claudeDir: '/c', cwds: ['/p'] });
+    dispatch({ cmd: 'watch', on: true });
+    dispatch({ cmd: 'init', claudeDir: '/c', cwds: ['/q'] });
+    expect(subDispose).toHaveBeenCalledTimes(1);
+    expect(coreDispose).toHaveBeenCalledTimes(1);
+  });
 });
