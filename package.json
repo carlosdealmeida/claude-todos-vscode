@@ -205,8 +205,9 @@
   "scripts": {
     "build:ext": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "build:hook": "esbuild src/hooks/sessionStart.ts --bundle --outfile=dist/hooks/sessionStart.js --format=cjs --platform=node",
+    "build:core": "esbuild src/core/main.ts --bundle --outfile=dist/core/main.js --format=cjs --platform=node",
     "build:webview": "vite build",
-    "build": "npm run build:ext && npm run build:hook && npm run build:webview",
+    "build": "npm run build:ext && npm run build:hook && npm run build:core && npm run build:webview",
     "watch": "npm run build -- --watch",
     "test": "vitest run",
     "test:watch": "vitest",
