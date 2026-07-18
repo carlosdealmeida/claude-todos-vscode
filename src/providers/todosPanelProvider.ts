@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { buildWebviewHtml } from '../webview/html';
-import type { SnapshotService } from '../services/snapshotService';
-import type { ExtensionMessage, WebviewMessage, ProjectUsage } from '../types';
+import type { SessionSnapshot, ExtensionMessage, WebviewMessage, ProjectUsage } from '../types';
 import { resolveLocale } from '../localeResolver';
 
 export class TodosPanelProvider {
@@ -9,7 +8,7 @@ export class TodosPanelProvider {
 
   constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly snapshotService: SnapshotService,
+    private readonly buildSnapshot: () => SessionSnapshot | null,
     private readonly onWebviewMessage: (msg: WebviewMessage) => void,
   ) {}
 
@@ -41,7 +40,7 @@ export class TodosPanelProvider {
 
   pushSnapshot(): void {
     if (!this.panel) return;
-    const msg: ExtensionMessage = { type: 'snapshot', snapshot: this.snapshotService.build() };
+    const msg: ExtensionMessage = { type: 'snapshot', snapshot: this.buildSnapshot() };
     this.panel.webview.postMessage(msg);
   }
 

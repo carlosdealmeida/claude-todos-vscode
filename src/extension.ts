@@ -2,25 +2,17 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { BridgeFile } from './services/bridgeFile';
-import { TodosParser } from './services/todosParser';
-import { SessionResolver } from './services/sessionResolver';
-import { SnapshotService } from './services/snapshotService';
-import { UsageParser } from './services/usageParser';
-import { ProjectUsageService } from './services/projectUsageService';
-import { TodosWatcher } from './services/todosWatcher';
 import { HookInstaller, type HookEvent } from './services/hookInstaller';
 import { TodosViewProvider } from './providers/todosViewProvider';
 import { TodosPanelProvider } from './providers/todosPanelProvider';
 import type { WebviewMessage } from './types';
 import { createT } from './i18n/t';
 import { resolveLocale } from './localeResolver';
-import { SessionNotifier, type NotificationKind } from './services/sessionNotifier';
-import { transcriptPath, subAgentsDir, SAFE_SESSION_ID } from './services/transcriptPaths';
 import { pickWorkspaceCwds } from './services/workspaceFolders';
+import { SessionCore } from './core/sessionCore';
+import type { NotificationKind } from './services/sessionNotifier';
 
 const HOOK_EVENTS: HookEvent[] = ['SessionStart', 'UserPromptSubmit'];
-const SEVEN_DAYS_MS = 7 * 24 * 3600 * 1000;
 // Retenção dos registros do bridge. Sessões saem do picker quando o transcript
 // some; isto só remove o lixo acumulado no sessions.json (cap de 200 do hook).
 const BRIDGE_MAX_AGE_MS = 30 * 24 * 3600 * 1000;
@@ -46,7 +38,6 @@ function relativeTime(ms: number, t: ReturnType<typeof createT>): string {
 
 export function activate(context: vscode.ExtensionContext): void {
   const claudeDir = resolveClaudeDir();
-  const bridgePath = path.join(claudeDir, '.vscode-todos-bridge', 'sessions.json');
   const settingsPath = path.join(claudeDir, 'settings.json');
   const hookScriptPath = ensureStableHookScript(context, claudeDir);
   const hookCommand = `node "${hookScriptPath}"`;
@@ -60,22 +51,13 @@ export function activate(context: vscode.ExtensionContext): void {
     try { hookInstaller.installAll(HOOK_EVENTS, hookCommand); } catch { /* swallow */ }
   }
 
-  const bridge = new BridgeFile(bridgePath);
-  bridge.prune(BRIDGE_MAX_AGE_MS);
-  const parser = new TodosParser(claudeDir);
-  const usageParser = new UsageParser(claudeDir);
-  const projectUsageService = new ProjectUsageService(claudeDir);
   const workspaceCwds = (): string[] => pickWorkspaceCwds(
     (vscode.workspace.workspaceFolders ?? []).map(f => ({ name: f.name, fsPath: f.uri.fsPath })),
     vscode.workspace.getConfiguration('claudeTodos').get<string>('activeFolder', ''),
   );
-  const resolver = new SessionResolver(bridge, workspaceCwds);
-  const snapshotService = new SnapshotService(resolver, parser, usageParser);
-  snapshotService.setPinnedSession(context.workspaceState.get<string | null>('pinnedSessionId', null));
-  const watcher = new TodosWatcher(claudeDir);
-  context.subscriptions.push(watcher);
-
-  const notifier = new SessionNotifier();
+  const core = new SessionCore({ claudeDir, workspaceCwds });
+  core.pruneBridge(BRIDGE_MAX_AGE_MS);
+  core.setPinnedSession(context.workspaceState.get<string | null>('pinnedSessionId', null));
   let notifyTimer: NodeJS.Timeout | null = null;
 
   let viewProvider!: TodosViewProvider;
@@ -117,28 +99,15 @@ export function activate(context: vscode.ExtensionContext): void {
   // Chamada em cada onChange do watcher e em cada tick do timer; o timer só
   // fica armado enquanto um disparo de idle ainda é possível (shouldPoll).
   const observeSession = (): void => {
-    const snapshot = snapshotService.build();
-    if (!snapshot) { stopNotifyTimer(); return; }
-    const mtime = parser.transcriptMtime(snapshot.sessionId, snapshot.cwd) ?? 0;
-    const main = snapshot.agents.find(a => a.isMain);
-    const allComplete = main !== undefined
-      && main.todos.length > 0
-      && main.todos.every(td => td.status === 'completed');
-    const now = Date.now();
-    const fired = notifier.observe({
-      sessionId: snapshot.sessionId,
-      mtime,
-      allComplete,
-      awaitingInput: snapshot.awaitingInput ?? null,
-      now,
-    });
-    maybeToast(fired, snapshot.title, snapshot.awaitingInput ?? null);
-    if (notifier.shouldPoll(now)) startNotifyTimer(); else stopNotifyTimer();
+    const { kinds, awaitingInput, title } = core.observeForNotifications();
+    if (title === null) { stopNotifyTimer(); return; }
+    maybeToast(kinds, title, awaitingInput);
+    if (core.shouldPollNotifications()) startNotifyTimer(); else stopNotifyTimer();
   };
 
   const showSessionPicker = async (): Promise<void> => {
     const t = createT(resolveLocale());
-    const sessions = snapshotService.listSessions();
+    const sessions = core.listSessions();
     // Em multi-root, o basename da pasta desambigua sessões de pastas distintas.
     const multiRoot = workspaceCwds().length > 1;
     const items: SessionPickItem[] = [
@@ -155,7 +124,7 @@ export function activate(context: vscode.ExtensionContext): void {
       placeHolder: t('picker.placeholder'),
     });
     if (!picked) return;
-    snapshotService.setPinnedSession(picked.sessionId);
+    core.setPinnedSession(picked.sessionId);
     await context.workspaceState.update('pinnedSessionId', picked.sessionId);
     viewProvider.pushSnapshot();
     panelProvider.pushSnapshot();
@@ -170,33 +139,30 @@ export function activate(context: vscode.ExtensionContext): void {
       panelProvider.pushSnapshot();
     } else if (msg.type === 'projectUsage') {
       // Segue a pasta da sessão exibida — painel e dashboard sempre na mesma pasta.
-      const cwd = snapshotService.activeCwd() ?? workspaceCwds()[0] ?? null;
-      const usage = cwd ? projectUsageService.usageForProject(cwd, Date.now() - SEVEN_DAYS_MS) : null;
+      const usage = core.getProjectUsage();
       viewProvider.pushProjectUsage(usage);
       panelProvider.pushProjectUsage(usage);
     } else if (msg.type === 'openTodoSource') {
-      const cwd = snapshotService.listSessions()
-        .find(s => s.sessionId === msg.sessionId)?.cwd ?? null;
-      void openTodoSource(claudeDir, cwd, msg);
+      const target = core.resolveTodoSource(msg.sessionId, msg.agentId, msg.line);
+      void openTodoSource(target);
     } else if (msg.type === 'pickSession') {
       void showSessionPicker();
     }
   };
 
-  viewProvider = new TodosViewProvider(context.extensionUri, snapshotService, handleMessage);
-  panelProvider = new TodosPanelProvider(context.extensionUri, snapshotService, handleMessage);
+  viewProvider = new TodosViewProvider(context.extensionUri, () => core.buildSnapshot(), handleMessage);
+  panelProvider = new TodosPanelProvider(context.extensionUri, () => core.buildSnapshot(), handleMessage);
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(TodosViewProvider.viewType, viewProvider),
   );
 
-  context.subscriptions.push(
-    watcher.onChange(() => {
-      viewProvider.pushSnapshot();
-      panelProvider.pushSnapshot();
-      observeSession();
-    }),
-  );
+  context.subscriptions.push({ dispose: () => core.dispose() });
+  context.subscriptions.push(core.onChange(() => {
+    viewProvider.pushSnapshot();
+    panelProvider.pushSnapshot();
+    observeSession();
+  }));
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
@@ -239,37 +205,16 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 // Abre o transcript do agente no editor, com a linha da mensagem selecionada.
-// agentId igual ao sessionId = main agent (transcript principal); qualquer
-// outro = sub-agent (agent-<id>.jsonl). A cwd vem da sessão (bridge), não da
-// pasta [0] — em multi-root abre o transcript da pasta certa. Ids fora do
-// padrão seguro são ignorados (defesa contra path traversal). Linha além do
-// fim do arquivo: o VS Code posiciona no fim — aceitável (append-only).
-async function openTodoSource(
-  claudeDir: string,
-  cwd: string | null,
-  msg: { sessionId: string; agentId: string; line: number },
-): Promise<void> {
-  if (!SAFE_SESSION_ID.test(msg.agentId)) return;
-  if (!cwd) return;
-
-  let filePath: string | null = null;
-  if (msg.agentId === msg.sessionId) {
-    filePath = transcriptPath(claudeDir, msg.sessionId, cwd);
-  } else {
-    const dir = subAgentsDir(claudeDir, msg.sessionId, cwd);
-    if (dir) {
-      const candidate = path.join(dir, `agent-${msg.agentId}.jsonl`);
-      if (fs.existsSync(candidate)) filePath = candidate;
-    }
-  }
-  if (!filePath) {
+// A resolução do alvo (agent principal vs sub-agent, validação do id, cwd da
+// sessão via bridge) já aconteceu no core; aqui só resta abrir o editor.
+async function openTodoSource(target: { filePath: string; line: number } | null): Promise<void> {
+  if (!target) {
     const t = createT(resolveLocale());
     void vscode.window.showWarningMessage(t('todo.sourceMissing'));
     return;
   }
-
-  const pos = new vscode.Position(Math.max(0, Math.floor(msg.line)), 0);
-  await vscode.window.showTextDocument(vscode.Uri.file(filePath), {
+  const pos = new vscode.Position(target.line, 0);
+  await vscode.window.showTextDocument(vscode.Uri.file(target.filePath), {
     selection: new vscode.Range(pos, pos),
     preview: true,
   });

@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { buildWebviewHtml } from '../webview/html';
-import type { SnapshotService } from '../services/snapshotService';
-import type { ExtensionMessage, WebviewMessage, ProjectUsage } from '../types';
+import type { SessionSnapshot, ExtensionMessage, WebviewMessage, ProjectUsage } from '../types';
 import { resolveLocale } from '../localeResolver';
 
 export class TodosViewProvider implements vscode.WebviewViewProvider {
@@ -10,7 +9,7 @@ export class TodosViewProvider implements vscode.WebviewViewProvider {
 
   constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly snapshotService: SnapshotService,
+    private readonly buildSnapshot: () => SessionSnapshot | null,
     private readonly onWebviewMessage: (msg: WebviewMessage) => void,
   ) {}
 
@@ -33,7 +32,7 @@ export class TodosViewProvider implements vscode.WebviewViewProvider {
 
   pushSnapshot(): void {
     if (!this.view) return;
-    const snapshot = this.snapshotService.build();
+    const snapshot = this.buildSnapshot();
     const msg: ExtensionMessage = { type: 'snapshot', snapshot };
     this.view.webview.postMessage(msg);
   }
