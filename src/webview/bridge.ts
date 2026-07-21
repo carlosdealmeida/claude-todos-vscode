@@ -23,8 +23,22 @@ export function createVscodeBridge(
   };
 }
 
-export function createJcefBridge(): WebviewBridge {
-  throw new Error('jcef bridge não implementada — chega no SP1');
+// Host JCEF (plugin JetBrains): o Kotlin injeta `window.__jcefPost` (JBCefJSQuery)
+// antes do load e entrega mensagens via `window.postMessage` — o listener fica
+// idêntico ao do VS Code.
+interface JcefWindow extends Pick<Window, 'addEventListener'> {
+  __jcefPost(json: string): void;
+}
+
+export function createJcefBridge(win: JcefWindow = window as unknown as JcefWindow): WebviewBridge {
+  return {
+    post: (msg) => win.__jcefPost(JSON.stringify(msg)),
+    onMessage: (handler) => {
+      win.addEventListener('message', (event) => {
+        handler((event as MessageEvent).data as ExtensionMessage);
+      });
+    },
+  };
 }
 
 export function createBridge(): WebviewBridge {

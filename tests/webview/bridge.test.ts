@@ -21,14 +21,21 @@ describe('createVscodeBridge', () => {
 });
 
 describe('createJcefBridge', () => {
-  it('throws until SP1 implements it', () => {
-    expect(() => createJcefBridge()).toThrow(/SP1/);
+  it('post stringifies and delegates to window.__jcefPost', () => {
+    const __jcefPost = vi.fn();
+    const win = { __jcefPost, addEventListener: vi.fn() };
+    const bridge = createJcefBridge(win as any);
+    bridge.post({ type: 'refresh' });
+    expect(__jcefPost).toHaveBeenCalledWith(JSON.stringify({ type: 'refresh' }));
   });
-});
 
-describe('createBridge', () => {
-  it('falls into the jcef branch when acquireVsCodeApi is absent (node env)', () => {
-    // Em env node, `acquireVsCodeApi` não existe em runtime → ramo JCEF → throw.
-    expect(() => createBridge()).toThrow(/SP1/);
+  it('onMessage receives event.data from message events', () => {
+    let captured: ((e: any) => void) | null = null;
+    const win = { __jcefPost: vi.fn(), addEventListener: (_: string, cb: (e: any) => void) => { captured = cb; } };
+    const bridge = createJcefBridge(win as any);
+    const seen: unknown[] = [];
+    bridge.onMessage((msg) => seen.push(msg));
+    captured!({ data: { type: 'locale', locale: 'pt-br' } });
+    expect(seen).toEqual([{ type: 'locale', locale: 'pt-br' }]);
   });
 });
