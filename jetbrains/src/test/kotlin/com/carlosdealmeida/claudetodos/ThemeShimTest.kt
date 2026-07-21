@@ -19,4 +19,10 @@ class ThemeShimTest {
         val css = ThemeShim.cssVariables()
         assertTrue(Regex("--vscode-foreground:\\s*#[0-9a-fA-F]{6}").containsMatchIn(css))
     }
+
+    @Test fun `variables map has the 20 names with non-empty values`() {
+        val vars = ThemeShim.variables()
+        assertEquals(ThemeShim.VAR_NAMES, vars.keys.toList())
+        assertTrue(vars.values.all { it.isNotBlank() })
+    }
 }

@@ -1,5 +1,3 @@
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "2.1.0"
@@ -10,6 +8,10 @@ plugins {
 group = "com.carlosdealmeida"
 version = "0.1.0"
 
+// Versão do IDE alvo, usada tanto para resolver a plataforma (compile/test) quanto para o
+// verifyPlugin — as duas precisam apontar para a mesma versão.
+val ideVersion = "2024.2.4"
+
 repositories {
     mavenCentral()
     intellijPlatform { defaultRepositories() }
@@ -17,7 +19,7 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        create("IC", "2024.2.4")
+        create("IC", ideVersion)
     }
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     testImplementation(kotlin("test"))
@@ -41,7 +43,7 @@ intellijPlatform {
     // defaultRepositories() configurado. Reusa a mesma versão já resolvida para compile/test.
     pluginVerification {
         ides {
-            ide("IC", "2024.2.4")
+            ide("IC", ideVersion)
         }
     }
 }
@@ -53,7 +55,11 @@ tasks.test { useJUnitPlatform() }
 val syncWebAssets by tasks.registering(Copy::class) {
     val dist = rootDir.resolve("../dist")
     doFirst {
-        require(dist.resolve("webview/main.js").exists() && dist.resolve("core/main.js").exists()) {
+        require(
+            dist.resolve("webview/main.js").exists() &&
+                dist.resolve("webview/index.css").exists() &&
+                dist.resolve("core/main.js").exists()
+        ) {
             "Artefatos npm ausentes em ../dist — rode `npm run build` na raiz do repo antes."
         }
     }

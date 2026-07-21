@@ -2,6 +2,7 @@ package com.carlosdealmeida.claudetodos
 
 import kotlin.test.Test
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class WebviewHtmlTest {
@@ -21,5 +22,10 @@ class WebviewHtmlTest {
         val html = buildHtml(css = "a{content:'</style>'}", themeVars = "", bridgeScript = "", appJs = "x='</script>'")
         assertContains(html, "<\\/style>'")   // css inlinado não fecha a tag <style>
         assertContains(html, "<\\/script>'")  // js inlinado não fecha a tag <script>
+    }
+
+    @Test fun `jsSingleQuoted escapes quotes and backslashes`() {
+        assertEquals("""'\'Segoe UI\', sans-serif'""", jsSingleQuoted("'Segoe UI', sans-serif"))
+        assertEquals("""'a\\b'""", jsSingleQuoted("a\\b"))
     }
 }

@@ -9,10 +9,13 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.content.ContentFactory
 import com.intellij.ui.jcef.JBCefApp
+import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.ui.JBUI
 import java.util.Locale
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
+
+private const val SIDECAR_DEAD_MSG = """{"type":"error","message":"sidecar terminated"}"""
 
 class ClaudeTodosToolWindowFactory : ToolWindowFactory {
     private val log = Logger.getInstance(ClaudeTodosToolWindowFactory::class.java)
@@ -26,7 +29,7 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory {
             )
             return
         }
-        val node = NodeLocator.find()
+        val node = NodeLocator.find(com.intellij.util.EnvironmentUtil.getValue("PATH"))
         if (node == null) {
             toolWindow.contentManager.addContent(
                 factory.createContent(
@@ -51,19 +54,23 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory {
         // spawn do processo falhar (ex.: node removido do PATH entre o find() e o start()).
         // Cobrimos com o mesmo erro do onDead, em vez de deixar a exceção subir e quebrar
         // a criação do tool window.
-        runCatching {
-            sidecar.start(
-                onEvent = router::onSidecarEvent,
-                onDead = {
-                    SwingUtilities.invokeLater {
-                        panel.post("""{"type":"error","message":"sidecar terminated"}""")
-                    }
-                },
-            )
-        }.onFailure { e ->
-            log.warn("claude-todos: falha ao iniciar sidecar", e)
-            SwingUtilities.invokeLater {
-                panel.post("""{"type":"error","message":"sidecar terminated"}""")
+        // start() faz IO síncrono (extração do bundle + spawn do processo) — despachado fora
+        // da EDT para não travar a UI na criação do tool window.
+        AppExecutorUtil.getAppExecutorService().execute {
+            runCatching {
+                sidecar.start(
+                    onEvent = router::onSidecarEvent,
+                    onDead = {
+                        SwingUtilities.invokeLater {
+                            panel.post(SIDECAR_DEAD_MSG)
+                        }
+                    },
+                )
+            }.onFailure { e ->
+                log.warn("claude-todos: falha ao iniciar sidecar", e)
+                SwingUtilities.invokeLater {
+                    panel.post(SIDECAR_DEAD_MSG)
+                }
             }
         }
 

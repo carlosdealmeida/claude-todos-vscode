@@ -18,14 +18,16 @@ object ThemeShim {
         "charts-red", "charts-yellow",
     )
 
-    fun cssVariables(): String {
-        val dark = isDark()
+    /** Nome (sem prefixo `--vscode-`) → valor, na mesma ordem de [VAR_NAMES]. Fonte de verdade única — [cssVariables] e o JS de live-update (WebviewPanel) derivam daqui. */
+    fun variables(): Map<String, String> {
+        val bg = UIManager.getColor("Panel.background")
+        val dark = isDark(bg)
         val fg = color("Label.foreground", if (dark) Color(0xBBBBBB) else Color(0x1F1F1F))
         val muted = color("Label.disabledForeground", if (dark) Color(0x787878) else Color(0x6E6E6E))
         val border = color("Component.borderColor", if (dark) Color(0x3C3F41) else Color(0xD1D1D1))
         val hover = color("List.selectionBackgroundInactive", if (dark) Color(0x2E436E) else Color(0xD5E1F2))
-        val accent = color("Component.focusColor", if (dark) Color(0x3574F0) else Color(0x3574F0))
-        val panelBg = color("Panel.background", if (dark) Color(0x2B2D30) else Color(0xF2F2F2))
+        val accent = color("Component.focusColor", Color(0x3574F0))
+        val panelBg = bg ?: if (dark) Color(0x2B2D30) else Color(0xF2F2F2)
         val error = color("Label.errorForeground", Color(0xE55765))
         val font = UIManager.getFont("Label.font") ?: Font("Dialog", Font.PLAIN, 13)
         val values = mapOf(
@@ -48,12 +50,16 @@ object ThemeShim {
             "charts-orange" to "#e08855", "charts-red" to "#e55765",
             "charts-yellow" to "#d6a243",
         )
-        val body = VAR_NAMES.joinToString("\n") { "  --vscode-$it: ${values.getValue(it)};" }
+        return VAR_NAMES.associateWith { values.getValue(it) }
+    }
+
+    fun cssVariables(): String {
+        val body = variables().entries.joinToString("\n") { (name, value) -> "  --vscode-$name: $value;" }
         return ":root{\n$body\n}"
     }
 
-    private fun isDark(): Boolean {
-        val bg = UIManager.getColor("Panel.background") ?: return true
+    private fun isDark(bg: Color?): Boolean {
+        if (bg == null) return true
         return (bg.red * 299 + bg.green * 587 + bg.blue * 114) / 1000 < 128
     }
 

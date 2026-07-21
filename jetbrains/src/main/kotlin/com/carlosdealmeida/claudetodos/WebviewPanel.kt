@@ -40,14 +40,10 @@ class WebviewPanel(parentDisposable: Disposable) {
     }
 
     fun updateThemeVars() {
-        val vars = ThemeShim.cssVariables()
-            .removePrefix(":root{").removeSuffix("}")
-            .lines().filter { it.isNotBlank() }
-            .joinToString("") {
-                val (name, value) = it.trim().removeSuffix(";").split(":", limit = 2)
-                "document.documentElement.style.setProperty('${name.trim()}', '${value.trim()}');"
-            }
-        browser.cefBrowser.executeJavaScript(vars, browser.cefBrowser.url, 0)
+        val js = ThemeShim.variables().entries.joinToString("") { (name, value) ->
+            "document.documentElement.style.setProperty('--vscode-$name', ${jsSingleQuoted(value)});"
+        }
+        browser.cefBrowser.executeJavaScript(js, browser.cefBrowser.url, 0)
     }
 
     private fun readResource(path: String): String =

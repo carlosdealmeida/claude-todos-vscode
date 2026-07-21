@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createVscodeBridge, createJcefBridge, createBridge } from '../../src/webview/bridge';
+import { createVscodeBridge, createJcefBridge } from '../../src/webview/bridge';
 
 describe('createVscodeBridge', () => {
   it('post delegates to acquireVsCodeApi().postMessage', () => {

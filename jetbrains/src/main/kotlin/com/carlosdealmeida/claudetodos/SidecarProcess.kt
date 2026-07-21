@@ -36,10 +36,12 @@ class SidecarProcess(
     }
 
     fun send(json: String) {
-        try {
-            writer?.let { it.write(json); it.newLine(); it.flush() }
-        } catch (e: Exception) {
-            log.warn("claude-todos: falha ao escrever no sidecar", e)
+        synchronized(lock) {
+            try {
+                writer?.let { it.write(json); it.newLine(); it.flush() }
+            } catch (e: Exception) {
+                log.warn("claude-todos: falha ao escrever no sidecar", e)
+            }
         }
     }
 
@@ -113,8 +115,11 @@ class SidecarProcess(
             w = writer
         }
         try { w?.close() } catch (_: Exception) {} // stdin EOF → sidecar sai sozinho
-        p?.let {
-            if (!it.waitFor(2, TimeUnit.SECONDS)) it.destroyForcibly()
+        // waitFor/destroyForcibly nunca na thread do Disposer — despachados para o pool.
+        p?.let { proc ->
+            AppExecutorUtil.getAppExecutorService().execute {
+                if (!proc.waitFor(2, TimeUnit.SECONDS)) proc.destroyForcibly()
+            }
         }
     }
 }
