@@ -43,10 +43,21 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory {
         val sidecar = SidecarProcess(node, project)
         com.intellij.openapi.util.Disposer.register(toolWindow.disposable, sidecar)
 
+        // SP2 Task 6 liga o host real (abrir transcript, picker nativo, toasts, prompt de
+        // hook — via NotificationBridge/HookSetup). Por ora, no-op seguro só para manter a
+        // factory compilando; nada no plugin ainda invoca essas rotas na EDT.
+        val host = object : RouterHost {
+            override fun openFile(path: String, line: Int) = Unit
+            override fun pickSession(sessions: List<SessionItem>, onPick: (String?) -> Unit) = Unit
+            override fun onNotification(kinds: List<String>, awaitingInput: String?, title: String?) = Unit
+            override fun activatePanel() = Unit
+            override fun warn(messageKey: String) = Unit
+        }
         val router = MessageRouter(
             sendToSidecar = sidecar::send,
             sendToWebview = { json -> SwingUtilities.invokeLater { panel.post(json) } },
             locale = ideLocale(),
+            host = host,
         )
 
         panel.load(onMessage = router::onWebviewMessage)
