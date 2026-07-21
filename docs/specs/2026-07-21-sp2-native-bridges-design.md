@@ -17,7 +17,11 @@ abre o transcript, picker de sessão, instalação do hook com prompt de primeir
    do VS Code (`~/.claude/.vscode-todos-bridge/hook.js`) e registra o MESMO comando
    (`node "<path>"`); `HookInstaller.install` já é idempotente por comando exato
    ([hookInstaller.ts:30](../../src/services/hookInstaller.ts#L30)) → instalar de um IDE é
-   no-op no outro, zero duplicação no `settings.json`.
+   no-op no outro, zero duplicação no `settings.json`. **Escopo do claim:** a idempotência
+   entre IDEs vale no setup default (`~/.claude`); com `CLAUDE_CONFIG_DIR` setado os dois IDEs
+   do plugin respeitam a env, mas o host VS Code hoje NÃO a consulta (`resolveClaudeDir` usa
+   setting/homedir) — paths podem divergir. Follow-up registrado: fazer `resolveClaudeDir` do
+   VS Code consultar `CLAUDE_CONFIG_DIR` antes do homedir.
 
 ## Protocolo (TS) — 3 comandos novos, todos request/reply com id
 
@@ -114,6 +118,10 @@ abre o transcript, picker de sessão, instalação do hook com prompt de primeir
 - Refactor do host VS Code para usar `SessionCore.hookStatus/installHook`.
 - Multi-root/multi-cwd no picker JetBrains (um `basePath` por projeto).
 - CI Gradle, empacotamento, marketplace (SP3).
+- Persistência do pin de sessão no JetBrains (hoje só na memória do sidecar; VS Code usa
+  workspaceState) — follow-up: PropertiesComponent por projeto + setPinned pós-init.
+- Detalhe do erro real no toast de falha de instalação do hook (assinatura Boolean descarta a
+  mensagem) — junto com a UI de settings no backlog pós-SP3.
 
 ## Testes
 
