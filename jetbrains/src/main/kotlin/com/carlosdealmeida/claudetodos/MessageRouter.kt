@@ -1,5 +1,7 @@
 package com.carlosdealmeida.claudetodos
 
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -44,8 +46,9 @@ class MessageRouter(
     private val locale: String,
     private val host: RouterHost,
 ) {
-    private var nextId = 0
-    private val pending = mutableMapOf<String, (JsonObject) -> Unit>()
+    // Acessados de múltiplas threads (CEF/pool/EDT) — estruturas thread-safe
+    private val nextId = AtomicInteger(0)
+    private val pending = ConcurrentHashMap<String, (JsonObject) -> Unit>()
 
     fun onWebviewMessage(json: String) {
         val msg = parse(json) ?: return
@@ -62,7 +65,7 @@ class MessageRouter(
                 val sessionId = msg["sessionId"]?.jsonPrimitive?.content ?: return
                 val agentId = msg["agentId"]?.jsonPrimitive?.content ?: return
                 val line = msg["line"]?.jsonPrimitive?.intOrNull ?: 0
-                val id = "src-${nextId++}"
+                val id = "src-${nextId.getAndIncrement()}"
                 pending[id] = { ev ->
                     val filePath = ev["filePath"]?.jsonPrimitive?.contentOrNull
                     if (filePath != null) host.openFile(filePath, ev["line"]?.jsonPrimitive?.intOrNull ?: 0)
@@ -74,7 +77,7 @@ class MessageRouter(
                 }.toString())
             }
             "pickSession" -> {
-                val id = "pick-${nextId++}"
+                val id = "pick-${nextId.getAndIncrement()}"
                 pending[id] = { ev ->
                     val sessions = ev["sessions"]?.jsonArray?.mapNotNull { el ->
                         runCatching {
@@ -139,13 +142,13 @@ class MessageRouter(
     fun observe() { sendToSidecar("""{"cmd":"observe"}""") }
 
     fun requestHookStatus(scriptPath: String, onResult: (Boolean) -> Unit) {
-        val id = "hs-${nextId++}"
+        val id = "hs-${nextId.getAndIncrement()}"
         pending[id] = { ev -> onResult(ev["installed"]?.jsonPrimitive?.booleanOrNull ?: false) }
         sendToSidecar(buildJsonObject { put("cmd", "hookStatus"); put("hookScriptPath", scriptPath); put("id", id) }.toString())
     }
 
     fun installHook(scriptPath: String, onDone: (Boolean) -> Unit) {
-        val id = "ih-${nextId++}"
+        val id = "ih-${nextId.getAndIncrement()}"
         pending[id] = { ev -> onDone(ev["ev"]?.jsonPrimitive?.content == "hookInstalled") }
         sendToSidecar(buildJsonObject { put("cmd", "installHook"); put("hookScriptPath", scriptPath); put("id", id) }.toString())
     }
