@@ -1,0 +1,4 @@
+.gradle/
+build/
+.intellijPlatform/
+src/main/resources/claudetodos/
