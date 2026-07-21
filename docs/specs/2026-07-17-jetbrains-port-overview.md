@@ -38,7 +38,7 @@ Cada SP tem spec + plano + ciclo próprio e entrega software testável por si.
 | SP | Escopo | Entregável | Toca código que já funciona? |
 |----|--------|-----------|------------------------------|
 | **SP0** | Desacoplar o core: `SessionCore` compartilhado, `todosWatcher` sem `vscode`, ponte da webview plugável, `src/core/main.ts` (protocolo JSON-lines) | ✅ **concluído 2026-07-18** (commits c766291..dd81781) — Extensão VS Code **idêntica** (regressão zero) + `core.js` sidecar rodável. Publicável como 0.16.0 sem mudança visível. | **Sim** — refactor interno, coberto por testes |
-| **SP1** | Esqueleto Kotlin + JCEF renderizando o painel read-only (árvore + tokens + dashboard), servindo a build Svelte via custom scheme, spawn do sidecar, `jcefBridge`, watch ao vivo | 🚧 **implementado 2026-07-21 — smoke humano pendente** (commits f5c8984..ed05605) — Painel read-only funcional dentro do IntelliJ, instalável localmente | Não (código novo) |
+| **SP1** | Esqueleto Kotlin + JCEF renderizando o painel read-only (árvore + tokens + dashboard), servindo a build Svelte via custom scheme, spawn do sidecar, `jcefBridge`, watch ao vivo | 🚧 **implementado 2026-07-21 — smoke humano pendente (primeira execução real do caminho JCEF)** (commits f5c8984..ed05605) — Painel read-only funcional dentro do IntelliJ, instalável localmente | Não (código novo) |
 | **SP2** | Pontes nativas: `Notifications.Bus` (toasts), `openTodoSource` → `FileEditorManager`, quick pick de sessão, instalação do hook, tela de boas-vindas | Paridade de features | Não |
 | **SP3** | Empacotamento (bundle do `core.js` nos resources, detecção do `node`), CI Gradle, publicação no JetBrains Marketplace | Plugin publicado | Não |
 
