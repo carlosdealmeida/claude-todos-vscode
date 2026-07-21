@@ -82,18 +82,27 @@ anexado ao GitHub Release) e — quando os secrets existem — assina e publica 
 1. **Vendor**: crie o vendor em <https://plugins.jetbrains.com> (mesma conta do GitHub
    funciona). O plugin id `com.carlosdealmeida.claude-todos` é imutável após a primeira
    publicação.
-2. **Chaves de assinatura** (uma vez):
+2. **Chaves de assinatura** (uma vez). O `zip-signer` usado pelo `signPlugin` exige a
+   chave em forma RSA (PKCS#1) — `genpkey` sozinho produz PKCS#8, por isso o passo
+   intermediário de conversão:
 
    ```bash
-   openssl genpkey -aes-256-cbc -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:4096
+   openssl genpkey -aes-256-cbc -algorithm RSA -out private_encrypted.pem -pkeyopt rsa_keygen_bits:4096
+   openssl rsa -in private_encrypted.pem -out private.pem
    openssl req -key private.pem -new -x509 -days 3650 -out chain.crt -subj "/CN=carlosdealmeida"
    ```
 
 3. **Secrets no GitHub** (Settings → Secrets → Actions):
    - `JB_MARKETPLACE_TOKEN` — token permanente de <https://plugins.jetbrains.com/author/me/tokens>
    - `JB_CERTIFICATE_CHAIN` — conteúdo de `chain.crt`
-   - `JB_PRIVATE_KEY` — conteúdo de `private.pem`
+   - `JB_PRIVATE_KEY` — conteúdo de `private.pem` (a forma RSA convertida)
    - `JB_PRIVATE_KEY_PASSWORD` — a senha usada no `genpkey`
+
+   > **Configure os secrets (ou pelo menos o `JB_MARKETPLACE_TOKEN`) somente APÓS a
+   > primeira submissão manual ser aprovada** — com o token presente, um push de tag
+   > tenta `publishPlugin` contra um plugin que ainda não existe no marketplace e o job
+   > falha (o Release em si sobrevive, mas o run fica vermelho). Ver "Primeira
+   > publicação (manual)" abaixo.
 
    Sem os secrets, o passo de publicação é pulado silenciosamente — o zip continua no
    GitHub Release para upload manual.
@@ -112,6 +121,10 @@ anexado ao GitHub Release) e — quando os secrets existem — assina e publica 
 
 Automáticos: a cada tag `v*`, o workflow assina e publica (aparece como update pendente de
 revisão leve no marketplace). Confira o passo "Publish to JetBrains Marketplace" no run.
+
+O `.zip` anexado ao GitHub Release em si **não é assinado** (a assinatura acontece no
+`signPlugin` do passo de publish ao marketplace) — instalar esse zip manualmente num IDE
+recente pode exibir aviso de plugin não assinado, o que é esperado.
 
 ## Removing a version
 

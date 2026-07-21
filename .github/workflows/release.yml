@@ -110,7 +110,7 @@ jobs:
           JB_CERTIFICATE_CHAIN: ${{ secrets.JB_CERTIFICATE_CHAIN }}
           JB_PRIVATE_KEY: ${{ secrets.JB_PRIVATE_KEY }}
           JB_PRIVATE_KEY_PASSWORD: ${{ secrets.JB_PRIVATE_KEY_PASSWORD }}
-        if: env.JB_MARKETPLACE_TOKEN != '' && startsWith(github.ref, 'refs/tags/v')
+        if: env.JB_MARKETPLACE_TOKEN != '' && env.JB_CERTIFICATE_CHAIN != '' && env.JB_PRIVATE_KEY != '' && env.JB_PRIVATE_KEY_PASSWORD != '' && startsWith(github.ref, 'refs/tags/v')
         working-directory: jetbrains
         run: ./gradlew -PpluginVersion="$PLUGIN_VERSION" signPlugin publishPlugin --console=plain
 
