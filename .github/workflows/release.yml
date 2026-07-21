@@ -51,11 +51,39 @@ jobs:
           name: vsix
           path: ${{ steps.package.outputs.vsix }}
 
+      # --- JetBrains plugin -------------------------------------------------
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Resolve plugin version
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "PLUGIN_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          else
+            echo "PLUGIN_VERSION=0.0.0-dev" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build JetBrains plugin
+        working-directory: jetbrains
+        run: ./gradlew -PpluginVersion="$PLUGIN_VERSION" buildPlugin --console=plain
+
+      - name: Upload plugin zip as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jetbrains-plugin
+          path: jetbrains/build/distributions/*.zip
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/v')
         with:
-          files: ${{ steps.package.outputs.vsix }}
+          files: |
+            ${{ steps.package.outputs.vsix }}
+            jetbrains/build/distributions/*.zip
           body_path: CHANGELOG.md
           draft: false
           prerelease: false
@@ -71,6 +99,20 @@ jobs:
         run: |
           npx ovsx create-namespace CarlosJunior1992 -p "$OVSX_PAT" || true
           npx ovsx publish --packagePath "${{ steps.package.outputs.vsix }}" -p "$OVSX_PAT"
+
+      # --- JetBrains Marketplace -------------------------------------------
+      # Publishes (signed) when the 4 JB_* secrets exist; skips silently
+      # otherwise. First-ever submission must be done manually via the web UI
+      # (vendor creation + initial review) — see RELEASING.md.
+      - name: Publish to JetBrains Marketplace
+        env:
+          JB_MARKETPLACE_TOKEN: ${{ secrets.JB_MARKETPLACE_TOKEN }}
+          JB_CERTIFICATE_CHAIN: ${{ secrets.JB_CERTIFICATE_CHAIN }}
+          JB_PRIVATE_KEY: ${{ secrets.JB_PRIVATE_KEY }}
+          JB_PRIVATE_KEY_PASSWORD: ${{ secrets.JB_PRIVATE_KEY_PASSWORD }}
+        if: env.JB_MARKETPLACE_TOKEN != '' && startsWith(github.ref, 'refs/tags/v')
+        working-directory: jetbrains
+        run: ./gradlew -PpluginVersion="$PLUGIN_VERSION" signPlugin publishPlugin --console=plain
 
       # --- Optional: automatic Marketplace publish -------------------------
       # The job above only builds the .vsix; publishing is done manually by
