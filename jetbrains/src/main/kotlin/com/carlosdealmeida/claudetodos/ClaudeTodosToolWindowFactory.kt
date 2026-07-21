@@ -108,6 +108,19 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory {
                         }
                     },
                 )
+            }.onFailure { e ->
+                log.warn("claude-todos: falha ao iniciar sidecar", e)
+                SwingUtilities.invokeLater {
+                    panel.post(SIDECAR_DEAD_MSG)
+                }
+            }
+
+            // runCatching próprio, separado do start(): uma falha aqui (cópia do hook
+            // travada no Windows, ~/.claude read-only) não é uma falha do sidecar — não
+            // deve postar SIDECAR_DEAD_MSG (o painel mostraria "sidecar terminated" falso
+            // com o sidecar rodando normalmente). Só loga; o prompt de hook fica perdido
+            // nessa sessão, aceitável.
+            runCatching {
                 val hookPath = HookSetup.ensureHookScript()
                 router.requestHookStatus(hookPath) { installed ->
                     if (!installed) SwingUtilities.invokeLater {
@@ -121,10 +134,7 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory {
                     }
                 }
             }.onFailure { e ->
-                log.warn("claude-todos: falha ao iniciar sidecar", e)
-                SwingUtilities.invokeLater {
-                    panel.post(SIDECAR_DEAD_MSG)
-                }
+                log.warn("claude-todos: falha ao preparar hook", e)
             }
         }
 

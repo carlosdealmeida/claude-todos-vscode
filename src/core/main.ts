@@ -21,6 +21,6 @@ rl.on('line', (line) => {
   try {
     dispatch(cmd);
   } catch (err) {
-    emit({ ev: 'error', message: String(err) });
+    emit({ ev: 'error', message: String(err), ...(cmd.id !== undefined ? { id: cmd.id } : {}) });
   }
 });

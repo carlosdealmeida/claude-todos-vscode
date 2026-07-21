@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { HookInstaller, DEFAULT_HOOK_EVENTS, type HookEvent } from './services/hookInstaller';
+import { HookInstaller, DEFAULT_HOOK_EVENTS } from './services/hookInstaller';
 import { TodosViewProvider } from './providers/todosViewProvider';
 import { TodosPanelProvider } from './providers/todosPanelProvider';
 import type { WebviewMessage } from './types';
