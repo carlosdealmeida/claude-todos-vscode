@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { HookInstaller, type HookEvent } from './services/hookInstaller';
+import { HookInstaller, DEFAULT_HOOK_EVENTS, type HookEvent } from './services/hookInstaller';
 import { TodosViewProvider } from './providers/todosViewProvider';
 import { TodosPanelProvider } from './providers/todosPanelProvider';
 import type { WebviewMessage } from './types';
@@ -12,7 +12,7 @@ import { pickWorkspaceCwds } from './services/workspaceFolders';
 import { SessionCore } from './core/sessionCore';
 import type { NotificationKind } from './services/sessionNotifier';
 
-const HOOK_EVENTS: HookEvent[] = ['SessionStart', 'UserPromptSubmit'];
+const HOOK_EVENTS = DEFAULT_HOOK_EVENTS;
 // Retenção dos registros do bridge. Sessões saem do picker quando o transcript
 // some; isto só remove o lixo acumulado no sessions.json (cap de 200 do hook).
 const BRIDGE_MAX_AGE_MS = 30 * 24 * 3600 * 1000;

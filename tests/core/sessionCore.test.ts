@@ -62,4 +62,19 @@ describe('SessionCore', () => {
     const usage = make().getProjectUsage();
     expect(usage?.byModel.some(m => m.model === 'claude-opus-4-8')).toBe(true);
   });
+
+  it('hookStatus is false before install and true after installHook (idempotent)', () => {
+    const core = make();
+    const script = path.join(claudeDir, 'bridge-hook.js');
+    expect(core.hookStatus(script)).toBe(false);
+
+    core.installHook(script);
+    expect(core.hookStatus(script)).toBe(true);
+
+    core.installHook(script); // idempotente: não duplica
+    const settings = JSON.parse(fs.readFileSync(path.join(claudeDir, 'settings.json'), 'utf-8'));
+    expect(settings.hooks.SessionStart).toHaveLength(1);
+    expect(settings.hooks.UserPromptSubmit).toHaveLength(1);
+    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(`node "${script}"`);
+  });
 });

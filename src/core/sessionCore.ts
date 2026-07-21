@@ -9,6 +9,7 @@ import { ProjectUsageService } from '../services/projectUsageService';
 import { TodosWatcher } from '../services/todosWatcher';
 import { SessionNotifier, type NotificationKind } from '../services/sessionNotifier';
 import { transcriptPath, subAgentsDir, SAFE_SESSION_ID } from '../services/transcriptPaths';
+import { HookInstaller, DEFAULT_HOOK_EVENTS } from '../services/hookInstaller';
 import type { SessionSnapshot, SessionSummary, ProjectUsage, AwaitingInput } from '../types';
 
 const SEVEN_DAYS_MS = 7 * 24 * 3600 * 1000;
@@ -53,6 +54,18 @@ export class SessionCore {
   getProjectUsage(): ProjectUsage | null {
     const cwd = this.snapshotService.activeCwd() ?? this.workspaceCwds()[0] ?? null;
     return cwd ? this.projectUsageService.usageForProject(cwd, this.now() - SEVEN_DAYS_MS) : null;
+  }
+
+  // Instalação de hook para o sidecar (JetBrains): o path do script vem do host;
+  // o comando tem o MESMO formato do VS Code — instalar de um IDE é no-op no outro.
+  hookStatus(scriptPath: string): boolean {
+    return new HookInstaller(path.join(this.claudeDir, 'settings.json'))
+      .areAllInstalled(DEFAULT_HOOK_EVENTS, `node "${scriptPath}"`);
+  }
+
+  installHook(scriptPath: string): void {
+    new HookInstaller(path.join(this.claudeDir, 'settings.json'))
+      .installAll(DEFAULT_HOOK_EVENTS, `node "${scriptPath}"`);
   }
 
   resolveTodoSource(sessionId: string, agentId: string, line: number): { filePath: string; line: number } | null {

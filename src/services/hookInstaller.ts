@@ -19,6 +19,10 @@ interface Settings {
 
 export type HookEvent = 'SessionStart' | 'UserPromptSubmit' | 'PreToolUse' | 'PostToolUse' | 'SessionEnd' | string;
 
+// Eventos que a extensão VS Code e o plugin JetBrains registram por padrão.
+// Compartilhado entre o host (extension.ts) e o SessionCore (sidecar).
+export const DEFAULT_HOOK_EVENTS: HookEvent[] = ['SessionStart', 'UserPromptSubmit'];
+
 export class HookInstaller {
   constructor(private readonly settingsPath: string) {}
 
