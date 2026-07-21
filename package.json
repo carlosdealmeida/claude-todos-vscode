@@ -209,6 +209,7 @@
     "build:webview": "vite build",
     "build": "npm run build:ext && npm run build:hook && npm run build:core && npm run build:webview",
     "watch": "npm run build -- --watch",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "vscode:prepublish": "npm run build",

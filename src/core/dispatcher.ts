@@ -96,8 +96,10 @@ export function createDispatcher(
           emit(withId({ ev: 'error', message: String(err) }, cmd.id));
         }
         break;
-      default:
-        emit(withId({ ev: 'error', message: `unknown command: ${(cmd as { cmd: string }).cmd}` }, cmd.id));
+      default: {
+        const c = cmd as { cmd: string; id?: string };
+        emit(withId({ ev: 'error', message: `unknown command: ${c.cmd}` }, c.id));
+      }
     }
   };
 }
