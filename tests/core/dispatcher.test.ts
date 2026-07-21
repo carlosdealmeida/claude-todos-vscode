@@ -106,3 +106,43 @@ describe('createDispatcher', () => {
     expect(coreDispose).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('correlation id', () => {
+  const init = { cmd: 'init', claudeDir: '/c', cwds: ['/p'] };
+
+  it('echoes the id on the direct response', () => {
+    const events = run([init, { cmd: 'getSnapshot', id: 'r1' }]);
+    expect(events.at(-1)).toMatchObject({ ev: 'snapshot', id: 'r1' });
+  });
+
+  it('omits the id when the command has none (retrocompat)', () => {
+    const events = run([init, { cmd: 'getSnapshot' }]);
+    expect(events.at(-1)).not.toHaveProperty('id');
+  });
+
+  it('watch pushes never carry an id', () => {
+    let fire: (() => void) | null = null;
+    const core = fakeCore({ onChange: (l: () => void) => { fire = l; return { dispose: vi.fn() }; } });
+    const events: CoreEvent[] = [];
+    const dispatch = createDispatcher((e) => events.push(e), () => core);
+    dispatch(init as any);
+    dispatch({ cmd: 'watch', on: true, id: 'w1' } as any);
+    fire!();
+    expect(events.at(-1)).toMatchObject({ ev: 'snapshot' });
+    expect(events.at(-1)).not.toHaveProperty('id');
+  });
+
+  it('echoes the id on error events too', () => {
+    expect(run([{ cmd: 'getSnapshot', id: 'e1' }]).at(-1))
+      .toEqual({ ev: 'error', message: 'not initialized', id: 'e1' });
+    expect(run([init, { cmd: 'nope', id: 'e2' } as any]).at(-1))
+      .toEqual({ ev: 'error', message: 'unknown command: nope', id: 'e2' });
+  });
+
+  it('echoes the id on sessions, projectUsage and todoSource', () => {
+    expect(run([init, { cmd: 'listSessions', id: 'a' }]).at(-1)).toMatchObject({ ev: 'sessions', id: 'a' });
+    expect(run([init, { cmd: 'getProjectUsage', id: 'b' }]).at(-1)).toMatchObject({ ev: 'projectUsage', id: 'b' });
+    expect(run([init, { cmd: 'resolveTodoSource', sessionId: 's', agentId: 's', line: 2, id: 'c' }]).at(-1))
+      .toMatchObject({ ev: 'todoSource', id: 'c' });
+  });
+});
