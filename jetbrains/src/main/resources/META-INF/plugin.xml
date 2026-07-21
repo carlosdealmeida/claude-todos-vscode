@@ -11,5 +11,7 @@
   <extensions defaultExtensionNs="com.intellij">
     <toolWindow id="Claude Todos" anchor="right" secondary="true"
                 factoryClass="com.carlosdealmeida.claudetodos.ClaudeTodosToolWindowFactory"/>
+    <notificationGroup id="claude-todos" displayType="BALLOON"/>
+    <notificationGroup id="claude-todos-sticky" displayType="STICKY_BALLOON"/>
   </extensions>
 </idea-plugin>

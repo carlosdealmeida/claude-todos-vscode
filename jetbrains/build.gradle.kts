@@ -58,13 +58,15 @@ val syncWebAssets by tasks.registering(Copy::class) {
         require(
             dist.resolve("webview/main.js").exists() &&
                 dist.resolve("webview/index.css").exists() &&
-                dist.resolve("core/main.js").exists()
+                dist.resolve("core/main.js").exists() &&
+                dist.resolve("hooks/sessionStart.js").exists()
         ) {
             "Artefatos npm ausentes em ../dist — rode `npm run build` na raiz do repo antes."
         }
     }
     from(dist.resolve("webview/main.js"), dist.resolve("webview/index.css"))
     from(dist.resolve("core/main.js")) { rename { "core-main.js" } }
+    from(dist.resolve("hooks/sessionStart.js")) { rename { "hook.js" } }
     into(layout.projectDirectory.dir("src/main/resources/claudetodos"))
 }
 
