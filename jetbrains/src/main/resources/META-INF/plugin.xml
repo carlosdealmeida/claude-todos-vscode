@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.carlosdealmeida.claude-todos</id>
   <name>Claude Todos</name>
-  <vendor url="https://github.com/carlosdealmeida/claude-todos-vscode">carlosdealmeida</vendor>
+  <vendor url="https://github.com/carlosdealmeida/claude-todos-vscode" email="carlos.dealmeiida@gmail.com">carlosdealmeida</vendor>
   <description><![CDATA[
     Live observability for your Claude Code agents: agent tree, per-task progress,
     tokens/context/cache and a 7-day usage dashboard — read from the transcripts

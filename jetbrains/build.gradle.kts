@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.carlosdealmeida"
-version = "0.1.0"
+version = providers.gradleProperty("pluginVersion").getOrElse("0.0.0-dev")
 
 // Versão do IDE alvo, usada tanto para resolver a plataforma (compile/test) quanto para o
 // verifyPlugin — as duas precisam apontar para a mesma versão.
@@ -37,6 +37,20 @@ intellijPlatform {
             sinceBuild = "242"
             untilBuild = provider { null }
         }
+        changeNotes = "See <a href=\"https://github.com/carlosdealmeida/claude-todos-vscode/releases\">GitHub Releases</a>."
+        vendor {
+            name = "carlosdealmeida"
+            url = "https://github.com/carlosdealmeida/claude-todos-vscode"
+            email = "carlos.dealmeiida@gmail.com"
+        }
+    }
+    signing {
+        certificateChain = providers.environmentVariable("JB_CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("JB_PRIVATE_KEY")
+        password = providers.environmentVariable("JB_PRIVATE_KEY_PASSWORD")
+    }
+    publishing {
+        token = providers.environmentVariable("JB_MARKETPLACE_TOKEN")
     }
     // Task 7: verifyPlugin (IntelliJ Plugin Verifier) precisa saber contra qual IDE
     // rodar — sem isso a task falha com "No IDE resolved for verification" mesmo com
