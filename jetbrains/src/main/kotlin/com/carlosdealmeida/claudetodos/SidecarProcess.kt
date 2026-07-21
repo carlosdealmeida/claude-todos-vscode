@@ -11,13 +11,12 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import java.io.BufferedWriter
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.concurrent.TimeUnit
+import java.util.zip.CRC32
 
 /**
  * Processo sidecar: `node core-main.js` falando JSON-lines. Extrai o bundle dos
- * resources para um path estável por versão; envia init+watch no start; lê o
+ * resources para um path estável por conteúdo (CRC32); envia init+watch no start; lê o
  * stdout num executor; 1 auto-restart em morte inesperada, depois onDead.
  */
 class SidecarProcess(
@@ -25,6 +24,7 @@ class SidecarProcess(
     private val project: Project,
 ) : Disposable {
     private val log = Logger.getInstance(SidecarProcess::class.java)
+    private val lock = Any()
     @Volatile private var process: Process? = null
     @Volatile private var writer: BufferedWriter? = null
     @Volatile private var disposed = false
@@ -44,12 +44,16 @@ class SidecarProcess(
     }
 
     private fun launch(script: File, onEvent: (String) -> Unit, onDead: () -> Unit) {
-        if (disposed) return
-        val p = ProcessBuilder(nodePath, script.absolutePath)
-            .redirectErrorStream(false)
-            .start()
-        process = p
-        writer = p.outputStream.bufferedWriter()
+        val p: Process
+        synchronized(lock) {
+            if (disposed) return
+            p = ProcessBuilder(nodePath, script.absolutePath)
+                .redirectErrorStream(false)
+                .start()
+            try { writer?.close() } catch (_: Exception) {} // fecha o writer antigo antes de trocar
+            process = p
+            writer = p.outputStream.bufferedWriter()
+        }
 
         AppExecutorUtil.getAppExecutorService().execute {
             p.inputStream.bufferedReader().forEachLine { line ->
@@ -60,8 +64,12 @@ class SidecarProcess(
                 if (restarts < 1) {
                     restarts++
                     log.warn("claude-todos: sidecar morreu; reiniciando (1/1)")
-                    launch(script, onEvent, onDead)
-                    sendInit()
+                    try {
+                        launch(script, onEvent, onDead)
+                    } catch (e: Exception) {
+                        log.warn("claude-todos: falha ao reiniciar sidecar", e)
+                        onDead()
+                    }
                 } else {
                     log.warn("claude-todos: sidecar morreu de novo; desistindo")
                     onDead()
@@ -85,25 +93,35 @@ class SidecarProcess(
         send("""{"cmd":"watch","on":true}""")
     }
 
-    // Extrai o bundle para um path estável por versão do plugin (idempotente).
+    // Extrai o bundle para um path estável por CONTEÚDO (idempotente; nunca serve bundle stale em dev).
     private fun extractScript(): File {
-        val version = javaClass.classLoader.getResource("claudetodos/core-main.js")
-            ?.let { it.hashCode().toString() } ?: "dev"
-        val target = File(PathManager.getTempPath(), "claude-todos/$version/core-main.js")
+        val bytes = javaClass.classLoader.getResourceAsStream("claudetodos/core-main.js")!!.use { it.readBytes() }
+        val target = File(PathManager.getTempPath(), "claude-todos/${contentKey(bytes)}/core-main.js")
         if (!target.isFile) {
             target.parentFile.mkdirs()
-            javaClass.classLoader.getResourceAsStream("claudetodos/core-main.js")!!.use { input ->
-                Files.copy(input, target.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            }
+            target.writeBytes(bytes)
         }
         return target
     }
 
     override fun dispose() {
-        disposed = true
-        try { writer?.close() } catch (_: Exception) {} // stdin EOF → sidecar sai sozinho
-        process?.let {
+        val p: Process?
+        val w: BufferedWriter?
+        synchronized(lock) {
+            disposed = true
+            p = process
+            w = writer
+        }
+        try { w?.close() } catch (_: Exception) {} // stdin EOF → sidecar sai sozinho
+        p?.let {
             if (!it.waitFor(2, TimeUnit.SECONDS)) it.destroyForcibly()
         }
     }
+}
+
+/** Chave de conteúdo (CRC32 em hex) usada para nomear o dir de extração do bundle — estável entre rebuilds. */
+internal fun contentKey(bytes: ByteArray): String {
+    val crc = CRC32()
+    crc.update(bytes)
+    return crc.value.toString(16)
 }
