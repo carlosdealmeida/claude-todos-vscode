@@ -20,9 +20,38 @@ jobs:
 
       - run: npm ci
 
+      - run: npm run typecheck
+
       - run: npm test
 
       - run: npm run build
 
       - name: Package .vsix (dry run)
         run: npx vsce package --no-dependencies --allow-missing-repository
+
+  jetbrains:
+    name: JetBrains plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      # syncWebAssets do Gradle consome ../dist (webview + core + hook)
+      - run: npm run build
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Test, build & verify plugin
+        working-directory: jetbrains
+        run: ./gradlew test build verifyPlugin --console=plain
