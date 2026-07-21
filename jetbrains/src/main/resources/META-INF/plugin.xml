@@ -9,6 +9,7 @@
   ]]></description>
   <depends>com.intellij.modules.platform</depends>
   <extensions defaultExtensionNs="com.intellij">
-    <!-- toolWindow registrado na Task 7 -->
+    <toolWindow id="Claude Todos" anchor="right" secondary="true"
+                factoryClass="com.carlosdealmeida.claudetodos.ClaudeTodosToolWindowFactory"/>
   </extensions>
 </idea-plugin>

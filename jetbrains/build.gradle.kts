@@ -36,6 +36,14 @@ intellijPlatform {
             untilBuild = provider { null }
         }
     }
+    // Task 7: verifyPlugin (IntelliJ Plugin Verifier) precisa saber contra qual IDE
+    // rodar — sem isso a task falha com "No IDE resolved for verification" mesmo com
+    // defaultRepositories() configurado. Reusa a mesma versão já resolvida para compile/test.
+    pluginVerification {
+        ides {
+            ide("IC", "2024.2.4")
+        }
+    }
 }
 
 tasks.test { useJUnitPlatform() }
