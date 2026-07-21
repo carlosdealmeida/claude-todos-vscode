@@ -11,6 +11,8 @@ function fakeCore(over: Partial<Record<string, any>> = {}) {
     resolveTodoSource: (_s: string, a: string) => a === 's' ? { filePath: '/p/s.jsonl', line: 2 } : null,
     onChange: (_l: () => void) => ({ dispose: vi.fn() }),
     observeForNotifications: () => ({ kinds: [], awaitingInput: null, title: 'T' }),
+    hookStatus: (_p: string) => false,
+    installHook: (_p: string) => {},
     shouldPollNotifications: () => false,
     ...over,
   } as any;
@@ -144,5 +146,34 @@ describe('correlation id', () => {
     expect(run([init, { cmd: 'getProjectUsage', id: 'b' }]).at(-1)).toMatchObject({ ev: 'projectUsage', id: 'b' });
     expect(run([init, { cmd: 'resolveTodoSource', sessionId: 's', agentId: 's', line: 2, id: 'c' }]).at(-1))
       .toMatchObject({ ev: 'todoSource', id: 'c' });
+  });
+});
+
+describe('observe / hookStatus / installHook', () => {
+  const init = { cmd: 'init', claudeDir: '/c', cwds: ['/p'] };
+
+  it('observe always answers, echoing the id, with empty kinds too', () => {
+    expect(run([init, { cmd: 'observe', id: 'o1' }]).at(-1))
+      .toEqual({ ev: 'notification', kinds: [], awaitingInput: null, title: 'T', id: 'o1' });
+  });
+
+  it('observe passes kinds and awaitingInput through', () => {
+    const core = fakeCore({ observeForNotifications: () => ({ kinds: ['awaitingInput'], awaitingInput: 'plan', title: 'S' }) });
+    expect(run([init, { cmd: 'observe' }], core).at(-1))
+      .toEqual({ ev: 'notification', kinds: ['awaitingInput'], awaitingInput: 'plan', title: 'S' });
+  });
+
+  it('hookStatus answers installed with id', () => {
+    const core = fakeCore({ hookStatus: () => true });
+    expect(run([init, { cmd: 'hookStatus', hookScriptPath: '/h.js', id: 'h1' }], core).at(-1))
+      .toEqual({ ev: 'hookStatus', installed: true, id: 'h1' });
+  });
+
+  it('installHook answers hookInstalled, and errors (with id) when the core throws', () => {
+    expect(run([init, { cmd: 'installHook', hookScriptPath: '/h.js', id: 'i1' }]).at(-1))
+      .toEqual({ ev: 'hookInstalled', id: 'i1' });
+    const bad = fakeCore({ installHook: () => { throw new Error('boom'); } });
+    expect(run([init, { cmd: 'installHook', hookScriptPath: '/h.js', id: 'i2' }], bad).at(-1))
+      .toEqual({ ev: 'error', message: 'Error: boom', id: 'i2' });
   });
 });
