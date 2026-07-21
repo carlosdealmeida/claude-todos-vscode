@@ -71,6 +71,48 @@ The `Release` workflow will:
 
 Verification can take a few minutes. The listing goes live once it passes.
 
+## JetBrains Marketplace
+
+O release por tag também builda o plugin JetBrains (`claude-todos-jetbrains-X.Y.Z.zip`,
+anexado ao GitHub Release) e — quando os secrets existem — assina e publica via
+`signPlugin`/`publishPlugin`.
+
+### One-time setup
+
+1. **Vendor**: crie o vendor em <https://plugins.jetbrains.com> (mesma conta do GitHub
+   funciona). O plugin id `com.carlosdealmeida.claude-todos` é imutável após a primeira
+   publicação.
+2. **Chaves de assinatura** (uma vez):
+
+   ```bash
+   openssl genpkey -aes-256-cbc -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:4096
+   openssl req -key private.pem -new -x509 -days 3650 -out chain.crt -subj "/CN=carlosdealmeida"
+   ```
+
+3. **Secrets no GitHub** (Settings → Secrets → Actions):
+   - `JB_MARKETPLACE_TOKEN` — token permanente de <https://plugins.jetbrains.com/author/me/tokens>
+   - `JB_CERTIFICATE_CHAIN` — conteúdo de `chain.crt`
+   - `JB_PRIVATE_KEY` — conteúdo de `private.pem`
+   - `JB_PRIVATE_KEY_PASSWORD` — a senha usada no `genpkey`
+
+   Sem os secrets, o passo de publicação é pulado silenciosamente — o zip continua no
+   GitHub Release para upload manual.
+
+### Primeira publicação (manual)
+
+1. **Pré-condição: o smoke humano do plugin** (gate SP1+SP2 — ver
+   `docs/specs/2026-07-17-jetbrains-port-overview.md`): `cd jetbrains && gradlew runIde`,
+   abrir um projeto com sessões Claude Code e validar painel/tema/picker/clique/toasts/hook.
+   Não submeter ao marketplace um plugin que nunca abriu num IDE real.
+2. Baixe o `.zip` do GitHub Release e faça o upload em
+   <https://plugins.jetbrains.com/plugin/add> (categoria: Tools integration).
+3. Aguarde a revisão inicial da JetBrains (~2 dias úteis).
+
+### Updates
+
+Automáticos: a cada tag `v*`, o workflow assina e publica (aparece como update pendente de
+revisão leve no marketplace). Confira o passo "Publish to JetBrains Marketplace" no run.
+
 ## Removing a version
 
 From <https://marketplace.visualstudio.com/manage>, open the extension and
