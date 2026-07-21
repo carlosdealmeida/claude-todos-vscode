@@ -43,22 +43,53 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory {
         val sidecar = SidecarProcess(node, project)
         com.intellij.openapi.util.Disposer.register(toolWindow.disposable, sidecar)
 
-        // SP2 Task 6 liga o host real (abrir transcript, picker nativo, toasts, prompt de
-        // hook — via NotificationBridge/HookSetup). Por ora, no-op seguro só para manter a
-        // factory compilando; nada no plugin ainda invoca essas rotas na EDT.
+        val locale = ideLocale()
+        val bridge = NotificationBridge(project, locale, activatePanel = {
+            SwingUtilities.invokeLater { toolWindow.activate(null) }
+        })
+
+        lateinit var router: MessageRouter
         val host = object : RouterHost {
-            override fun openFile(path: String, line: Int) = Unit
-            override fun pickSession(sessions: List<SessionItem>, onPick: (String?) -> Unit) = Unit
-            override fun onNotification(kinds: List<String>, awaitingInput: String?, title: String?) = Unit
-            override fun activatePanel() = Unit
-            override fun warn(messageKey: String) = Unit
+            override fun openFile(path: String, line: Int) {
+                SwingUtilities.invokeLater {
+                    val vf = com.intellij.openapi.vfs.LocalFileSystem.getInstance().refreshAndFindFileByPath(path)
+                    if (vf == null) { bridge.warn("todo.sourceMissing"); return@invokeLater }
+                    com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project)
+                        .openTextEditor(com.intellij.openapi.fileEditor.OpenFileDescriptor(project, vf, line, 0), true)
+                }
+            }
+            override fun pickSession(sessions: List<SessionItem>, onPick: (String?) -> Unit) {
+                SwingUtilities.invokeLater {
+                    val labels = mutableListOf(NotifyMessages.get(locale, "picker.auto"))
+                    val ids = mutableListOf<String?>(null)
+                    val now = System.currentTimeMillis()
+                    for (s in sessions) {
+                        labels += "${s.title} · ${s.sessionId.take(8)} · ${relativeTime(now, s.updatedAt, locale)}"
+                        ids += s.sessionId
+                    }
+                    com.intellij.openapi.ui.popup.JBPopupFactory.getInstance()
+                        .createPopupChooserBuilder(labels)
+                        .setTitle("Claude Todos")
+                        .setItemChosenCallback { chosen -> onPick(ids[labels.indexOf(chosen)]) }
+                        .createPopup()
+                        .showCenteredInCurrentWindow(project)
+                }
+            }
+            override fun onNotification(kinds: List<String>, awaitingInput: String?, title: String?) {
+                SwingUtilities.invokeLater { bridge.toast(kinds, awaitingInput, title) }
+            }
+            override fun activatePanel() { SwingUtilities.invokeLater { toolWindow.activate(null) } }
+            override fun warn(messageKey: String) { SwingUtilities.invokeLater { bridge.warn(messageKey) } }
         }
-        val router = MessageRouter(
+        router = MessageRouter(
             sendToSidecar = sidecar::send,
             sendToWebview = { json -> SwingUtilities.invokeLater { panel.post(json) } },
-            locale = ideLocale(),
+            locale = locale,
             host = host,
         )
+
+        val observeTimer = javax.swing.Timer(10_000) { router.observe() }.apply { start() }
+        com.intellij.openapi.util.Disposer.register(toolWindow.disposable) { observeTimer.stop() }
 
         panel.load(onMessage = router::onWebviewMessage)
         // Desvio autorizado (review da Task 6): start() pode lançar de forma síncrona se o
@@ -77,6 +108,18 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory {
                         }
                     },
                 )
+                val hookPath = HookSetup.ensureHookScript()
+                router.requestHookStatus(hookPath) { installed ->
+                    if (!installed) SwingUtilities.invokeLater {
+                        bridge.promptHookInstall(onInstall = {
+                            router.installHook(hookPath) { ok ->
+                                SwingUtilities.invokeLater {
+                                    if (ok) bridge.confirmHookInstalled() else bridge.hookInstallFailed("install failed")
+                                }
+                            }
+                        })
+                    }
+                }
             }.onFailure { e ->
                 log.warn("claude-todos: falha ao iniciar sidecar", e)
                 SwingUtilities.invokeLater {
