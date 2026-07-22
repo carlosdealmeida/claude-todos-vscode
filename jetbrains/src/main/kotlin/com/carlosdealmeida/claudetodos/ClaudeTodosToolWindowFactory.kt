@@ -3,6 +3,7 @@ package com.carlosdealmeida.claudetodos
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
@@ -17,7 +18,9 @@ import javax.swing.SwingUtilities
 
 private const val SIDECAR_DEAD_MSG = """{"type":"error","message":"sidecar terminated"}"""
 
-class ClaudeTodosToolWindowFactory : ToolWindowFactory {
+// DumbAware: o painel não depende de índices do IDE (é uma webview lendo
+// ~/.claude) — renderiza normalmente durante a indexação do projeto.
+class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
     private val log = Logger.getInstance(ClaudeTodosToolWindowFactory::class.java)
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
