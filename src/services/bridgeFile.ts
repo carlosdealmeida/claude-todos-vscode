@@ -30,8 +30,10 @@ export class BridgeFile {
   }
 
   allForCwd(cwd: string): BridgeRecord[] {
+    // path.normalize unifica separadores ('C:/x' vs 'c:\x') — hosts como o
+    // IntelliJ mandam basePath com '/', o hook grava a cwd nativa do SO.
     const eq = (a: string, b: string) => process.platform === 'win32'
-      ? a.toLowerCase() === b.toLowerCase()
+      ? path.normalize(a).toLowerCase() === path.normalize(b).toLowerCase()
       : a === b;
     return this.readAll()
       .filter(r => eq(r.cwd, cwd))

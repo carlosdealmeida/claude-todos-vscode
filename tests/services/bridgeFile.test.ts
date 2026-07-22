@@ -73,6 +73,16 @@ describe('BridgeFile', () => {
     expect(bridge.readAll()).toEqual([]);
   });
 
+  it.skipIf(process.platform !== 'win32')(
+    'allForCwd matches forward-slash queries against backslash records (win32)',
+    () => {
+      // O hook grava a cwd nativa (c:\x\y); hosts como o IntelliJ mandam
+      // project.basePath com '/' — a comparação precisa normalizar separador.
+      bridge.append({ cwd: 'c:\\@work\\proj', sessionId: 's-fw', terminalPid: null, startedAt: 5 });
+      expect(bridge.allForCwd('C:/@work/proj').map(r => r.sessionId)).toEqual(['s-fw']);
+    },
+  );
+
   it('allForCwd returns records sorted by startedAt desc', () => {
     bridge.append({ cwd: '/p', sessionId: 'mid', terminalPid: 1, startedAt: 2000 });
     bridge.append({ cwd: '/p', sessionId: 'new', terminalPid: 2, startedAt: 3000 });

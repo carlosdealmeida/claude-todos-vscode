@@ -87,7 +87,10 @@ class SidecarProcess(
     private fun sendInit() {
         val claudeDir = System.getenv("CLAUDE_CONFIG_DIR")
             ?: File(System.getProperty("user.home"), ".claude").absolutePath
-        val basePath = project.basePath ?: return
+        // project.basePath vem com separadores '/' (system-independent); o bridge
+        // grava a cwd nativa do SO (backslash no Windows) — File(...).absolutePath
+        // converte para o formato nativo, senão o allForCwd nunca casa.
+        val basePath = project.basePath?.let { File(it).absolutePath } ?: return
         send(buildJsonObject {
             put("cmd", "init"); put("claudeDir", claudeDir)
             putJsonArray("cwds") { add(basePath) }
