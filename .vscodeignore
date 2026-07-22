@@ -18,6 +18,9 @@ vitest.config.mts
 **/*.map
 **/.eslintrc.json
 .git/**
+.worktrees/**
+.idea/**
+jetbrains/**
 *.vsix
 CONTRIBUTING.md
 CONTRIBUTING.en.md

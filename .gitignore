@@ -9,3 +9,4 @@ docs/superpowers/
 
 # Worktrees criadas pelo ClaudeForge
 .worktrees/
+.idea/
