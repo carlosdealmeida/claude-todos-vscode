@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.0] - 2026-07-22
+
+### Added
+- **JetBrains plugin (beta).** The panel now runs inside IntelliJ-platform IDEs (IntelliJ IDEA, PyCharm, WebStorm, Rider, … 2024.2+): the same live agent tree, per-task timings, model badges, tokens/context/cache and 7-day dashboard, rendered via JCEF and fed by a Node sidecar sharing the exact same parser as the VS Code extension. Native integrations with parity: toasts (idle / all-complete / awaiting-your-answer) with the same gates, click-a-task opens the transcript at the line, native session picker, and hook installation that is idempotent with the VS Code extension (same script, same path — installing from one IDE is a no-op in the other). Requires Node.js on PATH (which Claude Code users already have). Distributed as `claude-todos-jetbrains-X.Y.Z.zip` attached to GitHub Releases; JetBrains Marketplace listing pending initial review. Validated end-to-end in a real IDE (theme following, live sessions, sub-agent cards, 1M-window sessions).
+- **Shared core.** Internally, the orchestration layer was extracted into a host-agnostic `SessionCore` + JSON-lines sidecar consumed by both IDEs — zero behavior change for the VS Code extension, one parser serving every host. Protocol gained optional request correlation ids.
+
+### Fixed
+- Session matching now normalizes path separators (hosts that report forward-slash paths on Windows — like the IntelliJ `basePath` — matched no sessions).
+- JetBrains: panel renders during project indexing (DumbAware); session picker no longer repeats the short id for untitled sessions.
+
 ## [0.15.0] - 2026-07-17
 
 ### Added
