@@ -67,7 +67,10 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
                     val ids = mutableListOf<String?>(null)
                     val now = System.currentTimeMillis()
                     for (s in sessions) {
-                        labels += "${s.title} · ${s.sessionId.take(8)} · ${relativeTime(now, s.updatedAt, locale)}"
+                        // Título fallback ("Session · <id8>") já contém o shortId — não repetir.
+                        val shortId = s.sessionId.take(8)
+                        val idPart = if (s.title.contains(shortId)) "" else " · $shortId"
+                        labels += "${s.title}$idPart · ${relativeTime(now, s.updatedAt, locale)}"
                         ids += s.sessionId
                     }
                     com.intellij.openapi.ui.popup.JBPopupFactory.getInstance()
