@@ -1,9 +1,10 @@
-# Claude Todos for VSCode
+# Claude Todos for VSCode and JetBrains
 
 [Português](README.md) · **English** · [Español](README.es.md)
 
 [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CarlosJunior1992.claude-todos?label=VS%20Code%20Marketplace&color=007ACC)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
 [![Open VSX](https://img.shields.io/open-vsx/v/CarlosJunior1992/claude-todos?label=Open%20VSX&color=c160ef)](https://open-vsx.org/extension/CarlosJunior1992/claude-todos)
+[![JetBrains Marketplace](https://img.shields.io/jetbrains/plugin/v/33074-claude-todos?label=JetBrains%20Marketplace&color=fe2857)](https://plugins.jetbrains.com/plugin/33074-claude-todos)
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -35,7 +36,13 @@ It does not matter **where** `claude` is running: VSCode's integrated terminal, 
 |---|---|
 | VS Code | [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos) |
 | Cursor · Windsurf · VSCodium | [Open VSX](https://open-vsx.org/extension/CarlosJunior1992/claude-todos) |
-| Any | `.vsix` from a [GitHub Release](https://github.com/carlosdealmeida/claude-todos-vscode/releases) |
+| IntelliJ IDEA · PyCharm · WebStorm · Rider · … (2024.2+) | [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/33074-claude-todos) |
+| Any (offline) | `.vsix` (VS Code) / `.zip` (JetBrains) — [GitHub Release](https://github.com/carlosdealmeida/claude-todos-vscode/releases) |
+
+> **JetBrains plugin:** the same panel runs inside JetBrains IDEs — same agent tree,
+> timings, tokens and dashboard, with native toasts, click-a-task to open the transcript
+> and a session picker. Requires **Node.js on PATH** (Claude Code users already have it).
+> The hook is shared: installing it from one IDE also covers the other.
 
 1. Install the extension (table above). The **"Get started with Claude Todos"** guide shows up on the editor's *Welcome/Get Started* page and walks you through the steps below.
 2. On first launch, accept the prompt to install hooks in `~/.claude/settings.json` — the extension adds two: `SessionStart` and `UserPromptSubmit`. Existing hooks are preserved.

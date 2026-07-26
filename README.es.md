@@ -1,9 +1,10 @@
-# Claude Todos para VSCode
+# Claude Todos para VSCode y JetBrains
 
 [Português](README.md) · [English](README.en.md) · **Español**
 
 [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CarlosJunior1992.claude-todos?label=VS%20Code%20Marketplace&color=007ACC)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
 [![Open VSX](https://img.shields.io/open-vsx/v/CarlosJunior1992/claude-todos?label=Open%20VSX&color=c160ef)](https://open-vsx.org/extension/CarlosJunior1992/claude-todos)
+[![JetBrains Marketplace](https://img.shields.io/jetbrains/plugin/v/33074-claude-todos?label=JetBrains%20Marketplace&color=fe2857)](https://plugins.jetbrains.com/plugin/33074-claude-todos)
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -35,7 +36,14 @@ No importa **dónde** se esté ejecutando `claude`: puede ser el terminal integr
 |---|---|
 | VS Code | [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos) |
 | Cursor · Windsurf · VSCodium | [Open VSX](https://open-vsx.org/extension/CarlosJunior1992/claude-todos) |
-| Cualquiera | `.vsix` de un [GitHub Release](https://github.com/carlosdealmeida/claude-todos-vscode/releases) |
+| IntelliJ IDEA · PyCharm · WebStorm · Rider · … (2024.2+) | [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/33074-claude-todos) |
+| Cualquiera (offline) | `.vsix` (VS Code) / `.zip` (JetBrains) — [GitHub Release](https://github.com/carlosdealmeida/claude-todos-vscode/releases) |
+
+> **Plugin de JetBrains:** el mismo panel funciona dentro de los IDEs de JetBrains —
+> mismo árbol de agentes, tiempos, tokens y panel de uso, con toasts nativos, clic en la
+> tarea para abrir el transcript y selector de sesión. Requiere **Node.js en el PATH**
+> (quien usa Claude Code ya lo tiene). El hook es compartido: instalarlo desde un IDE
+> también cubre el otro.
 
 1. Instala la extensión (tabla de arriba). La guía **"Empieza con Claude Todos"** aparece en la página *Welcome/Get Started* del editor y acompaña los pasos de abajo.
 2. En el primer arranque, acepta el aviso para instalar los hooks en `~/.claude/settings.json` — la extensión agrega dos: `SessionStart` y `UserPromptSubmit`. Los hooks existentes se conservan.

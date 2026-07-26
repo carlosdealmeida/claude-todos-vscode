@@ -1,5 +1,10 @@
 # Porta para JetBrains — visão geral e decomposição
 
+> **✅ PORTA CONCLUÍDA (2026-07-26).** Os 4 sub-projetos entregues, smoke humano validado
+> num IDE real e plugin aprovado no JetBrains Marketplace:
+> <https://plugins.jetbrains.com/plugin/33074-claude-todos> (id `com.carlosdealmeida.claude-todos`).
+> Lançado junto da extensão VS Code na v0.16.0, a partir do mesmo core compartilhado.
+
 **Origem:** decisão de produto 2026-07-17. Objetivo: **alcançar o público JetBrains**
 (IntelliJ/PyCharm/Rider/WebStorm/… que roda Claude Code) publicando um plugin no JetBrains
 Marketplace, com **paridade completa** de features com a extensão VS Code.
@@ -40,7 +45,7 @@ Cada SP tem spec + plano + ciclo próprio e entrega software testável por si.
 | **SP0** | Desacoplar o core: `SessionCore` compartilhado, `todosWatcher` sem `vscode`, ponte da webview plugável, `src/core/main.ts` (protocolo JSON-lines) | ✅ **concluído 2026-07-18** (commits c766291..dd81781) — Extensão VS Code **idêntica** (regressão zero) + `core.js` sidecar rodável. Publicável como 0.16.0 sem mudança visível. | **Sim** — refactor interno, coberto por testes |
 | **SP1** | Esqueleto Kotlin + JCEF renderizando o painel read-only (árvore + tokens + dashboard), servindo a build Svelte via custom scheme, spawn do sidecar, `jcefBridge`, watch ao vivo | ✅ **concluído — smoke humano validado 2026-07-22** (commits f5c8984..ed05605; achados do smoke corrigidos: separadores de path no cwd, factory DumbAware) — Painel read-only funcional dentro do IntelliJ, instalável localmente | Não (código novo) |
 | **SP2** | Pontes nativas: `Notifications.Bus` (toasts), `openTodoSource` → `FileEditorManager`, quick pick de sessão, instalação do hook, tela de boas-vindas | ✅ **concluído — smoke humano validado 2026-07-22** (toasts, clique→transcript, picker, hook idempotente confirmados no IDE real) — Paridade de features | Não |
-| **SP3** | Empacotamento (bundle do `core.js` nos resources, detecção do `node`), CI Gradle, publicação no JetBrains Marketplace | 🚧 **automação pronta e smoke validado — falta só a primeira submissão manual ao marketplace** (commits 06ae759..1435c27) — Plugin publicado | Não |
+| **SP3** | Empacotamento (bundle do `core.js` nos resources, detecção do `node`), CI Gradle, publicação no JetBrains Marketplace | ✅ **concluído 2026-07-26 — plugin PUBLICADO** ([JetBrains Marketplace #33074](https://plugins.jetbrains.com/plugin/33074-claude-todos), aprovado na revisão inicial; secrets de assinatura configurados → releases futuros publicam sozinhos) | Não |
 
 **Ordem obrigatória:** SP0 → SP1 → SP2 → SP3 (cada um depende do anterior). SP0 é o único que
 mexe no que já funciona, então recebe o maior cuidado (regressão zero é requisito).

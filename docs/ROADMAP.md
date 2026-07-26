@@ -37,6 +37,20 @@ material para README/divulgação. Comentários já postados com disclosure de a
 | [#57230](https://github.com/anthropics/claude-code/issues/57230) / [#26581](https://github.com/anthropics/claude-code/issues/26581) / [#29928](https://github.com/anthropics/claude-code/issues/29928) / [#8985](https://github.com/anthropics/claude-code/issues/8985) | abertas, 20–63 reações | Cluster: notificações nativas no VS Code ("needs attention" / "completed") | = item 14 (0.10.0); #8985 mostra que o hook `Notification` nem funciona no modo nativo — nosso notifier independe de hooks. |
 | [#58243](https://github.com/anthropics/claude-code/issues/58243) | aberta | Agent view: sort by most recently updated | Já ordenamos por mtime DESC. |
 
+**Achadas na varredura 2026-07-25 (ainda sem comentário nosso):**
+
+| Issue | Estado | Título | Nota |
+|---|---|---|---|
+| [#78327](https://github.com/anthropics/claude-code/issues/78327) / [#78324](https://github.com/anthropics/claude-code/issues/78324) / [#78555](https://github.com/anthropics/claude-code/issues/78555) | 2 `COMPLETED`, 1 aberta | Localização (l10n) da UI da extensão VS Code | = item 12, entregue na 0.8.0 (en/pt-br/es). Três pedidos independentes em 2 dias. |
+| [#79881](https://github.com/anthropics/claude-code/issues/79881) / [#80110](https://github.com/anthropics/claude-code/issues/80110) / [#79362](https://github.com/anthropics/claude-code/issues/79362) | abertas | Hook `Notification` não dispara na extensão VS Code (permission_prompt / idle_prompt) | Reforçam #8985 (63 reações). Nosso notifier (itens 14 e 22) **não depende de hook** — é o argumento de venda direto. |
+| [#79155](https://github.com/anthropics/claude-code/issues/79155) | aberta | Indicador **persistente** de uso de contexto (não só o aviso perto do limite) | = item 2, entregue na 0.4.0. |
+| [#81039](https://github.com/anthropics/claude-code/issues/81039) | aberta | Desktop sub-reporta a janela de contexto — `/context` mostra denominador de 200.0K em sessão que passa disso | Valida que a detecção de janela é dor real, e não só nossa (ver item 2). |
+| [#78745](https://github.com/anthropics/claude-code/issues/78745) / [#78747](https://github.com/anthropics/claude-code/issues/78747) | abertas | Expor tokens restantes como env var pro statusline | Nós já mostramos sem depender do harness. |
+| [#78595](https://github.com/anthropics/claude-code/issues/78595) | aberta | Extensão VS Code: indicadores de status na lista de sessões + notificação quando sessão em background termina | = itens 14 + 5(a). |
+| [#78960](https://github.com/anthropics/claude-code/issues/78960) | `COMPLETED` | Sidebar mostra "Running" para sessão já concluída | Cluster de estado errado no painel nativo; nosso modelo é derivado do transcript. |
+| [#79281](https://github.com/anthropics/claude-code/issues/79281) | aberta | Agents view: marcar a sessão main e usar cor para manter o paralelo legível | = nossa árvore (0.9.0) com badge de tipo colorido. |
+| [#78692](https://github.com/anthropics/claude-code/issues/78692) | aberta | Sidebar do desktop deveria mostrar **todas** as sessões de `~/.claude/projects/` | Munição para a decisão de posicionamento do item 8. |
+
 ---
 
 ## Alta aderência (candidatas fortes)
@@ -244,6 +258,28 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 - **Custo/benefício:** baixíssimo custo, retenção altíssima.
 - **Status:** ✅ entregue na 0.10.0 — spec: [docs/specs/2026-07-14-session-notifications-design.md](specs/2026-07-14-session-notifications-design.md) · plano: [docs/plans/2026-07-14-session-notifications.md](plans/2026-07-14-session-notifications.md). `SessionNotifier` puro (idle após ≥60s de atividade + 45s de silêncio; allComplete na transição), timer de 10s armado só em atividade, gate de setting+foco no disparo, toast com "Abrir painel"/"Não notificar".
 
+### 24. Porta JetBrains — plugin publicado ✅ ENTREGUE (0.16.0, 2026-07-26)
+- **Origem:** decisão de produto 2026-07-17 (alcançar o público JetBrains que roda Claude Code).
+- **Status:** ✅ **publicado** —
+  [JetBrains Marketplace #33074](https://plugins.jetbrains.com/plugin/33074-claude-todos).
+  Overview: [docs/specs/2026-07-17-jetbrains-port-overview.md](specs/2026-07-17-jetbrains-port-overview.md)
+  (SP0 core compartilhado + sidecar · SP1 esqueleto Kotlin/JCEF · SP2 pontes nativas ·
+  SP3 CI/empacotamento/publicação).
+- **Arquitetura:** um parser só (TS, `SessionCore` + sidecar Node falando JSON-lines) e uma
+  webview só (Svelte, ponte plugável `acquireVsCodeApi`/`__jcefPost`) servindo os dois IDEs —
+  zero divergência de schema por construção. Plugin Kotlin fino (JCEF + `MessageRouter`).
+- **Paridade entregue:** árvore de agentes, tempos, tokens/contexto/cache, dashboard 7 dias,
+  toasts nativos com os mesmos gates, clique na task → transcript na linha, picker de sessão,
+  e instalação de hook **idempotente entre os dois IDEs** (mesmo script, mesmo path).
+- **Validado em IDE real** (smoke humano 2026-07-22): achou e corrigiu 3 bugs que teste
+  automatizado nenhum pegaria (separadores de path do `basePath`, factory sem `DumbAware`,
+  shortId duplicado no picker).
+- **Divergências aceitas:** onboarding (JetBrains não tem walkthrough nativo — coberto pelo
+  prompt de hook + estados vazios); sem UI de settings dedicada (PropertiesComponent).
+- **Follow-ups no ledger:** `resolveClaudeDir` do VS Code consultar `CLAUDE_CONFIG_DIR`;
+  persistência do pin no JetBrains; erro real no toast de falha de hook; Configurable de
+  settings; limpar `pending` no `onDead`.
+
 ### 15. Publicar no Open VSX ✅ ENTREGUE (2026-07-14)
 - **Origem:** Cursor, Windsurf e VSCodium não acessam o marketplace da Microsoft — e são
   exatamente o público que mais roda Claude Code no editor.
@@ -317,7 +353,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   ≥5min); faixa sutil "lista sem atualização há X" sob o cabeçalho do main, tooltip
   explicativo, i18n ×3. Validado visualmente (3 casos).
 
-### 20. Badge de modelo por agente (main + nós da árvore) ✅ implementado — aguardando release
+### 20. Badge de modelo por agente (main + nós da árvore) ✅ ENTREGUE (0.15.0)
 - **Issues (varredura 2026-07-16):** [#28986](https://github.com/anthropics/claude-code/issues/28986)
   (**58 reações**, `platform:vscode`) mostrar modelo ativo no painel do VS Code ·
   [#76018](https://github.com/anthropics/claude-code/issues/76018) /
