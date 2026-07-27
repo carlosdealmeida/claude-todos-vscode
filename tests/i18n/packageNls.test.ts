@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { messages } from '../../src/i18n/messages';
 
 const ROOT = resolve(__dirname, '../..');
 
@@ -29,4 +30,19 @@ describe('package.nls parity', () => {
       }
     });
   }
+});
+
+describe('language setting matches the catalog', () => {
+  it('enum (minus auto) equals the message catalog locales', () => {
+    const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
+    const setting = pkg.contributes.configuration.properties['claudeTodos.language'];
+    const offered = (setting.enum as string[]).filter((v) => v !== 'auto').sort();
+    expect(offered).toEqual(Object.keys(messages).sort());
+  });
+
+  it('enumDescriptions has one entry per enum value', () => {
+    const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
+    const setting = pkg.contributes.configuration.properties['claudeTodos.language'];
+    expect(setting.enumDescriptions).toHaveLength(setting.enum.length);
+  });
 });

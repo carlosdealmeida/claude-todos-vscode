@@ -12,6 +12,8 @@
   "config.language.en": "Inglés",
   "config.language.ptBr": "Portugués (Brasil)",
   "config.language.es": "Español",
+  "config.language.zhCn": "Chino (Simplificado)",
+  "config.language.zhTw": "Chino (Tradicional)",
   "config.notifications.description": "Notifica cuando la sesión seguida queda inactiva tras un período de actividad, o completa todas las tareas (solo con la ventana de VS Code sin foco).",
   "config.activeFolder.description": "Solo multi-root: nombre (o ruta absoluta) de la carpeta del workspace a seguir. Vacío = seguir la sesión más activa entre todas las carpetas.",
   "walkthrough.title": "Empieza con Claude Todos",

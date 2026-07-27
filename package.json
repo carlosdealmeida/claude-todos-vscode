@@ -178,13 +178,17 @@
             "auto",
             "en",
             "pt-br",
-            "es"
+            "es",
+            "zh-cn",
+            "zh-tw"
           ],
           "enumDescriptions": [
             "%config.language.auto%",
             "%config.language.en%",
             "%config.language.ptBr%",
-            "%config.language.es%"
+            "%config.language.es%",
+            "%config.language.zhCn%",
+            "%config.language.zhTw%"
           ],
           "default": "auto",
           "description": "%config.language.description%"
