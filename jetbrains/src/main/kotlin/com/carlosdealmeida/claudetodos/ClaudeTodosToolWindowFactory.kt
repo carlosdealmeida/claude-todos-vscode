@@ -156,9 +156,5 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
         add(JBLabel(text).apply { border = JBUI.Borders.empty(16) })
     }
 
-    private fun ideLocale(): String = when (Locale.getDefault().language) {
-        "pt" -> "pt-br"
-        "es" -> "es"
-        else -> "en"
-    }
+    private fun ideLocale(): String = LocaleResolver.resolve(Locale.getDefault())
 }
