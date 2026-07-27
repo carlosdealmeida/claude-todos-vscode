@@ -92,7 +92,12 @@ jobs:
       # Publishes when the OVSX_PAT secret exists; skips silently otherwise.
       # The workflow only runs on tag pushes or manual dispatch, so a publish
       # from here always corresponds to a released (or explicitly chosen) tree.
+      # continue-on-error: as tres publicacoes sao independentes entre si. Sem
+      # isso, um marketplace que ja tem a versao (tipico num re-run) aborta o
+      # job e os marketplaces seguintes nunca chegam a rodar. Confira o log de
+      # cada step: o job verde nao garante que os tres publicaram.
       - name: Publish to Open VSX
+        continue-on-error: true
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
         if: env.OVSX_PAT != ''
@@ -105,6 +110,7 @@ jobs:
       # otherwise. First-ever submission must be done manually via the web UI
       # (vendor creation + initial review) — see RELEASING.md.
       - name: Publish to JetBrains Marketplace
+        continue-on-error: true
         env:
           JB_MARKETPLACE_TOKEN: ${{ secrets.JB_MARKETPLACE_TOKEN }}
           JB_CERTIFICATE_CHAIN: ${{ secrets.JB_CERTIFICATE_CHAIN }}
@@ -119,6 +125,7 @@ jobs:
       # (same pattern as the two steps above). The PAT comes from Azure DevOps
       # with scope Marketplace > Manage — see RELEASING.md.
       - name: Publish to VS Code Marketplace
+        continue-on-error: true
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         if: env.VSCE_PAT != '' && startsWith(github.ref, 'refs/tags/v')
