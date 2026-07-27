@@ -32,6 +32,11 @@ class TodosStore {
         break;
       case 'locale':
         this.locale = msg.locale;
+        // lang correto e essencial para a unificacao Han: com lang="en" fixo o
+        // navegador pode escolher glifos CJK com forma errada (ex.: zh-TW
+        // renderizado com fonte japonesa/simplificada). Cobre os dois hosts
+        // (VS Code e JetBrains) pois ambos carregam este mesmo bundle webview.
+        document.documentElement.lang = msg.locale;
         break;
       case 'projectUsage':
         this.projectUsage = msg.usage;

@@ -162,7 +162,7 @@ de tokens do 0.3.0).
 
 ### 12. i18n da UI da extensão ✅ ENTREGUE (0.8.0)
 - **Origem:** inconsistência entre README trilíngue (pt/en/es) e UI monolíngue em português; demanda crescente por localização no ecossistema Claude Code ([#60914](https://github.com/anthropics/claude-code/issues/60914), [#64472](https://github.com/anthropics/claude-code/issues/64472), [#58688](https://github.com/anthropics/claude-code/issues/58688), [#35600](https://github.com/anthropics/claude-code/issues/35600) etc.).
-- **Status:** ✅ entregue — idiomas **en** (base/fallback), **pt-br** e **es**. Segue o idioma de exibição do VS Code (`display language`) com override opcional via setting `claudeTodos.language`. Corrige a inconsistência pt/en anterior da UI.
+- **Status:** ✅ entregue — idiomas **en** (base/fallback), **pt-br**, **es**, **zh-cn** e **zh-tw**. Segue o idioma de exibição do VS Code (`display language`) com override opcional via setting `claudeTodos.language`. Corrige a inconsistência pt/en anterior da UI.
 - **Superfícies cobertas:**
   - **Webview** — todos os textos visíveis no painel (labels, estados vazios, mensagens de erro, unidades de tempo, legenda de cache).
   - **Runtime da extensão** — notificações, mensagens de quick pick, títulos de sessão e demais strings do processo da extensão.

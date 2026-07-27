@@ -20,7 +20,7 @@
 - **Tokens, context and cache** — table by model or by agent, context-window indicator with a traffic light, and cache efficiency (reused × created × new).
 - **"Last 7 days" dashboard** — aggregated project usage, by model and by agent type.
 - **Notifications** — a toast when the session goes idle waiting for you, or when all tasks complete (only while the window is unfocused).
-- **UI in 3 languages** — en, pt-br and es; follows VS Code's display language, with a setting override.
+- **UI in 5 languages** — en, pt-br, es, zh-cn and zh-tw; follows VS Code's display language, with a setting override.
 
 ## How it works
 
@@ -65,7 +65,7 @@ It does not matter **where** `claude` is running: VSCode's integrated terminal, 
 |---|---|---|
 | `claudeTodos.claudeDir` | `""` (auto-detect from `os.homedir()`) | Override the `~/.claude` location. |
 | `claudeTodos.autoInstallHook` | `true` | Show the first-run prompt asking to install the hooks. |
-| `claudeTodos.language` | `auto` | Panel UI language (`auto` \| `en` \| `pt-br` \| `es`). |
+| `claudeTodos.language` | `auto` | Panel UI language (`auto` \| `en` \| `pt-br` \| `es` \| `zh-cn` \| `zh-tw`). |
 | `claudeTodos.notifications` | `true` | Toast when the session goes idle or completes all tasks (window unfocused). |
 | `claudeTodos.activeFolder` | `""` | Multi-root: workspace folder to track; empty = follow the most active session. |
 

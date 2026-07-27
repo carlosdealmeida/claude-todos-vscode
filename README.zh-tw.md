@@ -22,7 +22,7 @@
 - **權杖、上下文和快取** — 依模型或依智慧體的表格、附紅綠燈提示的上下文視窗指示器，以及快取效率（重複使用 × 建立 × 新增）。
 - **「最近 7 天」儀表板** — 依模型和依智慧體類型彙總的專案使用情況。
 - **通知** — 當工作階段閒置等待你時，或所有任務完成時（僅在視窗未取得焦點時）彈出提示。
-- **介面支援 3 種語言** — en、pt-br 和 es；跟隨 VS Code 的顯示語言，也可透過設定覆寫。
+- **介面支援 5 種語言** — en、pt-br、es、zh-cn 和 zh-tw；跟隨 VS Code 的顯示語言，也可透過設定覆寫。
 
 ## 運作原理
 
@@ -67,7 +67,7 @@
 |---|---|---|
 | `claudeTodos.claudeDir` | `""`（透過 `os.homedir()` 自動偵測） | 覆寫 `~/.claude` 的位置。 |
 | `claudeTodos.autoInstallHook` | `true` | 顯示首次執行時詢問是否安裝掛鉤的提示。 |
-| `claudeTodos.language` | `auto` | 面板介面語言（`auto` \| `en` \| `pt-br` \| `es`）。 |
+| `claudeTodos.language` | `auto` | 面板介面語言（`auto` \| `en` \| `pt-br` \| `es` \| `zh-cn` \| `zh-tw`）。 |
 | `claudeTodos.notifications` | `true` | 工作階段閒置或完成所有任務時彈出提示（視窗未取得焦點時）。 |
 | `claudeTodos.activeFolder` | `""` | 多根工作區：要追蹤的工作區資料夾；留空 = 跟隨最活躍的工作階段。 |
 

@@ -11,7 +11,10 @@ function normalizeChinese(tag: string): Locale {
   // `zh-Hant-CN` e tradicional apesar do CN.
   if (parts.includes('hant')) return 'zh-tw';
   if (parts.includes('hans')) return 'zh-cn';
-  return TRADITIONAL_REGIONS.has(parts[parts.length - 1]) ? 'zh-tw' : 'zh-cn';
+  // Procura a regiao em qualquer subtag apos o idioma (nao so a ultima), para
+  // bater com o Kotlin (que le loc.country diretamente) mesmo com sufixos
+  // extras depois da regiao, ex.: `zh-TW-x-algo`.
+  return parts.slice(1).some((p) => TRADITIONAL_REGIONS.has(p)) ? 'zh-tw' : 'zh-cn';
 }
 
 // Mapeia qualquer tag de idioma do VS Code para um dos locales suportados.

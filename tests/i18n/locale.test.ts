@@ -46,6 +46,7 @@ describe('normalizeLocale — chines', () => {
     ['zh-Hant', 'zh-tw'],
     ['zh-Hant-CN', 'zh-tw'],
     ['zh-Hans-TW', 'zh-cn'],
+    ['zh-TW-x-algo', 'zh-tw'],
   ];
   for (const [input, expected] of cases) {
     it(`${input} -> ${expected}`, () => {

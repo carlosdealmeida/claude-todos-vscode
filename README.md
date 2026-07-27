@@ -20,7 +20,7 @@
 - **Tokens, contexto e cache** — tabela por modelo ou por agente, indicador da janela de contexto com semáforo e eficiência de cache (reaproveitado × criado × novo).
 - **Dashboard "Últimos 7 dias"** — uso agregado do projeto, por modelo e por tipo de agente.
 - **Notificações** — toast quando a sessão fica ociosa aguardando você, ou quando todas as tasks completam (só com a janela sem foco).
-- **UI em 3 idiomas** — en, pt-br e es; segue o idioma do VS Code, com override via setting.
+- **UI em 5 idiomas** — en, pt-br, es, zh-cn e zh-tw; segue o idioma do VS Code, com override via setting.
 
 ## Como funciona
 
@@ -65,7 +65,7 @@ Não importa **onde** o `claude` esteja rodando: pode ser o terminal integrado d
 |---|---|---|
 | `claudeTodos.claudeDir` | `""` (detecção automática via `os.homedir()`) | Sobrescreve a localização de `~/.claude`. |
 | `claudeTodos.autoInstallHook` | `true` | Mostra o aviso de primeira execução pedindo para instalar os hooks. |
-| `claudeTodos.language` | `auto` | Idioma da UI do painel (`auto` \| `en` \| `pt-br` \| `es`). |
+| `claudeTodos.language` | `auto` | Idioma da UI do painel (`auto` \| `en` \| `pt-br` \| `es` \| `zh-cn` \| `zh-tw`). |
 | `claudeTodos.notifications` | `true` | Toast quando a sessão fica ociosa ou completa todas as tasks (janela sem foco). |
 | `claudeTodos.activeFolder` | `""` | Multi-root: pasta do workspace a acompanhar; vazio = seguir a sessão mais ativa. |
 

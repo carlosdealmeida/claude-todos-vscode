@@ -22,7 +22,7 @@
 - **令牌、上下文和缓存** — 按模型或按智能体的表格、带红绿灯提示的上下文窗口指示器，以及缓存效率（复用 × 创建 × 新增）。
 - **“最近 7 天”仪表盘** — 按模型和按智能体类型汇总的项目使用情况。
 - **通知** — 当会话空闲等待你时，或所有任务完成时（仅在窗口未获得焦点时）弹出提示。
-- **界面支持 3 种语言** — en、pt-br 和 es；跟随 VS Code 的显示语言，也可通过设置覆盖。
+- **界面支持 5 种语言** — en、pt-br、es、zh-cn 和 zh-tw；跟随 VS Code 的显示语言，也可通过设置覆盖。
 
 ## 工作原理
 
@@ -67,7 +67,7 @@
 |---|---|---|
 | `claudeTodos.claudeDir` | `""`（通过 `os.homedir()` 自动检测） | 覆盖 `~/.claude` 的位置。 |
 | `claudeTodos.autoInstallHook` | `true` | 显示首次运行时询问是否安装钩子的提示。 |
-| `claudeTodos.language` | `auto` | 面板界面语言（`auto` \| `en` \| `pt-br` \| `es`）。 |
+| `claudeTodos.language` | `auto` | 面板界面语言（`auto` \| `en` \| `pt-br` \| `es` \| `zh-cn` \| `zh-tw`）。 |
 | `claudeTodos.notifications` | `true` | 会话空闲或所有任务完成时弹出提示（窗口未获得焦点时）。 |
 | `claudeTodos.activeFolder` | `""` | 多根工作区：要跟踪的工作区文件夹；留空 = 跟随最活跃的会话。 |
 

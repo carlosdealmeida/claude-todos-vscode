@@ -32,6 +32,19 @@ describe('package.nls parity', () => {
   }
 });
 
+describe('package.nls files match the catalog locales', () => {
+  it('has one package.nls.<locale>.json per non-en locale in messages.ts', () => {
+    const nlsLocales = readdirSync(ROOT)
+      .filter((f) => /^package\.nls\.[^.]+\.json$/.test(f))
+      .map((f) => f.replace(/^package\.nls\./, '').replace(/\.json$/, ''))
+      .sort();
+    const catalogLocales = Object.keys(messages)
+      .filter((locale) => locale !== 'en')
+      .sort();
+    expect(nlsLocales).toEqual(catalogLocales);
+  });
+});
+
 describe('language setting matches the catalog', () => {
   it('enum (minus auto) equals the message catalog locales', () => {
     const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));

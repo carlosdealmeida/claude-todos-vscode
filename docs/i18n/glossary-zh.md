@@ -48,6 +48,7 @@ complete, independent catalogs.
 | project | 项目 | 專案 | |
 | folder | 文件夹 | 資料夾 | |
 | file | 文件 | 檔案 | `文件` significa "documento" em zh-TW — não reusar |
+| orchestrator | 编排者 | 協調者 | Used in the READMEs (the agent driving sub-agents) |
 
 ## Never translated
 
@@ -58,7 +59,12 @@ official documentation:
 - `Claude Code`, `Claude Todos`
 - `~/.claude/settings.json`
 - `SessionStart`, `UserPromptSubmit`, `TodoWrite`
-- Command Palette command titles
+- `toast` — kept in English in the Chinese text; a deliberate choice, not an
+  oversight
+- Command Palette command titles — this rule applies from zh onward. The
+  `pt-br` and `es` catalogs predate this policy and DO translate the command
+  titles; that inconsistency is known and not meant to be silently copied
+  forward into new locales.
 - Keyboard shortcuts
 
 ## Where the strings live
@@ -66,7 +72,7 @@ official documentation:
 | File | Scope |
 |---|---|
 | `src/i18n/messages.ts` | Panel UI (73 keys per locale) |
-| `package.nls.zh-cn.json`, `package.nls.zh-tw.json` | VS Code commands, settings, walkthrough (27 keys) |
+| `package.nls.zh-cn.json`, `package.nls.zh-tw.json` | VS Code commands, settings, walkthrough (29 keys) |
 | `jetbrains/src/main/kotlin/.../NotifyMessages.kt` | JetBrains native toasts and prompts (18 keys) |
 | `README.zh-cn.md`, `README.zh-tw.md` | GitHub documentation |
 | `jetbrains/src/main/resources/META-INF/plugin.xml` | Marketplace description (zh-CN only) |
