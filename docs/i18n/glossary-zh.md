@@ -45,6 +45,9 @@ complete, independent catalogs.
 | install | 安装 | 安裝 | |
 | refresh | 刷新 | 重新整理 | |
 | track (verb) | 跟踪 | 追蹤 | Tracking a session |
+| project | 项目 | 專案 | |
+| folder | 文件夹 | 資料夾 | |
+| file | 文件 | 檔案 | `文件` significa "documento" em zh-TW — não reusar |
 
 ## Never translated
 
