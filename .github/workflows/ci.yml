@@ -26,6 +26,9 @@ jobs:
 
       - run: npm run typecheck
 
+      # tsc --noEmit ignora os .svelte: quem cobre o webview e o svelte-check.
+      - run: npm run check:svelte
+
       - run: npm test
 
       - run: npm run build

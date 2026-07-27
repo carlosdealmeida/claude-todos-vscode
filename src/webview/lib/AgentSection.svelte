@@ -9,6 +9,10 @@
 
   let { agent, defaultExpanded = true, history = false, tokens = null, hasRunningSubAgent = false, currentModel, usedModels = [], mainModel }:
     { agent: AgentTodos; defaultExpanded?: boolean; history?: boolean; tokens?: number | null; hasRunningSubAgent?: boolean; currentModel?: string; usedModels?: string[]; mainModel?: string } = $props();
+  // Captura so o valor inicial de proposito: depois disso quem manda e o
+  // clique do usuario. Reagir a prop re-expandiria a secao sozinha sempre que
+  // o agente voltasse a rodar, desfazendo o que o usuario colapsou.
+  // svelte-ignore state_referenced_locally
   let expanded = $state(defaultExpanded);
 
   let mBadge = $derived(modelBadge(currentModel, mainModel, agent.isMain));
@@ -22,7 +26,9 @@
   });
 
   // Estado visual do agente: ativo (pulsa), concluído (verde) ou ocioso.
-  let state = $derived(
+  // Nao chamar de `state`: colide com a rune $state e o svelte-check passa a
+  // ler `$state(...)` como auto-subscribe de um store chamado `state`.
+  let visualState = $derived(
     counts.inProgress > 0 || agent.status === 'running'
       ? 'active'
       : counts.total > 0 && counts.completed === counts.total
@@ -36,10 +42,10 @@
   let title = $derived(agent.name);
 </script>
 
-<section class="agent" class:hist={history} class:active={state === 'active'}>
+<section class="agent" class:hist={history} class:active={visualState === 'active'}>
   <button class="header" onclick={() => expanded = !expanded} aria-expanded={expanded}>
     <span class="chevron" class:open={expanded}><Icon name="chevron" size={12} /></span>
-    {#if state !== 'idle'}<span class="dot" class:active={state === 'active'} class:done={state === 'done'}></span>{/if}
+    {#if visualState !== 'idle'}<span class="dot" class:active={visualState === 'active'} class:done={visualState === 'done'}></span>{/if}
     <span class="title">{title}</span>
     {#if agent.agentType}
       <span class="type-badge tone-{agentTypeTone(agent.agentType)}" title={todosStore.t('agent.typeTooltip', { type: agent.agentType })}>{agent.agentType}</span>
