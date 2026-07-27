@@ -114,15 +114,12 @@ jobs:
         working-directory: jetbrains
         run: ./gradlew -PpluginVersion="$PLUGIN_VERSION" signPlugin publishPlugin --console=plain
 
-      # --- Optional: automatic Marketplace publish -------------------------
-      # The job above only builds the .vsix; publishing is done manually by
-      # uploading it at https://marketplace.visualstudio.com/manage
-      #
-      # To automate it instead: create a PAT (Azure DevOps, scope
-      # Marketplace > Manage), add it as the repo secret VSCE_PAT, and
-      # uncomment the step below.
-      #
-      # - name: Publish to VSCode Marketplace
-      #   env:
-      #     VSCE_PAT: ${{ secrets.VSCE_PAT }}
-      #   run: npx vsce publish --packagePath "${{ steps.package.outputs.vsix }}"
+      # --- VS Code Marketplace ---------------------------------------------
+      # Publishes when the VSCE_PAT secret exists; skips silently otherwise
+      # (same pattern as the two steps above). The PAT comes from Azure DevOps
+      # with scope Marketplace > Manage — see RELEASING.md.
+      - name: Publish to VS Code Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        if: env.VSCE_PAT != '' && startsWith(github.ref, 'refs/tags/v')
+        run: npx vsce publish --packagePath "${{ steps.package.outputs.vsix }}"

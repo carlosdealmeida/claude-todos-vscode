@@ -60,16 +60,42 @@ The `Release` workflow will:
 3. `vsce package` → produces `claude-todos-X.Y.Z.vsix`.
 4. Create a GitHub Release with the `.vsix` attached and `CHANGELOG.md` as the body.
 
-## Publishing to the Marketplace (manual)
+## Publishing to the VS Code Marketplace
 
-1. Open the GitHub Release the workflow created and download `claude-todos-X.Y.Z.vsix`.
-2. Go to <https://marketplace.visualstudio.com/manage> and sign in.
-3. **First release:** `New extension → Visual Studio Code` → upload the `.vsix`.
-4. **Updates:** find the extension in the list → `...` menu → `Update` → upload the new `.vsix`.
-5. The Marketplace re-reads `README.md` and `CHANGELOG.md` from inside the
-   `.vsix` automatically — no extra steps for docs.
+O workflow publica sozinho quando o secret `VSCE_PAT` existe (mesmo padrão do
+Open VSX e do JetBrains: sem o secret, o passo é pulado e o `.vsix` continua
+anexado ao GitHub Release para upload manual).
 
-Verification can take a few minutes. The listing goes live once it passes.
+### One-time setup (automação)
+
+1. **Organização no Azure DevOps** — o PAT do Marketplace vem de lá, não do
+   GitHub. Crie/entre em <https://dev.azure.com> com a **mesma conta Microsoft**
+   dona do publisher `CarlosJunior1992`.
+2. **Personal Access Token** — em `User settings → Personal access tokens →
+   New Token`:
+   - **Organization:** `All accessible organizations` (obrigatório — com uma
+     org só, o `vsce` recusa o token);
+   - **Scopes:** `Custom defined` → marque **Marketplace → Manage**;
+   - **Expiration:** máximo 1 ano. Anote a data: quando expirar, o passo de
+     publicação falha e é só gerar outro e atualizar o secret.
+3. **Secret no GitHub** — `Settings → Secrets and variables → Actions → New
+   repository secret`, nome `VSCE_PAT`, valor do token. Ou pela CLI:
+   ```bash
+   gh secret set VSCE_PAT -R carlosdealmeida/claude-todos-vscode
+   ```
+
+A partir daí, cada tag `v*` publica nos três marketplaces sozinha.
+
+### Upload manual (fallback / primeira publicação)
+
+1. Abra o GitHub Release e baixe `claude-todos-X.Y.Z.vsix`.
+2. Vá em <https://marketplace.visualstudio.com/manage> e entre.
+3. **Primeiro release:** `New extension → Visual Studio Code` → suba o `.vsix`.
+4. **Updates:** ache a extensão → menu `...` → `Update` → suba o `.vsix` novo.
+5. O Marketplace relê `README.md` e `CHANGELOG.md` de dentro do `.vsix`
+   automaticamente — nada a fazer para os docs.
+
+A verificação leva alguns minutos; a listagem entra no ar quando passa.
 
 ## JetBrains Marketplace
 
