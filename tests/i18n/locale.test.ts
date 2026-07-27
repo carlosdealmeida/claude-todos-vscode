@@ -31,3 +31,37 @@ describe('resolveLocaleFrom', () => {
     expect(resolveLocaleFrom('', 'en-US')).toBe('en');
   });
 });
+
+describe('normalizeLocale — chines', () => {
+  const cases: Array<[string | undefined, string]> = [
+    ['zh', 'zh-cn'],
+    ['zh-CN', 'zh-cn'],
+    ['zh-cn', 'zh-cn'],
+    ['zh-SG', 'zh-cn'],
+    ['zh-TW', 'zh-tw'],
+    ['zh_TW', 'zh-tw'],
+    ['zh-HK', 'zh-tw'],
+    ['zh-MO', 'zh-tw'],
+    ['zh-Hans', 'zh-cn'],
+    ['zh-Hant', 'zh-tw'],
+    ['zh-Hant-CN', 'zh-tw'],
+    ['zh-Hans-TW', 'zh-cn'],
+  ];
+  for (const [input, expected] of cases) {
+    it(`${input} -> ${expected}`, () => {
+      expect(normalizeLocale(input)).toBe(expected);
+    });
+  }
+});
+
+describe('resolveLocaleFrom — chines', () => {
+  it('setting explicito vence o idioma da IDE', () => {
+    expect(resolveLocaleFrom('zh-tw', 'zh-CN')).toBe('zh-tw');
+  });
+  it('auto segue o idioma da IDE', () => {
+    expect(resolveLocaleFrom('auto', 'zh-TW')).toBe('zh-tw');
+  });
+  it('setting vazio segue o idioma da IDE', () => {
+    expect(resolveLocaleFrom(undefined, 'zh-HK')).toBe('zh-tw');
+  });
+});
