@@ -12,6 +12,11 @@ object NotifyMessages {
         "time.now", "time.minutesAgo", "time.hoursAgo", "time.daysAgo",
     )
 
+    // Expostos para o teste de paridade: get() faz fallback para en e por isso
+    // nao serve para detectar chave faltando num locale.
+    val LOCALES: Set<String> get() = catalog.keys
+    internal fun rawKeys(locale: String): Set<String> = catalog[locale]?.keys.orEmpty()
+
     private val catalog: Map<String, Map<String, String>> = mapOf(
         "en" to mapOf(
             "notify.idle" to "\"{title}\" — waiting for you",

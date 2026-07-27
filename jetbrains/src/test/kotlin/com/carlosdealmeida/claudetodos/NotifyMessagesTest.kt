@@ -6,8 +6,14 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class NotifyMessagesTest {
-    @Test fun `all keys are non-empty in the 3 locales`() {
-        for (locale in listOf("en", "pt-br", "es"))
+    @Test fun `every locale declares exactly the KEYS set`() {
+        val expected = NotifyMessages.KEYS.toSet()
+        for (locale in NotifyMessages.LOCALES)
+            assertEquals(expected, NotifyMessages.rawKeys(locale), "chaves divergentes em $locale")
+    }
+
+    @Test fun `all keys are non-empty in every locale`() {
+        for (locale in NotifyMessages.LOCALES)
             for (key in NotifyMessages.KEYS)
                 assertTrue(NotifyMessages.get(locale, key).isNotBlank(), "vazio: $locale/$key")
     }
