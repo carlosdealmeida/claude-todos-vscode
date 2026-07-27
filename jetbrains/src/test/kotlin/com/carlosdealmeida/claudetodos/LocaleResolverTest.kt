@@ -3,6 +3,7 @@ package com.carlosdealmeida.claudetodos
 import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class LocaleResolverTest {
     private fun tag(t: String) = Locale.forLanguageTag(t)
@@ -32,6 +33,13 @@ class LocaleResolverTest {
         assertEquals("es", LocaleResolver.resolve(tag("es-MX")))
         assertEquals("en", LocaleResolver.resolve(tag("fr")))
         assertEquals("en", LocaleResolver.resolve(tag("en-US")))
+    }
+
+    @Test fun `every resolved value exists in the catalog`() {
+        val tags = listOf("zh", "zh-CN", "zh-TW", "zh-HK", "pt-BR", "es-MX", "fr")
+        for (t in tags)
+            assertTrue(LocaleResolver.resolve(Locale.forLanguageTag(t)) in NotifyMessages.LOCALES,
+                "locale resolvido sem catalogo: $t")
     }
 
 }
