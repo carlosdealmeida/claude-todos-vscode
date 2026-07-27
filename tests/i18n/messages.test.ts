@@ -3,7 +3,16 @@ import { messages } from '../../src/i18n/messages';
 
 describe('catalog completeness', () => {
   const enKeys = Object.keys(messages.en).sort();
-  for (const locale of ['pt-br', 'es'] as const) {
+  // Derivado do proprio catalogo: locale novo entra na suite sozinho.
+  const locales = Object.keys(messages).filter((l) => l !== 'en') as Array<
+    Exclude<keyof typeof messages, 'en'>
+  >;
+
+  it('has at least one locale besides en', () => {
+    expect(locales.length).toBeGreaterThan(0);
+  });
+
+  for (const locale of locales) {
     it(`${locale} has exactly the same keys as en`, () => {
       expect(Object.keys(messages[locale]).sort()).toEqual(enKeys);
     });
