@@ -2,7 +2,7 @@
 
 [Português](README.md) · **English** · [Español](README.es.md)
 
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CarlosJunior1992.claude-todos?label=VS%20Code%20Marketplace&color=007ACC)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
+[![VS Code Marketplace](https://vsmarketplacebadges.dev/version-short/CarlosJunior1992.claude-todos.svg?label=VS%20Code%20Marketplace&color=007ACC&style=flat)](https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos)
 [![Open VSX](https://img.shields.io/open-vsx/v/CarlosJunior1992/claude-todos?label=Open%20VSX&color=c160ef)](https://open-vsx.org/extension/CarlosJunior1992/claude-todos)
 [![JetBrains Marketplace](https://img.shields.io/jetbrains/plugin/v/33074-claude-todos?label=JetBrains%20Marketplace&color=fe2857)](https://plugins.jetbrains.com/plugin/33074-claude-todos)
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
