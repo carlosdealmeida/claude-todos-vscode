@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master, main]
 
+# CI so le o repo e builda: nada aqui escreve na API do GitHub.
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test & build
