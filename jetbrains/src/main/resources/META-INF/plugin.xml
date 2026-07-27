@@ -6,6 +6,10 @@
     Live observability for your Claude Code agents: agent tree, per-task progress,
     tokens/context/cache and a 7-day usage dashboard — read from the transcripts
     Claude Code already writes. Companion of the Claude Todos VS Code extension.
+    <br/><br/>
+    实时观测你的 Claude Code 智能体：智能体树、每个任务的进度、令牌/上下文/缓存，
+    以及 7 天用量面板 —— 全部从 Claude Code 已经写入的对话记录中读取。
+    Claude Todos VS Code 扩展的配套插件。
   ]]></description>
   <depends>com.intellij.modules.platform</depends>
   <extensions defaultExtensionNs="com.intellij">

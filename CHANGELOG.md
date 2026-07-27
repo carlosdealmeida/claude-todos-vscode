@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.0] - 2026-07-27
+
+### Added
+- Suporte a chinês simplificado (`zh-cn`) e tradicional (`zh-tw`) no painel, nas
+  notificações, nos metadados da extensão e nos READMEs.
+- A resolução de idioma passa a considerar o subtag de script e a região: `zh-TW`,
+  `zh-HK` e `zh-MO` usam tradicional; `zh-CN`, `zh-SG` e `zh` sem região usam
+  simplificado. Forçável pelo setting `claudeTodos.language`.
+- As traduções em chinês foram geradas por IA e aguardam revisão de falante
+  nativo — o glossário de terminologia está em `docs/i18n/glossary-zh.md`.
+
 ## [0.16.0] - 2026-07-22
 
 ### Added
