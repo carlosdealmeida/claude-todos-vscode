@@ -1,4 +1,4 @@
-import type { Todo, AgentUsage } from '../types';
+import type { Todo, AgentUsage, PendingQuestion } from '../types';
 
 // Compact token formatting for the panel: 7361 -> "7,4k", 24580 -> "24,6k".
 // Uses a comma decimal separator to match pt-BR.
@@ -192,4 +192,21 @@ export function listStaleness(
   if (!hasRunningSubAgent) return null;
   const age = now - agent.todosUpdatedAt;
   return age >= STALE_LIST_THRESHOLD_MS ? age : null;
+}
+
+// Decide título e chips da faixa de perguntas pendentes. Fica aqui (e não no
+// componente) porque o repo testa módulos puros do webview, não componentes.
+export function pendingSummary(
+  questions: PendingQuestion[],
+  t: (key: string, params?: Record<string, string | number>) => string,
+): { title: string; items: Array<{ chip?: string; text: string; line: number }> } | null {
+  if (questions.length === 0) return null;
+  const onlyPlan = questions.length === 1 && questions[0].kind === 'plan';
+  return {
+    title: onlyPlan ? t('app.pendingPlanTitle') : t('app.pendingQuestions', { n: questions.length }),
+    items: questions.map(q => {
+      const chip = q.kind === 'plan' ? t('app.pendingPlanChip') : q.header;
+      return { ...(chip ? { chip } : {}), text: q.text, line: q.line };
+    }),
+  };
 }
