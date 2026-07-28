@@ -23,6 +23,7 @@ import { TodosParser } from '../src/services/todosParser';
 import { UsageParser } from '../src/services/usageParser';
 import { encodeCwdToProjectDir } from '../src/services/projectDir';
 import type { SessionSnapshot } from '../src/types';
+import type { DemoScript } from '../site/src/demo/types';
 
 const MAX_FRAMES = 120;          // teto do spec — evita inchar o bundle
 const FRAME_SPACING_MS = 1000;   // 1 frame/s de roteiro
@@ -78,35 +79,45 @@ if (cuts.at(-1) !== lines.length) cuts.push(lines.length);
 // no snapshot emitido sao o MESMO, entao os dois nunca podem divergir.
 const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'claude-todos-demo-'));
 
-const frames: { atMs: number; snapshot: SessionSnapshot }[] = [];
+// O sandbox e so um andaime para o parser real ler do disco — ele acumula o
+// ULTIMO corte do transcript (main + sub-agents) o tempo todo em que o loop
+// roda. `finally` garante a remocao mesmo se `buildService().build()` ou
+// qualquer escrita lancar no meio: sem isso, o residuo e dado real de sessao
+// (nomes de sub-agent, conteudo de tasks), nao lixo vazio — nao pode sobrar
+// em %TEMP% indefinidamente.
+try {
+  const frames: { atMs: number; snapshot: SessionSnapshot }[] = [];
 
-for (const [index, cut] of cuts.entries()) {
-  const cutoffMs = cutoffTimestamp(cut);
-  writeTruncatedMain(lines.slice(0, cut));
-  writeTruncatedSubAgents(cutoffMs);
-  const snapshot = buildService().build();
-  if (!snapshot) continue;
-  frames.push({ atMs: index * FRAME_SPACING_MS, snapshot });
+  for (const [index, cut] of cuts.entries()) {
+    const cutoffMs = cutoffTimestamp(cut);
+    writeTruncatedMain(lines.slice(0, cut));
+    writeTruncatedSubAgents(cutoffMs);
+    const snapshot = buildService().build();
+    if (!snapshot) continue;
+    frames.push({ atMs: index * FRAME_SPACING_MS, snapshot });
+  }
+
+  const script = {
+    id: scriptId,
+    recordedAt: Date.now(),
+    durationMs: frames.length * FRAME_SPACING_MS,
+    // Preenchidos a mao apos inspecionar os frames (ver relatorio da Task 8).
+    markers: [],
+    frames,
+    // O dashboard agrega a JANELA DE 7 DIAS do projeto, nao esta sessao unica: nao
+    // ha o que derivar de um transcript so. A Task 9 preenche com os numeros
+    // reais das fixtures encenadas.
+    projectUsage: { sessions: 0, byModel: [], byAgentType: [] },
+  } satisfies DemoScript;
+
+  const outPath = path.join('site', 'src', 'demo', 'scripts', `${scriptId}.json`);
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  fs.writeFileSync(outPath, `${JSON.stringify(script, null, 2)}\n`);
+  console.log(`${frames.length} frames -> ${outPath}`);
+  console.log('Proximos passos: preencher `markers` (e conferir `projectUsage`).');
+} finally {
+  fs.rmSync(sandbox, { recursive: true, force: true });
 }
-
-const script = {
-  id: scriptId,
-  recordedAt: Date.now(),
-  durationMs: frames.length * FRAME_SPACING_MS,
-  // Preenchidos a mao apos inspecionar os frames (ver relatorio da Task 8).
-  markers: [],
-  frames,
-  // O dashboard agrega a JANELA DE 7 DIAS do projeto, nao esta sessao unica: nao
-  // ha o que derivar de um transcript so. A Task 9 preenche com os numeros
-  // reais das fixtures encenadas.
-  projectUsage: { sessions: 0, byModel: [], byAgentType: [] },
-};
-
-const outPath = path.join('site', 'src', 'demo', 'scripts', `${scriptId}.json`);
-fs.mkdirSync(path.dirname(outPath), { recursive: true });
-fs.writeFileSync(outPath, `${JSON.stringify(script, null, 2)}\n`);
-console.log(`${frames.length} frames -> ${outPath}`);
-console.log('Proximos passos: preencher `markers` (e conferir `projectUsage`).');
 
 // ---- helpers ----
 
