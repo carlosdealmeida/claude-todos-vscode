@@ -10,6 +10,8 @@ import { TodosWatcher } from '../services/todosWatcher';
 import { SessionNotifier, type NotificationKind } from '../services/sessionNotifier';
 import { transcriptPath, subAgentsDir, SAFE_SESSION_ID } from '../services/transcriptPaths';
 import { HookInstaller, DEFAULT_HOOK_EVENTS } from '../services/hookInstaller';
+import { readLiveSessions } from '../services/liveSessions';
+import { SessionNames } from '../services/sessionNames';
 import type { SessionSnapshot, SessionSummary, ProjectUsage, AwaitingInput } from '../types';
 
 const SEVEN_DAYS_MS = 7 * 24 * 3600 * 1000;
@@ -28,6 +30,7 @@ export class SessionCore {
   private readonly parser: TodosParser;
   private readonly usageParser: UsageParser;
   private readonly projectUsageService: ProjectUsageService;
+  private readonly sessionNames: SessionNames;
   private readonly snapshotService: SnapshotService;
   private readonly notifier = new SessionNotifier();
   private readonly watcher: TodosWatcher;
@@ -40,12 +43,23 @@ export class SessionCore {
     this.parser = new TodosParser(this.claudeDir);
     this.usageParser = new UsageParser(this.claudeDir);
     this.projectUsageService = new ProjectUsageService(this.claudeDir);
+    this.sessionNames = new SessionNames(
+      path.join(this.claudeDir, '.vscode-todos-bridge', 'session-names.json'),
+    );
     const resolver = new SessionResolver(this.bridge, this.workspaceCwds);
-    this.snapshotService = new SnapshotService(resolver, this.parser, this.usageParser);
+    this.snapshotService = new SnapshotService(
+      resolver, this.parser, this.usageParser,
+      () => readLiveSessions(this.claudeDir),
+      this.sessionNames,
+      this.now,
+    );
     this.watcher = new TodosWatcher(this.claudeDir);
   }
 
-  pruneBridge(maxAgeMs: number): void { this.bridge.prune(maxAgeMs); }
+  pruneBridge(maxAgeMs: number): void {
+    this.bridge.prune(maxAgeMs);
+    this.sessionNames.prune(maxAgeMs, this.now());
+  }
   setPinnedSession(id: string | null): void { this.snapshotService.setPinnedSession(id); }
   buildSnapshot(): SessionSnapshot | null { return this.snapshotService.build(); }
   listSessions(): SessionSummary[] { return this.snapshotService.listSessions(); }

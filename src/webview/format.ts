@@ -1,4 +1,5 @@
-import type { Todo, AgentUsage } from '../types';
+import type { Todo, AgentUsage, PendingQuestion } from '../types';
+import type { MessageKey } from '../i18n/messages';
 
 // Compact token formatting for the panel: 7361 -> "7,4k", 24580 -> "24,6k".
 // Uses a comma decimal separator to match pt-BR.
@@ -192,4 +193,31 @@ export function listStaleness(
   if (!hasRunningSubAgent) return null;
   const age = now - agent.todosUpdatedAt;
   return age >= STALE_LIST_THRESHOLD_MS ? age : null;
+}
+
+// Decide título e chips da faixa de perguntas pendentes. Fica aqui (e não no
+// componente) porque o repo testa módulos puros do webview, não componentes.
+export function pendingSummary(
+  questions: PendingQuestion[],
+  t: (key: MessageKey, params?: Record<string, string | number>) => string,
+): { title: string; items: Array<{ chip?: string; text: string; line: number }> } | null {
+  if (questions.length === 0) return null;
+  const onlyPlan = questions.length === 1 && questions[0].kind === 'plan';
+  // 85% das chamadas de AskUserQuestion trazem 1 so pergunta (medido em 320
+  // chamadas reais) — a forma contada ("1 perguntas em aberto") erra a
+  // concordancia no caso dominante. Singular dedicado so pra n===1, mesmo
+  // mecanismo de caso especial que ja existia pro plano solitario; sem motor
+  // de plural.
+  const title = onlyPlan
+    ? t('app.pendingPlanTitle')
+    : questions.length === 1
+      ? t('app.pendingQuestionTitle')
+      : t('app.pendingQuestions', { n: questions.length });
+  return {
+    title,
+    items: questions.map(q => {
+      const chip = q.kind === 'plan' ? t('app.pendingPlanChip') : q.header;
+      return { ...(chip ? { chip } : {}), text: q.text, line: q.line };
+    }),
+  };
 }

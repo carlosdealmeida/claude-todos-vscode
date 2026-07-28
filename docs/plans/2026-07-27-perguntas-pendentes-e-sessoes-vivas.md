@@ -21,8 +21,11 @@ espaço do Claude Code; a única escrita nova é um cache de nomes no diretório
 
 ## Global Constraints
 
-- **Português nos comentários de código e nas mensagens de commit**, seguindo o repo. Commits
-  sem acentuação (convenção do histórico).
+- **Português nos comentários de código e nas mensagens de commit**, seguindo o repo.
+  **Comentários de código levam acentuação correta** ("última", "não", "inserção") — é o padrão
+  do código existente. Onde um bloco de código deste plano mostrar comentário sem acento, trata-se
+  de erro de transcrição do plano: escreva acentuado. **Só as mensagens de commit vão sem
+  acentuação**, que é a convenção do histórico do repo.
 - **`src/i18n/messages.ts` e `src/webview/**` nunca importam `vscode`** — são empacotados no
   webview. O catálogo é a fonte do tipo: `en` define as chaves, e
   [tests/i18n/messages.test.ts](../../tests/i18n/messages.test.ts) falha se qualquer locale
@@ -906,7 +909,7 @@ Expected: PASS nos 7 testes.
 
 ```bash
 git add src/services/sessionNames.ts tests/services/sessionNames.test.ts
-git commit -m "feat(core): cache de nomes de sessao ao lado do bridge"
+git commit -m "feat(sessions): cache de nomes de sessao ao lado do bridge"
 ```
 
 ---

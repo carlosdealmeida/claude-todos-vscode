@@ -5,6 +5,7 @@
   import ProjectUsageSection from './lib/ProjectUsageSection.svelte';
   import Icon from './lib/Icon.svelte';
   import AgentTree from './lib/AgentTree.svelte';
+  import PendingQuestions from './lib/PendingQuestions.svelte';
   import { buildTree, isHistory } from './tree';
 
   let snapshot = $derived(todosStore.snapshot);
@@ -36,6 +37,9 @@
       </button>
       <button class="ghost" onclick={() => todosStore.refresh()} title={todosStore.t('app.refresh')} aria-label={todosStore.t('app.refresh')}><Icon name="refresh" size={14} /></button>
     </header>
+    {#if snapshot.pendingQuestions}
+      <PendingQuestions questions={snapshot.pendingQuestions} sessionId={snapshot.sessionId} />
+    {/if}
     {#if snapshot.usage}
       <UsageTable usage={snapshot.usage} />
     {/if}

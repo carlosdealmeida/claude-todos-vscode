@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { SnapshotService } from '../../src/services/snapshotService';
+import type { PendingQuestion } from '../../src/types';
 
 const usageStub = {
   usageForSession: () => ({ byModel: [], byAgent: [] }),
@@ -9,6 +10,7 @@ function makeParser(opts: {
   mtimes: Record<string, number | null>;
   titles?: Record<string, string | null>;
   awaitingInput?: 'question' | 'plan' | null;
+  pendingQuestions?: PendingQuestion[];
 }) {
   const agentsFor = (sessionId: string) => [
     { sessionId, agentId: sessionId, name: 'Main agent', isMain: true, todos: [], updatedAt: 0 },
@@ -20,6 +22,7 @@ function makeParser(opts: {
     listSessionDetail: (sessionId: string) => ({
       agents: agentsFor(sessionId),
       awaitingInput: opts.awaitingInput ?? null,
+      pendingQuestions: opts.pendingQuestions ?? [],
     }),
   };
 }
@@ -119,7 +122,7 @@ describe('SnapshotService', () => {
       transcriptMtime: () => 1000,
       readSessionTitle: () => null,
       listForSession: () => [], // no TodoWrite yet → no agents
-      listSessionDetail: () => ({ agents: [], awaitingInput: null }),
+      listSessionDetail: () => ({ agents: [], awaitingInput: null, pendingQuestions: [] }),
     };
     let receivedAgents: any[] | undefined;
     const usage = {
@@ -210,5 +213,165 @@ describe('SnapshotService', () => {
     const parser = makeParser({ mtimes: { a: 1000 } });
     const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
     expect('awaitingInput' in svc.build()!).toBe(false);
+  });
+
+  it('propaga pendingQuestions quando ha pendencia', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({
+      mtimes: { a: 10 },
+      pendingQuestions: [{ kind: 'question', header: 'H', text: 'Q', line: 3 }],
+    });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
+    expect(svc.build()?.pendingQuestions).toEqual([
+      { kind: 'question', header: 'H', text: 'Q', line: 3 },
+    ]);
+  });
+
+  it('omite pendingQuestions quando a lista e vazia', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({ mtimes: { a: 10 } });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
+    expect(svc.build()).not.toHaveProperty('pendingQuestions');
+  });
+
+  const liveMap = (ids: Record<string, { name?: string; nameSource?: string }>) => () =>
+    new Map(Object.entries(ids).map(([sessionId, extra]) => [
+      sessionId, { pid: 1, sessionId, cwd: '/p', ...extra },
+    ]));
+
+  const namesStub = () => {
+    const store: Record<string, string> = {};
+    return {
+      get: (id: string) => store[id],
+      entries: () => ({ ...store }),
+      remember: (id: string, name: string) => { store[id] = name; },
+      prune: () => {},
+    };
+  };
+
+  it('marca alive nas sessoes do registro vivo', () => {
+    const resolver = { resolveCandidates: () => [
+      { cwd: '/p', sessionId: 'viva', terminalPid: null, startedAt: 1 },
+      { cwd: '/p', sessionId: 'morta', terminalPid: null, startedAt: 1 },
+    ] };
+    const parser = makeParser({ mtimes: { viva: 5, morta: 9 } });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, liveMap({ viva: {} }), namesStub() as any);
+    const sessions = svc.listSessions();
+    expect(sessions.find(s => s.sessionId === 'viva')?.alive).toBe(true);
+    expect(sessions.find(s => s.sessionId === 'morta')?.alive).toBeUndefined();
+  });
+
+  it('listSessions mantem a ordem por mtime, sem promover vivas', () => {
+    const resolver = { resolveCandidates: () => [
+      { cwd: '/p', sessionId: 'viva', terminalPid: null, startedAt: 1 },
+      { cwd: '/p', sessionId: 'morta', terminalPid: null, startedAt: 1 },
+    ] };
+    const parser = makeParser({ mtimes: { viva: 5, morta: 9 } });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, liveMap({ viva: {} }), namesStub() as any);
+    expect(svc.listSessions().map(s => s.sessionId)).toEqual(['morta', 'viva']);
+  });
+
+  it('Auto prefere a sessao viva mesmo com mtime menor', () => {
+    const resolver = { resolveCandidates: () => [
+      { cwd: '/p', sessionId: 'viva', terminalPid: null, startedAt: 1 },
+      { cwd: '/p', sessionId: 'morta', terminalPid: null, startedAt: 1 },
+    ] };
+    const parser = makeParser({ mtimes: { viva: 5, morta: 9 } });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, liveMap({ viva: {} }), namesStub() as any);
+    expect(svc.build()?.sessionId).toBe('viva');
+  });
+
+  it('entre duas vivas, vence o maior mtime', () => {
+    const resolver = { resolveCandidates: () => [
+      { cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 },
+      { cwd: '/p', sessionId: 'b', terminalPid: null, startedAt: 1 },
+    ] };
+    const parser = makeParser({ mtimes: { a: 5, b: 9 } });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, liveMap({ a: {}, b: {} }), namesStub() as any);
+    expect(svc.build()?.sessionId).toBe('b');
+  });
+
+  it('pin vence a preferencia por sessao viva', () => {
+    const resolver = { resolveCandidates: () => [
+      { cwd: '/p', sessionId: 'viva', terminalPid: null, startedAt: 1 },
+      { cwd: '/p', sessionId: 'fixada', terminalPid: null, startedAt: 1 },
+    ] };
+    const parser = makeParser({ mtimes: { viva: 5, fixada: 1 } });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, liveMap({ viva: {} }), namesStub() as any);
+    svc.setPinnedSession('fixada');
+    expect(svc.build()?.sessionId).toBe('fixada');
+  });
+
+  it('nome do usuario vence o aiTitle e e memorizado', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 's', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({ mtimes: { s: 5 }, titles: { s: 'titulo derivado' } });
+    const names = namesStub();
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, liveMap({ s: { name: 'meu-nome', nameSource: 'user' } }), names as any);
+    expect(svc.listSessions()[0].title).toBe('meu-nome');
+    expect(names.get('s')).toBe('meu-nome');
+  });
+
+  it('nameSource derived e ignorado em favor do aiTitle', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 's', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({ mtimes: { s: 5 }, titles: { s: 'titulo derivado' } });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, liveMap({ s: { name: 'proj-1c', nameSource: 'derived' } }), namesStub() as any);
+    expect(svc.listSessions()[0].title).toBe('titulo derivado');
+  });
+
+  it('nome em cache sobrevive ao fim da sessao', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 's', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({ mtimes: { s: 5 }, titles: { s: 'titulo derivado' } });
+    const names = namesStub();
+    names.remember('s', 'nome-salvo');
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, () => new Map(), names as any);
+    expect(svc.listSessions()[0].title).toBe('nome-salvo');
+  });
+
+  it('nome do usuario vivo vence um nome em cache diferente', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 's', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({ mtimes: { s: 5 }, titles: { s: 'titulo derivado' } });
+    const names = namesStub();
+    names.remember('s', 'nome-antigo-em-cache');
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, liveMap({ s: { name: 'nome-vivo', nameSource: 'user' } }), names as any);
+    expect(svc.listSessions()[0].title).toBe('nome-vivo');
+  });
+
+  it('usa o now injetado no construtor pro updatedAt gravado por remember (item 10)', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 's', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({ mtimes: { s: 5 }, titles: { s: 'titulo derivado' } });
+    const remember = vi.fn();
+    const names = { get: () => undefined, entries: () => ({}), remember, prune: () => {} };
+    const svc = new SnapshotService(
+      resolver as any, parser as any, usageStub as any,
+      liveMap({ s: { name: 'nome-vivo', nameSource: 'user' } }), names as any,
+      () => 424242,
+    );
+    svc.build();
+    expect(remember).toHaveBeenCalledWith('s', 'nome-vivo', 424242);
+  });
+
+  it('sem now injetado, resolveTitle cai no relogio real (default)', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 's', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({ mtimes: { s: 5 } });
+    const remember = vi.fn();
+    const names = { get: () => undefined, entries: () => ({}), remember, prune: () => {} };
+    const before = Date.now();
+    const svc = new SnapshotService(
+      resolver as any, parser as any, usageStub as any,
+      liveMap({ s: { name: 'nome-vivo', nameSource: 'user' } }), names as any,
+    );
+    svc.build();
+    const after = Date.now();
+    const recordedNow = remember.mock.calls[0][2] as number;
+    expect(recordedNow).toBeGreaterThanOrEqual(before);
+    expect(recordedNow).toBeLessThanOrEqual(after);
+  });
+
+  it('sem registro vivo nem cache, o comportamento atual e preservado', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 's', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({ mtimes: { s: 5 }, titles: { s: 'titulo derivado' } });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
+    expect(svc.listSessions()[0].title).toBe('titulo derivado');
+    expect(svc.build()?.sessionId).toBe('s');
   });
 });

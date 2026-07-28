@@ -88,7 +88,25 @@ Três achados que mudaram o desenho:
    - Escrita **só quando o nome muda** (comparação antes do write), via
      `atomicWriteFileSync`, para não gerar I/O a cada refresh.
    - Podado junto com o bridge, na mesma janela de 30 dias já aplicada por `BridgeFile.prune`
-     no `activate`.
+     no `activate` (e, desde a correção do review final, também no `init` do dispatcher do
+     JetBrains — ver "Comportamentos do cache" abaixo).
+
+## Comportamentos do cache (não documentados até o review final)
+
+Dois efeitos colaterais do desenho acima, ambos aceitáveis mas que não estavam escritos em
+lugar nenhum:
+
+- **Precedência de 30 dias sem UI de limpeza.** Uma vez em cache, o nome tem prioridade sobre o
+  `aiTitle` do transcript pelo mesmo período da poda (30 dias) — não há comando nem ação no
+  picker pra apagar uma entrada individual antes disso. Rodar `/session-name` de novo
+  sobrescreve (comportamento de `remember`); só "esquecer" o nome e voltar ao `aiTitle` exige
+  esperar a poda.
+- **`updatedAt` é "primeira observação", não "última".** `remember` só escreve quando o nome
+  muda ([sessionNames.ts:47](../../src/services/sessionNames.ts#L47)), então `updatedAt` fica
+  parado no instante em que aquele nome foi visto pela primeira vez — mesmo que a sessão
+  continue viva e observada por semanas com o mesmo nome sem trocar. Na prática isso **encurta**
+  a janela efetiva de retenção de sessões de vida longa sem troca de nome: a poda de 30 dias
+  conta a partir da 1ª observação do nome, não da última atividade real da sessão.
 
 ## Limitação aceita: reuso de PID
 

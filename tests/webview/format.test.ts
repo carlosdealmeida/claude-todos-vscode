@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness } from '../../src/webview/format';
-import type { Todo, TodoStatus, AgentUsage } from '../../src/types';
+import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary } from '../../src/webview/format';
+import type { Todo, TodoStatus, AgentUsage, PendingQuestion } from '../../src/types';
 
 function todo(status: TodoStatus, startedAt?: number, completedAt?: number): Todo {
   const t: Todo = { content: status, activeForm: status, status };
@@ -295,5 +295,38 @@ describe('listStaleness', () => {
   it('returns null when the list is empty or fully completed', () => {
     expect(listStaleness({ ...base, todos: [] }, true, NOW)).toBeNull();
     expect(listStaleness({ ...base, todos: [todo('completed')] }, true, NOW)).toBeNull();
+  });
+});
+
+describe('pendingSummary', () => {
+  const t = (k: string, p?: Record<string, string | number>) =>
+    p ? `${k}:${JSON.stringify(p)}` : k;
+
+  it('devolve null quando nao ha pendencia', () => {
+    expect(pendingSummary([], t)).toBeNull();
+  });
+
+  it('usa o titulo de perguntas com a contagem', () => {
+    const out = pendingSummary([
+      { kind: 'question', header: 'A', text: 'P1', line: 1 },
+      { kind: 'question', text: 'P2', line: 1 },
+    ], t)!;
+    expect(out.title).toBe('app.pendingQuestions:{"n":2}');
+    expect(out.items).toEqual([
+      { chip: 'A', text: 'P1', line: 1 },
+      { text: 'P2', line: 1 },
+    ]);
+  });
+
+  it('uma unica pergunta usa o titulo no singular, nao a forma contada', () => {
+    const out = pendingSummary([{ kind: 'question', header: 'A', text: 'P1', line: 1 }], t)!;
+    expect(out.title).toBe('app.pendingQuestionTitle');
+    expect(out.items).toEqual([{ chip: 'A', text: 'P1', line: 1 }]);
+  });
+
+  it('plano unico usa titulo e chip proprios', () => {
+    const out = pendingSummary([{ kind: 'plan', text: '## Plano', line: 7 }], t)!;
+    expect(out.title).toBe('app.pendingPlanTitle');
+    expect(out.items).toEqual([{ chip: 'app.pendingPlanChip', text: '## Plano', line: 7 }]);
   });
 });

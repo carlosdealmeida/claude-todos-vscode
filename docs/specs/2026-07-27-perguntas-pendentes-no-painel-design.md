@@ -91,20 +91,28 @@ e no JetBrains** sem código específico de host. O `snapshotService` apenas pro
 novo, como já faz com `awaitingInput`
 ([snapshotService.ts:61](../../src/services/snapshotService.ts#L61)).
 
-i18n: **3 chaves novas** × 5 idiomas em [messages.ts](../../src/i18n/messages.ts) (`en`,
+i18n: **4 chaves novas** × 5 idiomas em [messages.ts](../../src/i18n/messages.ts) (`en`,
 `pt-br`, `es`, `zh-cn`, `zh-tw`), com o chinês seguindo o
 [glossário](../i18n/glossary-zh.md):
 
 | Chave | pt-br |
 |---|---|
 | `app.pendingQuestions` | `{n} perguntas em aberto` |
+| `app.pendingQuestionTitle` | `1 pergunta em aberto` |
 | `app.pendingPlanTitle` | `Plano aguardando aprovação` |
 | `app.pendingPlanChip` | `Plano` |
 
-Forma única com placeholder, **sem** tratamento de plural — é a convenção do catálogo atual
-(`'project.sessions': '{n} sessions'`, `'agent.activeBadge': '{count} active'`). Divergir só
-aqui criaria uma segunda regra de i18n no projeto para ganhar concordância num caso que
-representa 15% das ocorrências.
+**Correção pós-entrega (review final, 2026-07-27):** a versão original desta seção defendia
+forma única com placeholder e **sem** tratamento de plural, alegando que divergir só aqui
+criaria uma segunda regra de i18n no projeto para ganhar concordância num caso de 15% das
+ocorrências. Essa contagem estava invertida: os 320 `AskUserQuestion` medidos na seção acima
+mostram **85%** das chamadas com 1 pergunta só — ou seja, a forma contada (`app.pendingQuestions`
+com `n=1`) errava a concordância no caso **dominante**, não no minoritário ("1 perguntas em
+aberto", "1 open questions", "1 preguntas abiertas"; os dois chineses escapavam por não
+flexionarem). A correção é `app.pendingQuestionTitle`, uma chave dedicada ao singular usada só
+quando `questions.length === 1` e não é plano — exatamente o mesmo mecanismo de caso especial que
+`pendingSummary` já usava para `app.pendingPlanTitle`. Continua **sem** motor de plural: é uma
+chave extra de valor fixo, não uma regra genérica de concordância.
 
 ## Fora de escopo
 

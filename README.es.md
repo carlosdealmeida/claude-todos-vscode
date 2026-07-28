@@ -20,6 +20,8 @@
 - **Tokens, contexto y caché** — tabla por modelo o por agente, indicador de la ventana de contexto con semáforo y eficiencia de caché (reutilizado × creado × nuevo).
 - **Dashboard "Últimos 7 días"** — uso agregado del proyecto, por modelo y por tipo de agente.
 - **Notificaciones** — un toast cuando la sesión queda inactiva esperándote, o cuando todas las tareas se completan (solo con la ventana sin foco).
+- **Preguntas pendientes** — una franja en la parte superior del panel lista lo que la sesión está esperando (una pregunta del agente o un plan a la espera de aprobación), sin importar el foco de la ventana; hacer clic lleva a esa línea del transcript.
+- **Sesiones en vivo y nombres reales** — el selector de sesión marca con "● en vivo" las sesiones cuyo proceso de Claude Code sigue en ejecución, y el modo automático prioriza una sesión en vivo; los nombres definidos con `/session-name` se muestran en lugar del título derivado.
 - **UI en 5 idiomas** — en, pt-br, es, zh-cn y zh-tw; sigue el idioma de VS Code, con override por setting.
 
 ## Cómo funciona

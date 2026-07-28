@@ -29,6 +29,13 @@ export type CoreEvent = (
 
 type MakeCore = (deps: SessionCoreDeps) => SessionCore;
 
+// Mesma janela de retencao que o VS Code aplica no activate() (extension.ts) —
+// o dispatcher e o unico ponto de init comum aos dois hosts, entao e aqui que
+// o sidecar do JetBrains precisa podar tambem. Sem isso, session-names.json
+// (e o bridge) crescem sem limite pra quem so usa o plugin JetBrains, ja que
+// pruneBridge() nunca era chamado fora de extension.ts.
+const BRIDGE_MAX_AGE_MS = 30 * 24 * 3600 * 1000;
+
 export function createDispatcher(
   emit: (ev: CoreEvent) => void,
   makeCore: MakeCore = (deps) => new SessionCore(deps),
@@ -49,6 +56,7 @@ export function createDispatcher(
       core?.dispose();
       cwds = cmd.cwds;
       core = makeCore({ claudeDir: cmd.claudeDir, workspaceCwds: () => cwds });
+      core.pruneBridge(BRIDGE_MAX_AGE_MS);
       return;
     }
     if (!core) { emit(withId({ ev: 'error', message: 'not initialized' }, cmd.id)); return; }

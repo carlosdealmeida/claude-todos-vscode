@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { TodosParser, detectAwaitingInput } from '../../src/services/todosParser';
+import { TodosParser, detectAwaitingInput, detectPendingQuestions } from '../../src/services/todosParser';
 import { encodeCwdToProjectDir } from '../../src/services/projectDir';
 
 describe('TodosParser', () => {
@@ -887,6 +887,15 @@ describe('TodosParser', () => {
     });
   });
 
+  it('listSessionDetail devolve as perguntas pendentes do main', () => {
+    writeTranscript('s1', CWD, [
+      { isSidechain: false, message: { content: [{ type: 'tool_use', name: 'AskUserQuestion', id: 't1', input: { questions: [{ question: 'Q', header: 'H' }] } }] } },
+    ]);
+    expect(parser.listSessionDetail('s1', CWD).pendingQuestions).toEqual([
+      { kind: 'question', header: 'H', text: 'Q', line: 0 },
+    ]);
+  });
+
   it('does not emit duplicate sub-agent agentIds when prompts collide', () => {
     writeTranscript('s1', CWD, [
       todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
@@ -967,5 +976,116 @@ describe('listSessionDetail', () => {
 
   it('awaitingInput is null for a missing transcript', () => {
     expect(new TodosParser(claudeDir).listSessionDetail(SID, CWD).awaitingInput).toBeNull();
+  });
+
+  // Item Important 2 do review final: listSessionDetail passou a usar uma
+  // unica varredura (scanPendingWaits) em vez de chamar detectAwaitingInput e
+  // detectPendingQuestions em passes separados. Este teste trava que a fusao
+  // continua coerente com as duas funcoes originais (que seguem exportadas e
+  // inalteradas) na mesma fixture.
+  it('awaitingInput e pendingQuestions da varredura combinada batem com detectAwaitingInput/detectPendingQuestions isoladas', () => {
+    const lines = [JSON.stringify({
+      type: 'assistant',
+      message: {
+        role: 'assistant',
+        content: [{
+          type: 'tool_use', id: 'q1', name: 'AskUserQuestion',
+          input: { questions: [{ question: 'Qual caminho?', header: 'Rota' }] },
+        }],
+      },
+    })];
+    writeMain(lines);
+    const detail = new TodosParser(claudeDir).listSessionDetail(SID, CWD);
+    expect(detail.awaitingInput).toBe(detectAwaitingInput(lines, true));
+    expect(detail.pendingQuestions).toEqual(detectPendingQuestions(lines, true));
+  });
+
+  // As duas deteccoes legitimamente discordam num caso: AskUserQuestion sem
+  // `questions` valido conta como pendencia pro awaitingInput mas nao produz
+  // item nenhum pro pendingQuestions. A varredura unica precisa preservar essa
+  // divergencia (dois acumuladores, nao um derivado do outro).
+  it('AskUserQuestion malformado conta pro awaitingInput mas nao gera pendingQuestions', () => {
+    writeMain([JSON.stringify({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_use', id: 'q1', name: 'AskUserQuestion', input: {} }] },
+    })]);
+    const detail = new TodosParser(claudeDir).listSessionDetail(SID, CWD);
+    expect(detail.awaitingInput).toBe('question');
+    expect(detail.pendingQuestions).toEqual([]);
+  });
+});
+
+describe('detectPendingQuestions', () => {
+  const ask = (id: string, questions: object[]) => JSON.stringify({
+    isSidechain: false,
+    message: { content: [{ type: 'tool_use', name: 'AskUserQuestion', id, input: { questions } }] },
+  });
+  const plan = (id: string, text: string) => JSON.stringify({
+    isSidechain: false,
+    message: { content: [{ type: 'tool_use', name: 'ExitPlanMode', id, input: { plan: text } }] },
+  });
+  const result = (id: string) => JSON.stringify({
+    isSidechain: false,
+    message: { content: [{ type: 'tool_result', tool_use_id: id, content: 'ok' }] },
+  });
+
+  it('devolve uma entrada por pergunta, com header, texto e linha', () => {
+    const lines = ['{}', ask('t1', [
+      { question: 'Qual abordagem?', header: 'Abordagem' },
+      { question: 'Qual layout?', header: 'Layout' },
+    ])];
+    expect(detectPendingQuestions(lines, true)).toEqual([
+      { kind: 'question', header: 'Abordagem', text: 'Qual abordagem?', line: 1 },
+      { kind: 'question', header: 'Layout', text: 'Qual layout?', line: 1 },
+    ]);
+  });
+
+  it('suporta chamada com quatro perguntas', () => {
+    const qs = [1, 2, 3, 4].map(n => ({ question: `P${n}`, header: `H${n}` }));
+    expect(detectPendingQuestions([ask('t1', qs)], true)).toHaveLength(4);
+  });
+
+  it('ExitPlanMode vira item unico com a primeira linha nao vazia do plano', () => {
+    expect(detectPendingQuestions([plan('t1', '\n\n## Plano\nDetalhe')], true)).toEqual([
+      { kind: 'plan', text: '## Plano', line: 0 },
+    ]);
+  });
+
+  it('pendencia resolvida por tool_result some da lista', () => {
+    expect(detectPendingQuestions([ask('t1', [{ question: 'Q', header: 'H' }]), result('t1')], true)).toEqual([]);
+  });
+
+  it('com duas chamadas, so a ainda aberta e considerada', () => {
+    const lines = [
+      ask('t1', [{ question: 'Antiga', header: 'A' }]),
+      result('t1'),
+      ask('t2', [{ question: 'Atual', header: 'B' }]),
+    ];
+    expect(detectPendingQuestions(lines, true)).toEqual([
+      { kind: 'question', header: 'B', text: 'Atual', line: 2 },
+    ]);
+  });
+
+  it('ignora sidechain quando skipSidechain', () => {
+    const side = JSON.stringify({
+      isSidechain: true,
+      message: { content: [{ type: 'tool_use', name: 'AskUserQuestion', id: 't1', input: { questions: [{ question: 'Q' }] } }] },
+    });
+    expect(detectPendingQuestions([side], true)).toEqual([]);
+  });
+
+  it('omite header quando ausente e ignora entradas malformadas', () => {
+    const lines = [ask('t1', [{ question: 'Sem header' }, { header: 'so header' }, 'lixo'])];
+    expect(detectPendingQuestions(lines, true)).toEqual([
+      { kind: 'question', text: 'Sem header', line: 0 },
+    ]);
+  });
+
+  it('transcript sem essas ferramentas devolve lista vazia', () => {
+    expect(detectPendingQuestions(['{"message":{"content":[]}}', 'nao-json'], true)).toEqual([]);
+  });
+
+  it('plano so com linhas vazias e ignorado', () => {
+    expect(detectPendingQuestions([plan('t1', '\n  \n')], true)).toEqual([]);
   });
 });
