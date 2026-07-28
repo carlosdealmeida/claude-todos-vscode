@@ -25,11 +25,13 @@ describe('SessionNames', () => {
   });
 
   it('remember com o mesmo nome nao reescreve o arquivo', () => {
+    // Conteúdo compacto (não pretty-printed): uma reescrita re-serializaria
+    // com indentação e mudaria os bytes — o teste detecta qualquer write.
     const names = new SessionNames(file);
     names.remember('s1', 'meu-nome', 1000);
-    const before = fs.statSync(file).mtimeMs;
+    const compact = fs.readFileSync(file, 'utf-8');
     names.remember('s1', 'meu-nome', 2000);
-    expect(fs.statSync(file).mtimeMs).toBe(before);
+    expect(fs.readFileSync(file, 'utf-8')).toBe(compact);
   });
 
   it('remember com nome novo sobrescreve', () => {
@@ -49,16 +51,42 @@ describe('SessionNames', () => {
   });
 
   it('prune e no-op quando nao ha o que remover', () => {
+    // Conteúdo compacto (não pretty-printed): uma reescrita re-serializaria
+    // com indentação e mudaria os bytes — o teste detecta qualquer write.
     const names = new SessionNames(file);
     names.remember('s1', 'a', 1000);
-    const before = fs.statSync(file).mtimeMs;
+    const compact = fs.readFileSync(file, 'utf-8');
     names.prune(10_000, 2000);
-    expect(fs.statSync(file).mtimeMs).toBe(before);
+    expect(fs.readFileSync(file, 'utf-8')).toBe(compact);
   });
 
   it('arquivo corrompido e tratado como vazio', () => {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, '{corrompido');
+    expect(new SessionNames(file).get('s1')).toBeUndefined();
+  });
+
+  it('JSON valido array e tratado como vazio', () => {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, '[]');
+    expect(new SessionNames(file).get('s1')).toBeUndefined();
+  });
+
+  it('JSON valido string e tratado como vazio', () => {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, '"texto"');
+    expect(new SessionNames(file).get('s1')).toBeUndefined();
+  });
+
+  it('JSON valido null e tratado como vazio', () => {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, 'null');
+    expect(new SessionNames(file).get('s1')).toBeUndefined();
+  });
+
+  it('JSON valido number e tratado como vazio', () => {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, '42');
     expect(new SessionNames(file).get('s1')).toBeUndefined();
   });
 });
