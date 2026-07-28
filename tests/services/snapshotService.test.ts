@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { SnapshotService } from '../../src/services/snapshotService';
 import type { PendingQuestion } from '../../src/types';
 
@@ -334,6 +334,37 @@ describe('SnapshotService', () => {
     names.remember('s', 'nome-antigo-em-cache');
     const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, liveMap({ s: { name: 'nome-vivo', nameSource: 'user' } }), names as any);
     expect(svc.listSessions()[0].title).toBe('nome-vivo');
+  });
+
+  it('usa o now injetado no construtor pro updatedAt gravado por remember (item 10)', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 's', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({ mtimes: { s: 5 }, titles: { s: 'titulo derivado' } });
+    const remember = vi.fn();
+    const names = { get: () => undefined, entries: () => ({}), remember, prune: () => {} };
+    const svc = new SnapshotService(
+      resolver as any, parser as any, usageStub as any,
+      liveMap({ s: { name: 'nome-vivo', nameSource: 'user' } }), names as any,
+      () => 424242,
+    );
+    svc.build();
+    expect(remember).toHaveBeenCalledWith('s', 'nome-vivo', 424242);
+  });
+
+  it('sem now injetado, resolveTitle cai no relogio real (default)', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 's', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({ mtimes: { s: 5 } });
+    const remember = vi.fn();
+    const names = { get: () => undefined, entries: () => ({}), remember, prune: () => {} };
+    const before = Date.now();
+    const svc = new SnapshotService(
+      resolver as any, parser as any, usageStub as any,
+      liveMap({ s: { name: 'nome-vivo', nameSource: 'user' } }), names as any,
+    );
+    svc.build();
+    const after = Date.now();
+    const recordedNow = remember.mock.calls[0][2] as number;
+    expect(recordedNow).toBeGreaterThanOrEqual(before);
+    expect(recordedNow).toBeLessThanOrEqual(after);
   });
 
   it('sem registro vivo nem cache, o comportamento atual e preservado', () => {

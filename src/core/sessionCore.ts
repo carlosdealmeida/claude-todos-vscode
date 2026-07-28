@@ -51,6 +51,7 @@ export class SessionCore {
       resolver, this.parser, this.usageParser,
       () => readLiveSessions(this.claudeDir),
       this.sessionNames,
+      this.now,
     );
     this.watcher = new TodosWatcher(this.claudeDir);
   }

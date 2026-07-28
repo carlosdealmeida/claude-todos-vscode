@@ -14,6 +14,9 @@ export class SnapshotService {
     private readonly usageParser: UsageParser,
     private readonly liveSessions: () => Map<string, LiveSession> = () => new Map(),
     private readonly names?: SessionNames,
+    // Injetavel pra testar o updatedAt gravado por resolveTitle() sem depender
+    // do relogio real — mesmo padrao do `now` que o SessionCore ja usa pra poda.
+    private readonly now: () => number = () => Date.now(),
   ) {}
 
   setPinnedSession(sessionId: string | null): void {
@@ -93,7 +96,7 @@ export class SnapshotService {
   // `cachedName` vem do lote resolvido em listSessions() — nunca lido aqui.
   private resolveTitle(sessionId: string, cwd: string, live?: LiveSession, cachedName?: string): string {
     if (live?.nameSource === 'user' && live.name) {
-      this.names?.remember(sessionId, live.name, Date.now());
+      this.names?.remember(sessionId, live.name, this.now());
       return live.name;
     }
     if (cachedName) return cachedName;
