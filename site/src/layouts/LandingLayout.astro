@@ -1,0 +1,35 @@
+---
+import Explorer from '../components/Explorer.svelte';
+import LangSwitcher from '../components/LangSwitcher.svelte';
+import script from '../demo/scripts/smoke-test.json';
+import landing from '../generated/landing.json';
+import '../demo/theme.css';
+import type { Locale } from '../../../src/i18n/locale';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const content = landing[locale];
+---
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Claude Todos</title>
+    <meta name="description" content={content.tagline} />
+  </head>
+  <body>
+    <LangSwitcher client:load current={locale} />
+    <main>
+      <h1>Claude Todos</h1>
+      <p class="tagline">{content.tagline}</p>
+      <Explorer client:only="svelte" script={script} locale={locale} />
+      <ul class="features">
+        {content.features.map((f: string) => <li set:html={f} />)}
+      </ul>
+    </main>
+  </body>
+</html>

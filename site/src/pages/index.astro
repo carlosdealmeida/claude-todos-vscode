@@ -1,22 +1,7 @@
 ---
-import Explorer from '../components/Explorer.svelte';
-import script from '../demo/scripts/smoke-test.json';
-import '../demo/theme.css';
+import LandingLayout from '../layouts/LandingLayout.astro';
+import type { Locale } from '../../../src/i18n/locale';
+
+const locale: Locale = 'en';
 ---
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Claude Todos — observability for your Claude Code agents</title>
-  </head>
-  <body>
-    <main>
-      <h1>Claude Todos</h1>
-      <p>Observability for your Claude Code agents.</p>
-      <div class="stage">
-        <Explorer client:only="svelte" script={script} locale="en" />
-      </div>
-    </main>
-  </body>
-</html>
+<LandingLayout locale={locale} />

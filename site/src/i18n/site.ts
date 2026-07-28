@@ -19,11 +19,65 @@ const en: SiteStrings = {
   },
 };
 
-// Os demais locales caem para `en` ate a Task 14 preencher as traducoes.
+const ptBr: SiteStrings = {
+  featuresTitle: 'Explore',
+  features: {
+    'agent-tree': 'Árvore de agentes ao vivo',
+    'live-tasks': 'Tasks em tempo real',
+    'task-timing': 'Tempos por task',
+    'tokens-cache': 'Tokens, contexto e cache',
+    dashboard: 'Últimos 7 dias',
+    notifications: 'Notificações',
+    i18n: 'UI em 5 idiomas',
+  },
+};
+
+const es: SiteStrings = {
+  featuresTitle: 'Explora',
+  features: {
+    'agent-tree': 'Árbol de agentes en vivo',
+    'live-tasks': 'Tareas en tiempo real',
+    'task-timing': 'Tiempos por tarea',
+    'tokens-cache': 'Tokens, contexto y caché',
+    dashboard: 'Últimos 7 días',
+    notifications: 'Notificaciones',
+    i18n: 'IU en 5 idiomas',
+  },
+};
+
+// zh-cn/zh-tw: terminologia de docs/i18n/glossary-zh.md ("agent" -> 智能体/智慧體,
+// nunca 代理; "token" -> 令牌/權杖; "cache" -> 缓存/快取). Como as demais traducoes
+// zh do projeto, ainda aguardam revisao de falante nativo.
+const zhCn: SiteStrings = {
+  featuresTitle: '探索',
+  features: {
+    'agent-tree': '实时智能体树',
+    'live-tasks': '实时任务',
+    'task-timing': '每个任务的耗时',
+    'tokens-cache': '令牌、上下文和缓存',
+    dashboard: '最近 7 天',
+    notifications: '通知',
+    i18n: '5 种语言界面',
+  },
+};
+
+const zhTw: SiteStrings = {
+  featuresTitle: '探索',
+  features: {
+    'agent-tree': '即時智慧體樹',
+    'live-tasks': '即時任務',
+    'task-timing': '每個任務的耗時',
+    'tokens-cache': '權杖、上下文和快取',
+    dashboard: '最近 7 天',
+    notifications: '通知',
+    i18n: '5 種語言介面',
+  },
+};
+
 export const SITE_STRINGS: Record<Locale, SiteStrings> = {
   en,
-  'pt-br': en,
-  es: en,
-  'zh-cn': en,
-  'zh-tw': en,
+  'pt-br': ptBr,
+  es,
+  'zh-cn': zhCn,
+  'zh-tw': zhTw,
 };
