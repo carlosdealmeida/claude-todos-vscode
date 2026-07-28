@@ -1,8 +1,18 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { SessionNames } from '../../src/services/sessionNames';
+import * as atomicWrite from '../../src/services/atomicWrite';
+
+// Mock parcial: por padrao encaminha pra implementacao real (disco de verdade,
+// como o resto do arquivo espera), so sobrescrito pontualmente nos testes de
+// falha de escrita abaixo — spyOn direto no modulo 'fs' nao funciona aqui
+// (ESM builtin, namespace nao configuravel).
+vi.mock('../../src/services/atomicWrite', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/services/atomicWrite')>();
+  return { ...actual, atomicWriteFileSync: vi.fn(actual.atomicWriteFileSync) };
+});
 
 describe('SessionNames', () => {
   let dir: string;
@@ -102,5 +112,32 @@ describe('SessionNames', () => {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, '42');
     expect(new SessionNames(file).get('s1')).toBeUndefined();
+  });
+
+  // Item Important 1 do review final: write() e best-effort — uma falha de
+  // rename (ex.: EPERM por duas janelas escrevendo o mesmo arquivo) nao pode
+  // derrubar o sidecar do JetBrains, que chama remember()/prune() fora de
+  // qualquer try/catch (callback do watcher).
+  it('remember engole falha de escrita (best-effort) e nao lanca', () => {
+    const names = new SessionNames(file);
+    vi.mocked(atomicWrite.atomicWriteFileSync).mockImplementationOnce(() => {
+      const err = new Error('EPERM simulado') as NodeJS.ErrnoException;
+      err.code = 'EPERM';
+      throw err;
+    });
+    expect(() => names.remember('s1', 'nome', 1000)).not.toThrow();
+    // a escrita falhou de verdade — nada foi persistido
+    expect(new SessionNames(file).get('s1')).toBeUndefined();
+  });
+
+  it('prune engole falha de escrita (best-effort) e nao lanca', () => {
+    const names = new SessionNames(file);
+    names.remember('velha', 'a', 1000); // grava normalmente, mock ainda no default (real)
+    vi.mocked(atomicWrite.atomicWriteFileSync).mockImplementationOnce(() => {
+      const err = new Error('EACCES simulado') as NodeJS.ErrnoException;
+      err.code = 'EACCES';
+      throw err;
+    });
+    expect(() => names.prune(10_000, 55_000)).not.toThrow();
   });
 });

@@ -22,9 +22,21 @@ export class SessionNames {
     }
   }
 
+  // Escrita e best-effort: o cache de nomes e so uma otimizacao (sem ele o
+  // titulo cai pro aiTitle), mas quem chama write() (remember/prune) roda no
+  // callback do watcher, fora de qualquer try/catch — no sidecar do JetBrains
+  // uma excecao ali derruba o processo inteiro. rename-sobre-existente pode
+  // falhar com EPERM/EACCES no Windows quando duas janelas (VS Code e
+  // JetBrains) escrevem o mesmo arquivo ao mesmo tempo; perder esse nome e
+  // aceitavel, matar o painel nao. Simetriza com o engolimento de erro que
+  // readAll ja faz.
   private write(all: Record<string, Entry>): void {
-    fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
-    atomicWriteFileSync(this.filePath, JSON.stringify(all, null, 2));
+    try {
+      fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
+      atomicWriteFileSync(this.filePath, JSON.stringify(all, null, 2));
+    } catch {
+      // best-effort — ver comentario acima
+    }
   }
 
   get(sessionId: string): string | undefined {
