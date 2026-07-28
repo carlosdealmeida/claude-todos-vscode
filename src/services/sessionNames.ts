@@ -31,6 +31,17 @@ export class SessionNames {
     return this.readAll()[sessionId]?.name;
   }
 
+  // Leitura em lote para caminhos quentes (ex.: listSessions() em cada refresh),
+  // que resolvem o nome de N sessões candidatas — uma leitura do arquivo em vez
+  // de N chamadas a get().
+  entries(): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const [id, entry] of Object.entries(this.readAll())) {
+      out[id] = entry.name;
+    }
+    return out;
+  }
+
   remember(sessionId: string, name: string, now: number): void {
     const all = this.readAll();
     if (all[sessionId]?.name === name) return;  // sem I/O quando nada muda

@@ -41,6 +41,17 @@ describe('SessionNames', () => {
     expect(names.get('s1')).toBe('novo');
   });
 
+  it('entries devolve mapa sessionId -> nome numa unica leitura', () => {
+    const names = new SessionNames(file);
+    names.remember('s1', 'nome-1', 1000);
+    names.remember('s2', 'nome-2', 2000);
+    expect(new SessionNames(file).entries()).toEqual({ s1: 'nome-1', s2: 'nome-2' });
+  });
+
+  it('entries devolve objeto vazio quando o arquivo nao existe', () => {
+    expect(new SessionNames(file).entries()).toEqual({});
+  });
+
   it('prune remove entradas mais velhas que a janela', () => {
     const names = new SessionNames(file);
     names.remember('velha', 'a', 1000);

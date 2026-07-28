@@ -243,6 +243,7 @@ describe('SnapshotService', () => {
     const store: Record<string, string> = {};
     return {
       get: (id: string) => store[id],
+      entries: () => ({ ...store }),
       remember: (id: string, name: string) => { store[id] = name; },
       prune: () => {},
     };
@@ -324,6 +325,15 @@ describe('SnapshotService', () => {
     names.remember('s', 'nome-salvo');
     const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, () => new Map(), names as any);
     expect(svc.listSessions()[0].title).toBe('nome-salvo');
+  });
+
+  it('nome do usuario vivo vence um nome em cache diferente', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 's', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({ mtimes: { s: 5 }, titles: { s: 'titulo derivado' } });
+    const names = namesStub();
+    names.remember('s', 'nome-antigo-em-cache');
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, liveMap({ s: { name: 'nome-vivo', nameSource: 'user' } }), names as any);
+    expect(svc.listSessions()[0].title).toBe('nome-vivo');
   });
 
   it('sem registro vivo nem cache, o comportamento atual e preservado', () => {

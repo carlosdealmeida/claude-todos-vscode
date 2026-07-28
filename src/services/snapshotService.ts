@@ -22,6 +22,9 @@ export class SnapshotService {
 
   listSessions(): SessionSummary[] {
     const live = this.liveSessions();
+    // Uma leitura do arquivo de nomes por chamada, igual ao `live` — resolveTitle
+    // roda em laço por sessão candidata e não pode reabrir o arquivo a cada volta.
+    const cachedNames = this.names?.entries() ?? {};
     const out: SessionSummary[] = [];
     for (const record of this.resolver.resolveCandidates()) {
       const updatedAt = this.parser.transcriptMtime(record.sessionId, record.cwd);
@@ -29,7 +32,7 @@ export class SnapshotService {
       out.push({
         sessionId: record.sessionId,
         cwd: record.cwd,
-        title: this.resolveTitle(record.sessionId, record.cwd, live.get(record.sessionId)),
+        title: this.resolveTitle(record.sessionId, record.cwd, live.get(record.sessionId), cachedNames[record.sessionId]),
         updatedAt,
         ...(live.has(record.sessionId) ? { alive: true } : {}),
       });
@@ -87,13 +90,13 @@ export class SnapshotService {
 
   // name do registro (só nameSource 'user') > nome em cache > aiTitle > id curto.
   // 'derived' é ignorado de propósito: é {basename}-{sufixo}, pior que o aiTitle.
-  private resolveTitle(sessionId: string, cwd: string, live?: LiveSession): string {
+  // `cachedName` vem do lote resolvido em listSessions() — nunca lido aqui.
+  private resolveTitle(sessionId: string, cwd: string, live?: LiveSession, cachedName?: string): string {
     if (live?.nameSource === 'user' && live.name) {
       this.names?.remember(sessionId, live.name, Date.now());
       return live.name;
     }
-    const cached = this.names?.get(sessionId);
-    if (cached) return cached;
+    if (cachedName) return cachedName;
     return this.parser.readSessionTitle(sessionId, cwd) ?? `Session · ${sessionId.slice(0, 8)}`;
   }
 }
