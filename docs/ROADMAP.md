@@ -104,7 +104,7 @@ de tokens do 0.3.0).
 ### 5. Seletor de sessão melhor: vivas/ativas, atalhos, sem corte — (d)+(b) ✅ (0.13.0)
 - **Issues:** [#28147](https://github.com/anthropics/claude-code/issues/28147) (`NOT_PLANNED`, `keybindings`) indicadores de atividade + atalhos · [#24435](https://github.com/anthropics/claude-code/issues/24435) (`NOT_PLANNED`) picker corta em ~8 sessões mais recentes · [#23275](https://github.com/anthropics/claude-code/issues/23275) (`NOT_PLANNED`) nomear sessões
 - **Status:** fatias (d)+(b) ✅ entregues na 0.13.0. Restam (a) sessões vivas e (c) apelidos —
-  📐 a planejar (investigado 2026-07-15), **3º da fila** (decidido 2026-07-27).
+  📐 a planejar (investigado 2026-07-15), **2º da fila** (decidido 2026-07-27).
 - **Achados:**
   - **(b) não cortar lista:** ✅ já não cortamos — `listSessions()` não tem limite
     ([snapshotService.ts:19-33](../src/services/snapshotService.ts#L19)); o corte em ~8 é do
@@ -138,6 +138,15 @@ de tokens do 0.3.0).
   [#78454](https://github.com/anthropics/claude-code/issues/78454) expõe uma terceira fonte
   possível, `~/.claude/daemon/roster.json` (ver item 21). Confirma (a) como o próximo passo
   natural depois do item 17.
+- **✅ Fonte reconfirmada em disco (2026-07-27, CLI 2.1.220):** `~/.claude/sessions/{pid}.json`
+  existe e está vivo — um arquivo por processo, com
+  `{pid, sessionId, cwd, startedAt, procStart?, version, peerProtocol, kind, entrypoint, name,
+  nameSource}`. Confirmações que importam para o design: `entrypoint` distingue
+  `claude-vscode` de terminal; `name` vem preenchido com `nameSource: "derived"` (resolve (c)
+  sem storage próprio); e `procStart` — presente em parte dos arquivos — é exatamente o
+  carimbo que defende contra reuso de PID. **A conferir no design:** o arquivo é removido no
+  exit ou fica órfão? (havia 3 arquivos para 3 sessões vivas, o que sugere limpeza correta,
+  mas um crash não passa pelo caminho feliz).
 - **Risco a checar antes:** [#78466](https://github.com/anthropics/claude-code/issues/78466) —
   lista de sessões vazia no Windows quando o workspace está em drive `subst`. Nós resolvemos o
   project dir a partir da cwd (o `encodeCwdToProjectDir`); vale um teste em drive `subst`, já
@@ -254,15 +263,18 @@ ecossistema está migrando de "um agente com todos" para **orquestração** (sub
 background, workflows, agent teams), e os dados disso **já estão no disco** no formato que o
 parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"**.
 
-> **Fila de brainstorming (prioridade, decidida em 2026-07-27):** 1º item **17** (agent teams —
-> gatilho atingido, schema em disco) · 2º item **22-ext** (perguntas pendentes **no painel**, não
-> só no toast — custo baixo, `detectAwaitingInput` já existe) · 3º item **5(a)+(c)** (sessões
-> vivas + nomes reais, destravados por `~/.claude/sessions/*.json`). O item **23** sai da fila
-> por ora — segue como o cluster mais quente das varreduras, mas depende de uma decisão de
-> posicionamento (junto com o item 8) que ainda não foi tomada. Itens 13, 14 e 15 saíram da
-> fila por entrega (0.9.0, 0.10.0, 0.10.0).
+> **Fila de brainstorming (prioridade, decidida em 2026-07-27):** 1º item **22-ext** (perguntas
+> pendentes **no painel**, não só no toast — custo baixo, `detectAwaitingInput` já existe) ·
+> 2º item **5(a)+(c)** (sessões vivas + nomes reais, destravados por
+> `~/.claude/sessions/*.json`, verificado em disco). O item **17** (agent teams) **saiu da
+> fila**: a inspeção de 2026-07-27 revogou o gatilho — não existe owner por task em dado
+> nenhum, e 61 dos 63 configs de team são auto-criados sem membros reais (detalhes no item). O
+> item **23** também fica fora por ora — segue como o cluster mais quente das varreduras, mas
+> depende de uma decisão de posicionamento (junto com o item 8) que ainda não foi tomada. Itens
+> 13, 14 e 15 saíram da fila por entrega (0.9.0, 0.10.0, 0.10.0).
 >
-> Fila anterior (2026-07-25), para histórico: 1º 17 · 2º 5(a)+(c) · 3º 23.
+> Filas anteriores, para histórico: 2026-07-25 → 1º 17 · 2º 5(a)+(c) · 3º 23. Manhã de
+> 2026-07-27 → 1º 17 · 2º 22-ext · 3º 5(a)+(c) (17 caiu na verificação de disco da mesma tarde).
 
 ### 13. Árvore de agentes ao vivo ("mission control") ✅ ENTREGUE (0.9.0)
 - **Origem:** descoberta de 2026-07-10 durante o debug do 0.8.2 — cada sub-agent agora tem um
@@ -332,7 +344,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   projeto atual só se for opt-in.
 - **Status:** ✅ entregue na 0.11.0 — spec: [docs/specs/2026-07-14-project-usage-dashboard-design.md](specs/2026-07-14-project-usage-dashboard-design.md) · plano: [docs/plans/2026-07-14-project-usage.md](plans/2026-07-14-project-usage.md). Bloco "Últimos 7 dias · este projeto" colapsável no painel (N sessões, tokens por modelo, cache agregado), agregação lazy com memo por arquivo, protocolo dedicado sem tocar o snapshot.
 
-### 17. Agent teams: dono por task 📐 gatilho atingido (2026-07-16) · **1º da fila**
+### 17. Agent teams: dono por task ⏸️ adiado — gatilho **não** atingido (reverificado 2026-07-27)
 - **Origem:** o schema `TaskCreate`/`TaskUpdate` que já suportamos é a fundação do modo teams
   (tasks com **owner**, agentes trocando mensagens via SendMessage).
 - **Ideia:** quando o campo de owner aparecer nos transcripts, exibi-lo por task (avatar/nome
@@ -348,6 +360,31 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   [#24384](https://github.com/anthropics/claude-code/issues/24384) 50r; custom agents como
   teammates [#24316](https://github.com/anthropics/claude-code/issues/24316) 43r). O
   `leadSessionId` liga o team à sessão que o painel já exibe. Promover a planejamento.
+- **❌ Gatilho revogado (inspeção de disco, 2026-07-27).** O item foi promovido em 07-16 com
+  base no config de teams existir — mas o que ele pede é **owner por task**, e isso não existe
+  em lugar nenhum. Três achados, todos verificados localmente:
+  1. **Nenhum campo de dono nos transcripts.** Varrendo todo o `~/.claude/projects`, os únicos
+     campos que as ferramentas carregam são `TaskCreate.{subject,description,activeForm}` e
+     `TaskUpdate.{taskId,status}` — zero ocorrências de `"owner"` (nem no task store do item 21).
+     A premissa original (*"quando o campo de owner aparecer nos transcripts"*) **segue não
+     realizada**.
+  2. **97% dos configs de team são ruído.** Dos 63 diretórios em `~/.claude/teams/`, **61** são
+     `session-{id8}` auto-criados para sessões comuns, com um único membro (o próprio
+     `team-lead`, `backendType: "in-process"`). Só **2** são teams de verdade (`farol` e
+     `chat-webhook`, 3 membros cada) — e ambos foram criados em **fevereiro de 2026**. Qualquer
+     UI que reagir à mera existência do config vai disparar em toda sessão.
+  3. **Membro não tem `sessionId`.** O config lista `{agentId, name, agentType, model, cwd,
+     joinedAt, tmuxPaneId}` — nada que ligue um membro ao transcript dele. E o config
+     **sobrevive** ao transcript (o do `farol` já foi apagado pela retenção de 30 dias), então
+     um painel derivado do config mostraria membros sem dado nenhum por trás.
+- **Como reverificar** (barato, roda em segundos) — se listar algo além de `subject`,
+  `description`, `activeForm`, `taskId` e `status`, o gatilho voltou:
+  ```bash
+  node -e "const fs=require('fs'),p=require('path');function*w(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const f=p.join(d,e.name);if(e.isDirectory())yield*w(f);else if(e.name.endsWith('.jsonl'))yield f}}const k=new Set();for(const f of w(require('os').homedir()+'/.claude/projects')){const t=fs.readFileSync(f,'utf8');if(!t.includes('TaskCreate')&&!t.includes('TaskUpdate'))continue;for(const l of t.split('\n')){let e;try{e=JSON.parse(l)}catch{continue}const c=e.message?.content;if(!Array.isArray(c))continue;for(const b of c)if(b?.type==='tool_use'&&/^Task(Create|Update)$/.test(b.name||''))Object.keys(b.input||{}).forEach(x=>k.add(b.name+'.'+x))}}console.log([...k].sort().join(' '))"
+  ```
+- **Condição para reabrir:** campo de dono presente no `TaskCreate`/`TaskUpdate` **ou** um team
+  real (`members.length > 1`) ativo com transcript vivo. Sem um dos dois, qualquer coisa aqui é
+  UI sem dado.
 
 ### 18. Onboarding walkthrough + reposicionamento do README ✅ ENTREGUE (0.14.0)
 - **Ideia:** (a) walkthrough nativo do VS Code (`contributes.walkthroughs`) guiando a
@@ -426,6 +463,12 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   mutadas por outra sessão nos escapam? (b) exibir `blockedBy` como ícone/tooltip de
   dependência na lista; (c) o painel nativo tem bugs de dessincronização — nós podemos acertar.
 - **Cuidado:** `.lock` presente no diretório — ler sem travar, read-only como sempre.
+- **⚠️ Achado novo (2026-07-27):** o task store **está vazio aqui agora** — `~/.claude/tasks/`
+  tem 63 diretórios de sessão, mas o único conteúdo restante é um par `.lock` /
+  `.highwatermark`; nenhum `N.json`. Ou os arquivos de task são efêmeros (apagados no fim da
+  sessão), ou o formato mudou desde a observação de 07-16. Isso **derruba a premissa** de (b)
+  exibir `blockedBy`: não há de onde ler. Reconfirmar em disco antes de investir neste item —
+  e preferir o transcript como fonte, que é o que já fazemos.
 - **Achado 2 (varredura 2026-07-25) — IDs de task não sobrevivem ao resume:**
   [#80871](https://github.com/anthropics/claude-code/issues/80871) reporta que os ids de
   `TaskUpdate`/`TaskList` mudam depois de um `--resume`. Isso importa para nós porque o schema
@@ -473,7 +516,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   pendência (`detectAwaitingInput`) — falta só exibi-la no painel em vez de só notificar: uma
   faixa "aguardando sua resposta" com o texto da pergunta e clique levando à linha do
   transcript (reusa `openTodoSource` do item 1). Custo baixo, tudo já parseado.
-  📐 **2º da fila** (decidido 2026-07-27) — daqui em diante chamado de **item 22-ext**.
+  📐 **1º da fila** (decidido 2026-07-27) — daqui em diante chamado de **item 22-ext**.
 
 ### 23. Background tasks (shells) no painel 🔍 a investigar / posicionamento
 - **Issues (varredura 2026-07-16):** [#75863](https://github.com/anthropics/claude-code/issues/75863)
