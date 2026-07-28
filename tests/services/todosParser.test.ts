@@ -977,6 +977,42 @@ describe('listSessionDetail', () => {
   it('awaitingInput is null for a missing transcript', () => {
     expect(new TodosParser(claudeDir).listSessionDetail(SID, CWD).awaitingInput).toBeNull();
   });
+
+  // Item Important 2 do review final: listSessionDetail passou a usar uma
+  // unica varredura (scanPendingWaits) em vez de chamar detectAwaitingInput e
+  // detectPendingQuestions em passes separados. Este teste trava que a fusao
+  // continua coerente com as duas funcoes originais (que seguem exportadas e
+  // inalteradas) na mesma fixture.
+  it('awaitingInput e pendingQuestions da varredura combinada batem com detectAwaitingInput/detectPendingQuestions isoladas', () => {
+    const lines = [JSON.stringify({
+      type: 'assistant',
+      message: {
+        role: 'assistant',
+        content: [{
+          type: 'tool_use', id: 'q1', name: 'AskUserQuestion',
+          input: { questions: [{ question: 'Qual caminho?', header: 'Rota' }] },
+        }],
+      },
+    })];
+    writeMain(lines);
+    const detail = new TodosParser(claudeDir).listSessionDetail(SID, CWD);
+    expect(detail.awaitingInput).toBe(detectAwaitingInput(lines, true));
+    expect(detail.pendingQuestions).toEqual(detectPendingQuestions(lines, true));
+  });
+
+  // As duas deteccoes legitimamente discordam num caso: AskUserQuestion sem
+  // `questions` valido conta como pendencia pro awaitingInput mas nao produz
+  // item nenhum pro pendingQuestions. A varredura unica precisa preservar essa
+  // divergencia (dois acumuladores, nao um derivado do outro).
+  it('AskUserQuestion malformado conta pro awaitingInput mas nao gera pendingQuestions', () => {
+    writeMain([JSON.stringify({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_use', id: 'q1', name: 'AskUserQuestion', input: {} }] },
+    })]);
+    const detail = new TodosParser(claudeDir).listSessionDetail(SID, CWD);
+    expect(detail.awaitingInput).toBe('question');
+    expect(detail.pendingQuestions).toEqual([]);
+  });
 });
 
 describe('detectPendingQuestions', () => {

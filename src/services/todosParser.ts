@@ -131,6 +131,48 @@ export function detectPendingQuestions(lines: string[], skipSidechain: boolean):
   return last;
 }
 
+// Varredura unica que alimenta detectAwaitingInput e detectPendingQuestions ao
+// mesmo tempo — listSessionDetail() rodava as duas em passes separadas sobre o
+// MESMO mainLines (mais collectDispatches, ate 3 JSON.parse por linha), custo
+// que se paga a cada 10s de polling e a cada evento do watcher. Mantem DOIS
+// acumuladores (nao deriva um do outro): um AskUserQuestion malformado conta
+// como pendencia pro awaitingInput mas produz zero itens pro pendingQuestions
+// — semantica que detectAwaitingInput/detectPendingQuestions ja tinham
+// separadamente e que esta funcao preserva.
+function scanPendingWaits(
+  lines: string[],
+  skipSidechain: boolean,
+): { awaitingInput: AwaitingInput | null; pendingQuestions: PendingQuestion[] } {
+  const awaitingPending = new Map<string, AwaitingInput>();
+  const questionsPending = new Map<string, PendingQuestion[]>();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line) continue;
+    let entry: TranscriptEntry;
+    try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
+    if (skipSidechain && entry.isSidechain) continue;
+    const content = entry.message?.content;
+    if (!Array.isArray(content)) continue;
+    for (const block of content) {
+      if (block?.type === 'tool_use' && typeof block.id === 'string') {
+        if (typeof block.name === 'string' && block.name in WAIT_TOOLS) {
+          awaitingPending.set(block.id, WAIT_TOOLS[block.name]);
+        }
+        const items = pendingItemsFor(block, i);
+        if (items.length > 0) questionsPending.set(block.id, items);
+      } else if (block?.type === 'tool_result' && typeof block.tool_use_id === 'string') {
+        awaitingPending.delete(block.tool_use_id);
+        questionsPending.delete(block.tool_use_id);
+      }
+    }
+  }
+  let awaitingInput: AwaitingInput | null = null;
+  for (const v of awaitingPending.values()) awaitingInput = v;
+  let pendingQuestions: PendingQuestion[] = [];
+  for (const v of questionsPending.values()) pendingQuestions = v;
+  return { awaitingInput, pendingQuestions };
+}
+
 function pendingItemsFor(block: ContentBlock, line: number): PendingQuestion[] {
   if (block.name === 'AskUserQuestion') {
     const raw = block.input?.questions;
@@ -191,10 +233,11 @@ export class TodosParser {
     }
 
     agents.push(...this.listSubAgents(sessionId, cwd, mainLines));
+    const waits = scanPendingWaits(mainLines, true);
     return {
       agents,
-      awaitingInput: detectAwaitingInput(mainLines, true),
-      pendingQuestions: detectPendingQuestions(mainLines, true),
+      awaitingInput: waits.awaitingInput,
+      pendingQuestions: waits.pendingQuestions,
     };
   }
 
