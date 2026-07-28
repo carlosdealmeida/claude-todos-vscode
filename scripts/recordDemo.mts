@@ -2,14 +2,18 @@
 // real, truncado progressivamente. Cada corte vira um frame. Roda em Node, onde
 // `fs` existe — o site so consome o JSON resultante.
 //
-// Uso: npm run demo:record -- <caminho-do-.jsonl> <id-do-roteiro>
+// Uso: npm run demo:record -- <caminho-do-.jsonl> <id-do-roteiro> [--cwd <valor>] [--title <valor>]
 //
-// O transcript de origem carrega dois dados da maquina/sessao de quem gravou:
-// o `cwd` absoluto (estrutura de pastas do dono do repo) e o titulo da sessao
-// (uma entrada `ai-title` que pode ser residuo de qualquer conversa anterior).
-// Nenhum dos dois pode ir para um site publico. As constantes SHOWCASE_* abaixo
-// sao o unico lugar que precisa mudar numa regravacao futura — editar aqui, nao
-// espalhar o valor pelo resto do arquivo.
+// O transcript de origem carrega o `cwd` absoluto de quem gravou (estrutura de
+// pastas do dono do repo) — isso nunca pode ir para um site publico, entao
+// `--cwd` SEMPRE tem um default de vitrine (nunca deriva do transcript real).
+// O titulo (`ai-title` gravado dentro do transcript) e outra historia: as
+// vezes e residuo de outra conversa (regravacao smoke-test de 2026-07-27:
+// "Responder com ola", sem relacao nenhuma com a sessao) e precisa ser
+// substituido; as vezes descreve a sessao de verdade (regravacao de
+// 2026-07-28: "Executar smoke test") e deve ser preservado. Por isso, ao
+// contrario do cwd, o titulo so e reescrito quando `--title` e passado
+// explicitamente — sem a flag, o `ai-title` real do transcript sobrevive.
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -23,16 +27,31 @@ import type { SessionSnapshot } from '../src/types';
 const MAX_FRAMES = 120;          // teto do spec — evita inchar o bundle
 const FRAME_SPACING_MS = 1000;   // 1 frame/s de roteiro
 
-// cwd e titulo de vitrine — mesmo cwd usado pelas fixtures encenadas da Task 9,
-// para consistencia visual entre roteiros. Nunca deriva do transcript real.
-const SHOWCASE_CWD = '/home/dev/claude-todos-vscode';
-const SHOWCASE_TITLE = 'Smoke test: main + 3 sub-agents';
+// cwd de vitrine default — mesmo valor usado pelas fixtures encenadas da
+// Task 9, para consistencia visual entre roteiros. So muda via `--cwd`.
+const DEFAULT_SHOWCASE_CWD = '/home/dev/claude-todos-vscode';
 
-const [transcriptPath, scriptId] = process.argv.slice(2);
+const positional: string[] = [];
+let cwdOverride: string | undefined;
+let titleOverride: string | undefined;
+{
+  const argv = process.argv.slice(2);
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--cwd') { cwdOverride = argv[++i]; continue; }
+    if (argv[i] === '--title') { titleOverride = argv[++i]; continue; }
+    positional.push(argv[i]);
+  }
+}
+const [transcriptPath, scriptId] = positional;
 if (!transcriptPath || !scriptId) {
-  console.error('uso: npm run demo:record -- <caminho-do-.jsonl> <id>');
+  console.error('uso: npm run demo:record -- <caminho-do-.jsonl> <id> [--cwd <valor>] [--title <valor>]');
   process.exit(1);
 }
+
+const SHOWCASE_CWD = cwdOverride ?? DEFAULT_SHOWCASE_CWD;
+// undefined = preserva o `ai-title` real do transcript (default); uma string
+// aqui reescreve toda entrada `ai-title` para esse valor antes de gravar.
+const SHOWCASE_TITLE = titleOverride;
 
 const lines = fs.readFileSync(transcriptPath, 'utf8').split('\n').filter(Boolean);
 const sessionId = path.basename(transcriptPath, '.jsonl');
@@ -120,12 +139,16 @@ function cutoffTimestamp(cut: number): number {
   return -Infinity;
 }
 
-// O titulo real da sessao vem de uma entrada `ai-title` gravada DENTRO do
-// transcript. Reescrever o campo aqui — antes de escrever no sandbox — em vez
-// de sobrescrever `snapshot.title` depois do parser rodar, mantem o invariante
-// do gravador: o titulo de vitrine sai do parser real lendo um transcript
-// valido, por construcao, nao de um patch pos-hoc no resultado.
+// Quando `--title` foi passado, o titulo real da sessao (uma entrada
+// `ai-title` gravada DENTRO do transcript) e substituido pelo valor de
+// vitrine. Reescrever o campo aqui — antes de escrever no sandbox — em vez de
+// sobrescrever `snapshot.title` depois do parser rodar, mantem o invariante do
+// gravador: o titulo de vitrine sai do parser real lendo um transcript
+// valido, por construcao, nao de um patch pos-hoc no resultado. Sem a flag
+// (default), a linha segue intocada e o `ai-title` real do transcript e o que
+// aparece no snapshot.
 function rewriteAiTitle(line: string): string {
+  if (SHOWCASE_TITLE === undefined) return line;
   if (line.indexOf('"type":"ai-title"') < 0) return line;
   try {
     const entry = JSON.parse(line) as { type?: string; aiTitle?: unknown };
