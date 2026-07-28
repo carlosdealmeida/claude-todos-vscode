@@ -1,5 +1,5 @@
 ---
-import Demo from '../components/Demo.svelte';
+import Explorer from '../components/Explorer.svelte';
 import script from '../demo/scripts/smoke-test.json';
 import '../demo/theme.css';
 ---
@@ -14,7 +14,9 @@ import '../demo/theme.css';
     <main>
       <h1>Claude Todos</h1>
       <p>Observability for your Claude Code agents.</p>
-      <Demo client:only="svelte" script={script} locale="en" />
+      <div class="stage">
+        <Explorer client:only="svelte" script={script} locale="en" />
+      </div>
     </main>
   </body>
 </html>

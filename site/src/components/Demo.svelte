@@ -6,16 +6,48 @@
   import { createPlayer, type Player } from '../demo/player';
   import { createDemoBridge, type DemoBridge } from '../demo/demoBridge';
 
-  let { script, locale = 'en' as Locale }: { script: DemoScript; locale?: Locale } = $props();
+  let {
+    script,
+    locale = 'en' as Locale,
+    onFeatureChange,
+  }: {
+    script: DemoScript;
+    locale?: Locale;
+    // Sentido inverso da navegacao: Explorer.svelte usa isto para manter o
+    // realce da FeatureList em sincronia com o marcador que o player cruzou
+    // por ultimo (nao apenas com o clique do usuario).
+    onFeatureChange?: (feature: FeatureId | null) => void;
+  } = $props();
 
   let host: HTMLDivElement;
   let player: Player | null = null;
   let bridge: DemoBridge | null = null;
   let note = $state<string | null>(null);
   let playing = $state(false);
+  let activeFeature = $state<FeatureId | null>(null);
+
+  // Sentido inverso da navegacao: enquanto o roteiro toca, destaca a feature
+  // cujo marcador foi o ultimo atingido.
+  function markerAt(tMs: number): FeatureId | null {
+    let found: FeatureId | null = null;
+    for (const marker of script.markers) {
+      if (marker.atMs > tMs) break;
+      found = marker.feature;
+    }
+    return found;
+  }
+
+  $effect(() => {
+    onFeatureChange?.(activeFeature);
+  });
 
   onMount(async () => {
-    player = createPlayer(script, { onSnapshot: (s) => bridge?.pushSnapshot(s) });
+    player = createPlayer(script, {
+      onSnapshot: (s) => {
+        bridge?.pushSnapshot(s);
+        activeFeature = markerAt(player?.tMs ?? 0);
+      },
+    });
     bridge = createDemoBridge({
       script,
       player,
@@ -57,6 +89,7 @@
 
   export function seekToFeature(feature: FeatureId): void {
     player?.seekToFeature(feature);
+    activeFeature = feature;
   }
 
   function toggle(): void {
