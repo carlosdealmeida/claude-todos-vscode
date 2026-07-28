@@ -1,0 +1,57 @@
+name: Deploy site
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'site/**'
+      - 'src/webview/**'
+      - 'README*.md'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+# O deploy do Pages precisa escrever no ambiente github-pages; nada alem disso.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Um deploy por vez; nao cancela um em andamento para nao publicar pela metade.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Duas arvores de dependencia: a raiz fornece os componentes do webview,
+      # site/ fornece o Astro.
+      - run: npm ci
+      - run: npm ci
+        working-directory: site
+
+      - run: npm run build
+        working-directory: site
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
