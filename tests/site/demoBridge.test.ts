@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createDemoBridge } from '../../site/src/demo/demoBridge';
 import type { DemoScript } from '../../site/src/demo/types';
-import type { ExtensionMessage } from '../../src/types';
+import type { ExtensionMessage, SessionSnapshot } from '../../src/types';
 
 const script: DemoScript = {
   id: 'test',
@@ -57,8 +57,42 @@ describe('createDemoBridge', () => {
     expect(onPickSession).toHaveBeenCalled();
   });
 
-  it('ignores messages posted before a handler is registered', () => {
+  it('forwards pushSnapshot to the registered handler with the exact snapshot', () => {
+    const seen: ExtensionMessage[] = [];
     const bridge = createDemoBridge({ script, player: fakePlayer(), locale: 'en', onOpenSource: vi.fn(), onPickSession: vi.fn() });
-    expect(() => bridge.post({ type: 'refresh' })).not.toThrow();
+    bridge.onMessage((m) => seen.push(m));
+    const snapshot: SessionSnapshot = { sessionId: 's2', cwd: '/other', title: 'other', pinned: true, agents: [] };
+    bridge.pushSnapshot(snapshot);
+    expect(seen).toContainEqual({ type: 'snapshot', snapshot });
+  });
+
+  it('forwards pushLocale to the registered handler with the exact locale', () => {
+    const seen: ExtensionMessage[] = [];
+    const bridge = createDemoBridge({ script, player: fakePlayer(), locale: 'en', onOpenSource: vi.fn(), onPickSession: vi.fn() });
+    bridge.onMessage((m) => seen.push(m));
+    bridge.pushLocale('es');
+    expect(seen).toContainEqual({ type: 'locale', locale: 'es' });
+  });
+
+  it('ignores post() messages sent through the panel-answer path before a handler is registered', () => {
+    const bridge = createDemoBridge({ script, player: fakePlayer(), locale: 'en', onOpenSource: vi.fn(), onPickSession: vi.fn() });
+    // projectUsage (like ready) goes through send() internally — this is the
+    // path the null-handler guard actually protects, unlike 'refresh' which
+    // never calls send() and would pass even without the guard.
+    expect(() => bridge.post({ type: 'projectUsage' })).not.toThrow();
+
+    // Once a handler attaches, subsequent sends must still work normally —
+    // the earlier no-handler send should have been silently dropped, not
+    // queued or left in a broken state.
+    const seen: ExtensionMessage[] = [];
+    bridge.onMessage((m) => seen.push(m));
+    bridge.post({ type: 'projectUsage' });
+    expect(seen).toEqual([{ type: 'projectUsage', usage: script.projectUsage }]);
+  });
+
+  it('ignores pushSnapshot/pushLocale calls made before a handler is registered', () => {
+    const bridge = createDemoBridge({ script, player: fakePlayer(), locale: 'en', onOpenSource: vi.fn(), onPickSession: vi.fn() });
+    expect(() => bridge.pushSnapshot({ sessionId: 's1', cwd: '/r', title: 't', pinned: false, agents: [] })).not.toThrow();
+    expect(() => bridge.pushLocale('pt-br')).not.toThrow();
   });
 });
