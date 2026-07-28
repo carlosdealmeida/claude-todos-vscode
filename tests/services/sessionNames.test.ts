@@ -53,10 +53,13 @@ describe('SessionNames', () => {
   it('prune e no-op quando nao ha o que remover', () => {
     // Conteúdo compacto (não pretty-printed): uma reescrita re-serializaria
     // com indentação e mudaria os bytes — o teste detecta qualquer write.
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const compact = JSON.stringify({
+      's1': { name: 'a', updatedAt: 50_000 }  // recente o bastante
+    });
+    fs.writeFileSync(file, compact);
     const names = new SessionNames(file);
-    names.remember('s1', 'a', 1000);
-    const compact = fs.readFileSync(file, 'utf-8');
-    names.prune(10_000, 2000);
+    names.prune(10_000, 55_000);  // janela que não remove (50_000 is fresh)
     expect(fs.readFileSync(file, 'utf-8')).toBe(compact);
   });
 
