@@ -1,0 +1,4538 @@
+{
+  "id": "smoke-test",
+  "recordedAt": 1785263499827,
+  "durationMs": 103000,
+  "markers": [
+    { "feature": "tokens-cache", "atMs": 8000 },
+    { "feature": "agent-tree", "atMs": 88000 }
+  ],
+  "frames": [
+    {
+      "atMs": 0,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Session · 3bc32f6e",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [],
+          "byAgent": []
+        }
+      }
+    },
+    {
+      "atMs": 1000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Session · 3bc32f6e",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [],
+          "byAgent": []
+        }
+      }
+    },
+    {
+      "atMs": 2000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Session · 3bc32f6e",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [],
+          "byAgent": []
+        }
+      }
+    },
+    {
+      "atMs": 3000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Session · 3bc32f6e",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [],
+          "byAgent": []
+        }
+      }
+    },
+    {
+      "atMs": 4000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Session · 3bc32f6e",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [],
+          "byAgent": []
+        }
+      }
+    },
+    {
+      "atMs": 5000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Session · 3bc32f6e",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [],
+          "byAgent": []
+        }
+      }
+    },
+    {
+      "atMs": 6000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Session · 3bc32f6e",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [],
+          "byAgent": []
+        }
+      }
+    },
+    {
+      "atMs": 7000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Session · 3bc32f6e",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [],
+          "byAgent": []
+        }
+      }
+    },
+    {
+      "atMs": 8000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Session · 3bc32f6e",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 2,
+              "output": 22,
+              "cache": 42932
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 2,
+                  "output": 22,
+                  "cache": 42932
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 42934,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 2,
+            "read": 0,
+            "creation": 42932
+          }
+        }
+      }
+    },
+    {
+      "atMs": 9000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 2,
+              "output": 22,
+              "cache": 42932
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 2,
+                  "output": 22,
+                  "cache": 42932
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 42934,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 2,
+            "read": 0,
+            "creation": 42932
+          }
+        }
+      }
+    },
+    {
+      "atMs": 10000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 2,
+              "output": 22,
+              "cache": 42932
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 2,
+                  "output": 22,
+                  "cache": 42932
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 42934,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 2,
+            "read": 0,
+            "creation": 42932
+          }
+        }
+      }
+    },
+    {
+      "atMs": 11000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 4,
+              "output": 204,
+              "cache": 85933
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 4,
+                  "output": 204,
+                  "cache": 85933
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 43003,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 4,
+            "read": 42932,
+            "creation": 43001
+          }
+        }
+      }
+    },
+    {
+      "atMs": 12000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 8,
+              "output": 568,
+              "cache": 171935
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 8,
+                  "output": 568,
+                  "cache": 171935
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 43003,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 8,
+            "read": 128796,
+            "creation": 43139
+          }
+        }
+      }
+    },
+    {
+      "atMs": 13000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 8,
+              "output": 568,
+              "cache": 171935
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 8,
+                  "output": 568,
+                  "cache": 171935
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 43003,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 8,
+            "read": 128796,
+            "creation": 43139
+          }
+        }
+      }
+    },
+    {
+      "atMs": 14000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 10,
+              "output": 645,
+              "cache": 215156
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 10,
+                  "output": 645,
+                  "cache": 215156
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 43223,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 10,
+            "read": 171797,
+            "creation": 43359
+          }
+        }
+      }
+    },
+    {
+      "atMs": 15000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 12,
+              "output": 954,
+              "cache": 262293
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 12,
+                  "output": 954,
+                  "cache": 262293
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 47139,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 12,
+            "read": 204079,
+            "creation": 58214
+          }
+        }
+      }
+    },
+    {
+      "atMs": 16000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 14,
+              "output": 1263,
+              "cache": 309430
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 14,
+                  "output": 1263,
+                  "cache": 309430
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 47139,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 14,
+            "read": 236361,
+            "creation": 73069
+          }
+        }
+      }
+    },
+    {
+      "atMs": 17000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 16,
+              "output": 1813,
+              "cache": 356914
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 16,
+                  "output": 1813,
+                  "cache": 356914
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 47486,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 16,
+            "read": 283498,
+            "creation": 73416
+          }
+        }
+      }
+    },
+    {
+      "atMs": 18000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 18,
+              "output": 2363,
+              "cache": 404398
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 18,
+                  "output": 2363,
+                  "cache": 404398
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 47486,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 18,
+            "read": 330635,
+            "creation": 73763
+          }
+        }
+      }
+    },
+    {
+      "atMs": 19000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 18,
+              "output": 2363,
+              "cache": 404398
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 18,
+                  "output": 2363,
+                  "cache": 404398
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 47486,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 18,
+            "read": 330635,
+            "creation": 73763
+          }
+        }
+      }
+    },
+    {
+      "atMs": 20000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 18,
+              "output": 2363,
+              "cache": 404398
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 18,
+                  "output": 2363,
+                  "cache": 404398
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 47486,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 18,
+            "read": 330635,
+            "creation": 73763
+          }
+        }
+      }
+    },
+    {
+      "atMs": 21000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 20,
+              "output": 3905,
+              "cache": 504048
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 20,
+                  "output": 3905,
+                  "cache": 504048
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 49826,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 20,
+            "read": 426703,
+            "creation": 77345
+          }
+        }
+      }
+    },
+    {
+      "atMs": 22000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 21,
+              "output": 4676,
+              "cache": 553873
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 21,
+                  "output": 4676,
+                  "cache": 553873
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 49826,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 21,
+            "read": 474737,
+            "creation": 79136
+          }
+        }
+      }
+    },
+    {
+      "atMs": 23000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 21,
+              "output": 4676,
+              "cache": 553873
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 21,
+                  "output": 4676,
+                  "cache": 553873
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 49826,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 21,
+            "read": 474737,
+            "creation": 79136
+          }
+        }
+      }
+    },
+    {
+      "atMs": 24000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 21,
+              "output": 4676,
+              "cache": 553873
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 21,
+                  "output": 4676,
+                  "cache": 553873
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 49826,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 21,
+            "read": 474737,
+            "creation": 79136
+          }
+        }
+      }
+    },
+    {
+      "atMs": 25000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 21,
+              "output": 4676,
+              "cache": 553873
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 21,
+                  "output": 4676,
+                  "cache": 553873
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 49826,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 21,
+            "read": 474737,
+            "creation": 79136
+          }
+        }
+      }
+    },
+    {
+      "atMs": 26000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 25,
+              "output": 9476,
+              "cache": 655139
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 25,
+                  "output": 9476,
+                  "cache": 655139
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 50635,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 25,
+            "read": 574387,
+            "creation": 80752
+          }
+        }
+      }
+    },
+    {
+      "atMs": 27000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 27,
+              "output": 11876,
+              "cache": 705772
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 27,
+                  "output": 11876,
+                  "cache": 705772
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 50635,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 27,
+            "read": 624212,
+            "creation": 81560
+          }
+        }
+      }
+    },
+    {
+      "atMs": 28000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 29,
+              "output": 14276,
+              "cache": 756405
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 29,
+                  "output": 14276,
+                  "cache": 756405
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 50635,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 29,
+            "read": 674037,
+            "creation": 82368
+          }
+        }
+      }
+    },
+    {
+      "atMs": 29000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 31,
+              "output": 16676,
+              "cache": 807038
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 31,
+                  "output": 16676,
+                  "cache": 807038
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 50635,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 31,
+            "read": 723862,
+            "creation": 83176
+          }
+        }
+      }
+    },
+    {
+      "atMs": 30000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 33,
+              "output": 16979,
+              "cache": 860464
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 33,
+                  "output": 16979,
+                  "cache": 860464
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 53428,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 33,
+            "read": 774495,
+            "creation": 85969
+          }
+        }
+      }
+    },
+    {
+      "atMs": 31000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 35,
+              "output": 17380,
+              "cache": 914449
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 35,
+                  "output": 17380,
+                  "cache": 914449
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 53987,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 35,
+            "read": 827921,
+            "creation": 86528
+          }
+        }
+      }
+    },
+    {
+      "atMs": 32000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 37,
+              "output": 17781,
+              "cache": 968434
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 37,
+                  "output": 17781,
+                  "cache": 968434
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 53987,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 37,
+            "read": 881347,
+            "creation": 87087
+          }
+        }
+      }
+    },
+    {
+      "atMs": 33000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 39,
+              "output": 17860,
+              "cache": 1022891
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 39,
+                  "output": 17860,
+                  "cache": 1022891
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 54459,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 39,
+            "read": 935332,
+            "creation": 87559
+          }
+        }
+      }
+    },
+    {
+      "atMs": 34000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 39,
+              "output": 17860,
+              "cache": 1022891
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 39,
+                  "output": 17860,
+                  "cache": 1022891
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 54459,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 39,
+            "read": 935332,
+            "creation": 87559
+          }
+        }
+      }
+    },
+    {
+      "atMs": 35000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 41,
+              "output": 18074,
+              "cache": 1078625
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 41,
+                  "output": 18074,
+                  "cache": 1078625
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 55736,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 41,
+            "read": 989789,
+            "creation": 88836
+          }
+        }
+      }
+    },
+    {
+      "atMs": 36000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 41,
+              "output": 18074,
+              "cache": 1078625
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 41,
+                  "output": 18074,
+                  "cache": 1078625
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 55736,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 41,
+            "read": 989789,
+            "creation": 88836
+          }
+        }
+      }
+    },
+    {
+      "atMs": 37000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 41,
+              "output": 18074,
+              "cache": 1078625
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 41,
+                  "output": 18074,
+                  "cache": 1078625
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 55736,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 41,
+            "read": 989789,
+            "creation": 88836
+          }
+        }
+      }
+    },
+    {
+      "atMs": 38000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 41,
+              "output": 18074,
+              "cache": 1078625
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 41,
+                  "output": 18074,
+                  "cache": 1078625
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 55736,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 41,
+            "read": 989789,
+            "creation": 88836
+          }
+        }
+      }
+    },
+    {
+      "atMs": 39000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 43,
+              "output": 18170,
+              "cache": 1134825
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 43,
+                  "output": 18170,
+                  "cache": 1134825
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 56202,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 43,
+            "read": 1045523,
+            "creation": 89302
+          }
+        }
+      }
+    },
+    {
+      "atMs": 40000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 45,
+              "output": 18763,
+              "cache": 1192258
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 45,
+                  "output": 18763,
+                  "cache": 1192258
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 57435,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 45,
+            "read": 1101257,
+            "creation": 91001
+          }
+        }
+      }
+    },
+    {
+      "atMs": 41000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 49,
+              "output": 19949,
+              "cache": 1307124
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 49,
+                  "output": 19949,
+                  "cache": 1307124
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 57435,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 49,
+            "read": 1212725,
+            "creation": 94399
+          }
+        }
+      }
+    },
+    {
+      "atMs": 42000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 49,
+              "output": 19949,
+              "cache": 1307124
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 49,
+                  "output": 19949,
+                  "cache": 1307124
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 57435,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 49,
+            "read": 1212725,
+            "creation": 94399
+          }
+        }
+      }
+    },
+    {
+      "atMs": 43000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 49,
+              "output": 19949,
+              "cache": 1307124
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 49,
+                  "output": 19949,
+                  "cache": 1307124
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 57435,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 49,
+            "read": 1212725,
+            "creation": 94399
+          }
+        }
+      }
+    },
+    {
+      "atMs": 44000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 51,
+              "output": 20181,
+              "cache": 1365987
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 51,
+                  "output": 20181,
+                  "cache": 1365987
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 58865,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 51,
+            "read": 1270158,
+            "creation": 95829
+          }
+        }
+      }
+    },
+    {
+      "atMs": 45000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 55,
+              "output": 20528,
+              "cache": 1484513
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 55,
+                  "output": 20528,
+                  "cache": 1484513
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 59665,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 55,
+            "read": 1385024,
+            "creation": 99489
+          }
+        }
+      }
+    },
+    {
+      "atMs": 46000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 55,
+              "output": 20528,
+              "cache": 1484513
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 55,
+                  "output": 20528,
+                  "cache": 1484513
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 59665,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 55,
+            "read": 1385024,
+            "creation": 99489
+          }
+        }
+      }
+    },
+    {
+      "atMs": 47000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 57,
+              "output": 21812,
+              "cache": 1544894
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 57,
+                  "output": 21812,
+                  "cache": 1544894
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 60383,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 57,
+            "read": 1444802,
+            "creation": 100092
+          }
+        }
+      }
+    },
+    {
+      "atMs": 48000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 59,
+              "output": 23096,
+              "cache": 1605275
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 59,
+                  "output": 23096,
+                  "cache": 1605275
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 60383,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 59,
+            "read": 1504580,
+            "creation": 100695
+          }
+        }
+      }
+    },
+    {
+      "atMs": 49000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 59,
+              "output": 23096,
+              "cache": 1605275
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 59,
+                  "output": 23096,
+                  "cache": 1605275
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 60383,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 59,
+            "read": 1504580,
+            "creation": 100695
+          }
+        }
+      }
+    },
+    {
+      "atMs": 50000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 59,
+              "output": 23096,
+              "cache": 1605275
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 59,
+                  "output": 23096,
+                  "cache": 1605275
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 60383,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 59,
+            "read": 1504580,
+            "creation": 100695
+          }
+        }
+      }
+    },
+    {
+      "atMs": 51000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 61,
+              "output": 23270,
+              "cache": 1667216
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 61,
+                  "output": 23270,
+                  "cache": 1667216
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 61943,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 61,
+            "read": 1564961,
+            "creation": 102255
+          }
+        }
+      }
+    },
+    {
+      "atMs": 52000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 63,
+              "output": 23444,
+              "cache": 1729157
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 63,
+                  "output": 23444,
+                  "cache": 1729157
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 61943,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 63,
+            "read": 1625342,
+            "creation": 103815
+          }
+        }
+      }
+    },
+    {
+      "atMs": 53000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 63,
+              "output": 23444,
+              "cache": 1729157
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 63,
+                  "output": 23444,
+                  "cache": 1729157
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 61943,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 63,
+            "read": 1625342,
+            "creation": 103815
+          }
+        }
+      }
+    },
+    {
+      "atMs": 54000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 67,
+              "output": 24276,
+              "cache": 1853499
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 67,
+                  "output": 24276,
+                  "cache": 1853499
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 62173,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 67,
+            "read": 1749224,
+            "creation": 104275
+          }
+        }
+      }
+    },
+    {
+      "atMs": 55000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 69,
+              "output": 24692,
+              "cache": 1915670
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 69,
+                  "output": 24692,
+                  "cache": 1915670
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 62173,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 69,
+            "read": 1811165,
+            "creation": 104505
+          }
+        }
+      }
+    },
+    {
+      "atMs": 56000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 71,
+              "output": 24773,
+              "cache": 1978295
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 71,
+                  "output": 24773,
+                  "cache": 1978295
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 62627,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 71,
+            "read": 1873336,
+            "creation": 104959
+          }
+        }
+      }
+    },
+    {
+      "atMs": 57000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 71,
+              "output": 24773,
+              "cache": 1978295
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 71,
+                  "output": 24773,
+                  "cache": 1978295
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 62627,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 71,
+            "read": 1873336,
+            "creation": 104959
+          }
+        }
+      }
+    },
+    {
+      "atMs": 58000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 75,
+              "output": 26111,
+              "cache": 2132281
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 75,
+                  "output": 26111,
+                  "cache": 2132281
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 76995,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 75,
+            "read": 1998586,
+            "creation": 133695
+          }
+        }
+      }
+    },
+    {
+      "atMs": 59000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 77,
+              "output": 26780,
+              "cache": 2209274
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 77,
+                  "output": 26780,
+                  "cache": 2209274
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 76995,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 77,
+            "read": 2061211,
+            "creation": 148063
+          }
+        }
+      }
+    },
+    {
+      "atMs": 60000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 77,
+              "output": 26780,
+              "cache": 2209274
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 77,
+                  "output": 26780,
+                  "cache": 2209274
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 76995,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 77,
+            "read": 2061211,
+            "creation": 148063
+          }
+        }
+      }
+    },
+    {
+      "atMs": 61000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 77,
+              "output": 26780,
+              "cache": 2209274
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 77,
+                  "output": 26780,
+                  "cache": 2209274
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 76995,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 77,
+            "read": 2061211,
+            "creation": 148063
+          }
+        }
+      }
+    },
+    {
+      "atMs": 62000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 77,
+              "output": 26780,
+              "cache": 2209274
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 77,
+                  "output": 26780,
+                  "cache": 2209274
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 76995,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 77,
+            "read": 2061211,
+            "creation": 148063
+          }
+        }
+      }
+    },
+    {
+      "atMs": 63000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 81,
+              "output": 27492,
+              "cache": 2370690
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 81,
+                  "output": 27492,
+                  "cache": 2370690
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 80710,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 81,
+            "read": 2215197,
+            "creation": 155493
+          }
+        }
+      }
+    },
+    {
+      "atMs": 64000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 83,
+              "output": 27848,
+              "cache": 2451398
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 83,
+                  "output": 27848,
+                  "cache": 2451398
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 80710,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 83,
+            "read": 2292190,
+            "creation": 159208
+          }
+        }
+      }
+    },
+    {
+      "atMs": 65000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 85,
+              "output": 28005,
+              "cache": 2532518
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 85,
+                  "output": 28005,
+                  "cache": 2532518
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 81122,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 85,
+            "read": 2372898,
+            "creation": 159620
+          }
+        }
+      }
+    },
+    {
+      "atMs": 66000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 87,
+              "output": 28162,
+              "cache": 2613638
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 87,
+                  "output": 28162,
+                  "cache": 2613638
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 81122,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 87,
+            "read": 2453606,
+            "creation": 160032
+          }
+        }
+      }
+    },
+    {
+      "atMs": 67000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 89,
+              "output": 28331,
+              "cache": 2695084
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 89,
+                  "output": 28331,
+                  "cache": 2695084
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 81448,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 89,
+            "read": 2534726,
+            "creation": 160358
+          }
+        }
+      }
+    },
+    {
+      "atMs": 68000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 91,
+              "output": 28500,
+              "cache": 2776530
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 91,
+                  "output": 28500,
+                  "cache": 2776530
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 81448,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 91,
+            "read": 2615846,
+            "creation": 160684
+          }
+        }
+      }
+    },
+    {
+      "atMs": 69000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 93,
+              "output": 28812,
+              "cache": 2859248
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 93,
+                  "output": 28812,
+                  "cache": 2859248
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 82720,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 93,
+            "read": 2697292,
+            "creation": 161956
+          }
+        }
+      }
+    },
+    {
+      "atMs": 70000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 97,
+              "output": 29436,
+              "cache": 3024684
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 97,
+                  "output": 29436,
+                  "cache": 3024684
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 82720,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 97,
+            "read": 2860184,
+            "creation": 164500
+          }
+        }
+      }
+    },
+    {
+      "atMs": 71000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 97,
+              "output": 29436,
+              "cache": 3024684
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 97,
+                  "output": 29436,
+                  "cache": 3024684
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 82720,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 97,
+            "read": 2860184,
+            "creation": 164500
+          }
+        }
+      }
+    },
+    {
+      "atMs": 72000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 97,
+              "output": 29436,
+              "cache": 3024684
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 97,
+                  "output": 29436,
+                  "cache": 3024684
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 82720,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 97,
+            "read": 2860184,
+            "creation": 164500
+          }
+        }
+      }
+    },
+    {
+      "atMs": 73000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 97,
+              "output": 29436,
+              "cache": 3024684
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 97,
+                  "output": 29436,
+                  "cache": 3024684
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 82720,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 97,
+            "read": 2860184,
+            "creation": 164500
+          }
+        }
+      }
+    },
+    {
+      "atMs": 74000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 99,
+              "output": 29819,
+              "cache": 3109574
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 99,
+                  "output": 29819,
+                  "cache": 3109574
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 84892,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 99,
+            "read": 2942902,
+            "creation": 166672
+          }
+        }
+      }
+    },
+    {
+      "atMs": 75000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 103,
+              "output": 30585,
+              "cache": 3279354
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 103,
+                  "output": 30585,
+                  "cache": 3279354
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 84892,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 103,
+            "read": 3108338,
+            "creation": 171016
+          }
+        }
+      }
+    },
+    {
+      "atMs": 76000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 103,
+              "output": 30585,
+              "cache": 3279354
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 103,
+                  "output": 30585,
+                  "cache": 3279354
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 84892,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 103,
+            "read": 3108338,
+            "creation": 171016
+          }
+        }
+      }
+    },
+    {
+      "atMs": 77000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 105,
+              "output": 30970,
+              "cache": 3364967
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 105,
+                  "output": 30970,
+                  "cache": 3364967
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 85615,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 105,
+            "read": 3193228,
+            "creation": 171739
+          }
+        }
+      }
+    },
+    {
+      "atMs": 78000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 109,
+              "output": 31740,
+              "cache": 3536193
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 109,
+                  "output": 31740,
+                  "cache": 3536193
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 85615,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 109,
+            "read": 3363008,
+            "creation": 173185
+          }
+        }
+      }
+    },
+    {
+      "atMs": 79000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 109,
+              "output": 31740,
+              "cache": 3536193
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 109,
+                  "output": 31740,
+                  "cache": 3536193
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 85615,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 109,
+            "read": 3363008,
+            "creation": 173185
+          }
+        }
+      }
+    },
+    {
+      "atMs": 80000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 111,
+              "output": 31862,
+              "cache": 3622300
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 111,
+                  "output": 31862,
+                  "cache": 3622300
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 86109,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 111,
+            "read": 3448621,
+            "creation": 173679
+          }
+        }
+      }
+    },
+    {
+      "atMs": 81000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 113,
+              "output": 32658,
+              "cache": 3710256
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 113,
+                  "output": 32658,
+                  "cache": 3710256
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 87958,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 113,
+            "read": 3534728,
+            "creation": 175528
+          }
+        }
+      }
+    },
+    {
+      "atMs": 82000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 115,
+              "output": 33454,
+              "cache": 3798212
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 115,
+                  "output": 33454,
+                  "cache": 3798212
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 87958,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 115,
+            "read": 3620835,
+            "creation": 177377
+          }
+        }
+      }
+    },
+    {
+      "atMs": 83000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 115,
+              "output": 33454,
+              "cache": 3798212
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 115,
+                  "output": 33454,
+                  "cache": 3798212
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 87958,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 115,
+            "read": 3620835,
+            "creation": 177377
+          }
+        }
+      }
+    },
+    {
+      "atMs": 84000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 119,
+              "output": 38512,
+              "cache": 3975844
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 119,
+                  "output": 38512,
+                  "cache": 3975844
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 88818,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 119,
+            "read": 3796747,
+            "creation": 179097
+          }
+        }
+      }
+    },
+    {
+      "atMs": 85000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 121,
+              "output": 41041,
+              "cache": 4064660
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 121,
+                  "output": 41041,
+                  "cache": 4064660
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 88818,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 121,
+            "read": 3884703,
+            "creation": 179957
+          }
+        }
+      }
+    },
+    {
+      "atMs": 86000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 121,
+              "output": 41041,
+              "cache": 4064660
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 121,
+                  "output": 41041,
+                  "cache": 4064660
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 88818,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 121,
+            "read": 3884703,
+            "creation": 179957
+          }
+        }
+      }
+    },
+    {
+      "atMs": 87000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-fable-5",
+              "input": 121,
+              "output": 41041,
+              "cache": 4064660
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+              "name": "Main agent",
+              "isMain": true,
+              "models": [
+                {
+                  "model": "claude-fable-5",
+                  "input": 121,
+                  "output": 41041,
+                  "cache": 4064660
+                }
+              ],
+              "currentModel": "claude-fable-5"
+            }
+          ],
+          "context": {
+            "tokens": 88818,
+            "limit": 200000
+          },
+          "cache": {
+            "input": 121,
+            "read": 3884703,
+            "creation": 179957
+          }
+        }
+      }
+    },
+    {
+      "atMs": 88000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499193.5063,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 89000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499234.5085,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 90000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499270.51,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 91000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499309.5195,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 92000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499353.0386,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 93000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499392.5654,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 94000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499438.567,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 95000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499483.5874,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 96000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499529.0244,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 97000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499570.7014,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 98000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499615.7131,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 99000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499657.6917,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 100000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499704.709,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 101000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499749.7102,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    },
+    {
+      "atMs": 102000,
+      "snapshot": {
+        "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Smoke test: main + 3 sub-agents",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentId": "ac61f5134bd90acd5",
+            "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+            "isMain": false,
+            "todos": [],
+            "updatedAt": 1785263499790.7078,
+            "status": "completed",
+            "parentAgentId": "3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da",
+            "agentType": "claude-code-guide",
+            "depth": 1
+          }
+        ],
+        "usage": {
+          "byModel": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "input": 60,
+              "output": 1906,
+              "cache": 115374
+            }
+          ],
+          "byAgent": [
+            {
+              "agentId": "ac61f5134bd90acd5",
+              "name": "Verificar disponibilidade TodoWrite/TaskCreate",
+              "isMain": false,
+              "models": [
+                {
+                  "model": "claude-haiku-4-5-20251001",
+                  "input": 60,
+                  "output": 1906,
+                  "cache": 115374
+                }
+              ],
+              "currentModel": "claude-haiku-4-5-20251001"
+            }
+          ],
+          "cache": {
+            "input": 60,
+            "read": 63447,
+            "creation": 51927
+          }
+        }
+      }
+    }
+  ],
+  "projectUsage": {
+    "sessions": 0,
+    "byModel": [],
+    "byAgentType": []
+  }
+}
