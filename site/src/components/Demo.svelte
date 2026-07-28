@@ -29,6 +29,15 @@
     // import dinamico — nao inverter a ordem.
     (window as unknown as DemoWindow).__claudeTodosDemo = bridge;
 
+    // O import('svelte') dinamico aqui, ao lado do import estatico do modulo
+    // 'svelte' que o proprio Astro/@astrojs/svelte ja injeta neste componente,
+    // e o que o Vite acusa no aviso de build ("dynamically imported ... but
+    // also statically imported"). E ruido inofensivo: o Rollup detecta que o
+    // runtime ja esta no grafo e reaproveita o mesmo chunk (sem duplicar o
+    // Svelte) — o import dinamico existe so para atrasar a resolucao de
+    // 'App.svelte' ate depois da linha acima, garantindo que
+    // window.__claudeTodosDemo ja esteja atribuido quando o App resolve o
+    // bridge no load do modulo. Nao trocar por um import estatico no topo.
     const [{ mount }, App] = await Promise.all([
       import('svelte'),
       import('../../../src/webview/App.svelte').then((m) => m.default),
@@ -37,7 +46,14 @@
     playing = true;
   });
 
-  onDestroy(() => player?.destroy());
+  onDestroy(() => {
+    player?.destroy();
+    // O bridge injetado em window.__claudeTodosDemo sobrevive ao componente se
+    // nao for limpo aqui — ele fecha sobre um player ja destruido e o script
+    // inteiro. Baixo impacto hoje (pagina estatica de view unica), mas e uma
+    // referencia global a objeto morto por uma linha de custo.
+    delete (window as unknown as DemoWindow).__claudeTodosDemo;
+  });
 
   export function seekToFeature(feature: FeatureId): void {
     player?.seekToFeature(feature);
