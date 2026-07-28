@@ -51,18 +51,24 @@ export function createPlayer(script: DemoScript, opts: PlayerOptions): Player {
     emit();
   }, TICK_MS);
 
+  // Logica de seek extraida do closure (nao um metodo do objeto retornado) para
+  // que seekToFeature nao dependa de `this` — o Player e frequentemente
+  // desestruturado (`const { seekToFeature } = player`), o que quebraria uma
+  // chamada `this.seek(...)`.
+  function doSeek(next: number): void {
+    tMs = Math.max(0, Math.min(next, script.durationMs));
+    emit();
+  }
+
   return {
     get tMs() { return tMs; },
     get playing() { return playing; },
     play() { playing = true; emit(); },
     pause() { playing = false; },
-    seek(next: number) {
-      tMs = Math.max(0, Math.min(next, script.durationMs));
-      emit();
-    },
+    seek(next: number) { doSeek(next); },
     seekToFeature(feature: FeatureId) {
       const marker = script.markers.find((m) => m.feature === feature);
-      if (marker) this.seek(marker.atMs);
+      if (marker) doSeek(marker.atMs);
     },
     destroy() { clearInterval(timer); },
   };
