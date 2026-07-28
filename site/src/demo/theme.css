@@ -1,0 +1,52 @@
+/* Simula as variaveis que o VS Code injeta na webview. Valores do tema Dark+
+   e do Light+ padrao. A lista cobre as 20 vars usadas em src/webview/ — uma
+   var faltando renderiza o componente correspondente sem cor. */
+:root {
+  --vscode-font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  --vscode-font-size: 13px;
+  --vscode-editor-font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+
+  --vscode-foreground: #cccccc;
+  --vscode-descriptionForeground: #9d9d9d;
+  --vscode-errorForeground: #f14c4c;
+  --vscode-focusBorder: #007fd4;
+  --vscode-panel-border: #3c3c3c;
+  --vscode-list-hoverBackground: #2a2d2e;
+  --vscode-sideBarSectionHeader-background: #2a2a2a;
+  --vscode-textBlockQuote-background: #222222;
+  --vscode-badge-background: #4d4d4d;
+  --vscode-badge-foreground: #ffffff;
+  --vscode-progressBar-background: #0e70c0;
+  --vscode-testing-iconPassed: #73c991;
+
+  --vscode-charts-blue: #4daafc;
+  --vscode-charts-green: #89d185;
+  --vscode-charts-yellow: #e6c07b;
+  --vscode-charts-orange: #d18616;
+  --vscode-charts-red: #f14c4c;
+
+  --demo-editor-background: #1e1e1e;
+}
+
+:root[data-theme="light"] {
+  --vscode-foreground: #3b3b3b;
+  --vscode-descriptionForeground: #6a6a6a;
+  --vscode-errorForeground: #e51400;
+  --vscode-focusBorder: #005fb8;
+  --vscode-panel-border: #e5e5e5;
+  --vscode-list-hoverBackground: #f0f0f0;
+  --vscode-sideBarSectionHeader-background: #eeeeee;
+  --vscode-textBlockQuote-background: #f5f5f5;
+  --vscode-badge-background: #cccccc;
+  --vscode-badge-foreground: #3b3b3b;
+  --vscode-progressBar-background: #005fb8;
+  --vscode-testing-iconPassed: #257e25;
+
+  --vscode-charts-blue: #1a85ff;
+  --vscode-charts-green: #388a34;
+  --vscode-charts-yellow: #b89500;
+  --vscode-charts-orange: #d18616;
+  --vscode-charts-red: #e51400;
+
+  --demo-editor-background: #ffffff;
+}
