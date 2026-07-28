@@ -42,11 +42,11 @@
   --vscode-progressBar-background: #005fb8;
   --vscode-testing-iconPassed: #257e25;
 
-  --vscode-charts-blue: #1a85ff;
-  --vscode-charts-green: #388a34;
-  --vscode-charts-yellow: #b89500;
+  --vscode-charts-blue: #005bc2;
+  --vscode-charts-green: #2f742c;
+  --vscode-charts-yellow: #7b6300;
   --vscode-charts-orange: #d18616;
-  --vscode-charts-red: #e51400;
+  --vscode-charts-red: #c61100;
 
   --demo-editor-background: #ffffff;
 }
