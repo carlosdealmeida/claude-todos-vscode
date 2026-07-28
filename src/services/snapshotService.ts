@@ -59,6 +59,7 @@ export class SnapshotService {
       agents,
       usage: this.usageParser.usageForSession(chosen.sessionId, chosen.cwd, usageAgents),
       ...(detail.awaitingInput !== null ? { awaitingInput: detail.awaitingInput } : {}),
+      ...(detail.pendingQuestions.length > 0 ? { pendingQuestions: detail.pendingQuestions } : {}),
     };
   }
 

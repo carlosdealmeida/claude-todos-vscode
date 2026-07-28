@@ -165,9 +165,13 @@ export class TodosParser {
     return this.listSessionDetail(sessionId, cwd).agents;
   }
 
-  listSessionDetail(sessionId: string, cwd: string): { agents: AgentTodos[]; awaitingInput: AwaitingInput | null } {
+  listSessionDetail(sessionId: string, cwd: string): {
+    agents: AgentTodos[];
+    awaitingInput: AwaitingInput | null;
+    pendingQuestions: PendingQuestion[];
+  } {
     const transcriptPath = this.transcriptPath(sessionId, cwd);
-    if (!transcriptPath) return { agents: [], awaitingInput: null };
+    if (!transcriptPath) return { agents: [], awaitingInput: null, pendingQuestions: [] };
 
     const mainLines = this.readLines(transcriptPath);
     const agents: AgentTodos[] = [];
@@ -187,7 +191,11 @@ export class TodosParser {
     }
 
     agents.push(...this.listSubAgents(sessionId, cwd, mainLines));
-    return { agents, awaitingInput: detectAwaitingInput(mainLines, true) };
+    return {
+      agents,
+      awaitingInput: detectAwaitingInput(mainLines, true),
+      pendingQuestions: detectPendingQuestions(mainLines, true),
+    };
   }
 
   transcriptMtime(sessionId: string, cwd: string): number | null {

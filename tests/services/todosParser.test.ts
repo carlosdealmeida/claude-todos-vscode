@@ -887,6 +887,15 @@ describe('TodosParser', () => {
     });
   });
 
+  it('listSessionDetail devolve as perguntas pendentes do main', () => {
+    writeTranscript('s1', CWD, [
+      { isSidechain: false, message: { content: [{ type: 'tool_use', name: 'AskUserQuestion', id: 't1', input: { questions: [{ question: 'Q', header: 'H' }] } }] } },
+    ]);
+    expect(parser.listSessionDetail('s1', CWD).pendingQuestions).toEqual([
+      { kind: 'question', header: 'H', text: 'Q', line: 0 },
+    ]);
+  });
+
   it('does not emit duplicate sub-agent agentIds when prompts collide', () => {
     writeTranscript('s1', CWD, [
       todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),

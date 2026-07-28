@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { SnapshotService } from '../../src/services/snapshotService';
+import type { PendingQuestion } from '../../src/types';
 
 const usageStub = {
   usageForSession: () => ({ byModel: [], byAgent: [] }),
@@ -9,6 +10,7 @@ function makeParser(opts: {
   mtimes: Record<string, number | null>;
   titles?: Record<string, string | null>;
   awaitingInput?: 'question' | 'plan' | null;
+  pendingQuestions?: PendingQuestion[];
 }) {
   const agentsFor = (sessionId: string) => [
     { sessionId, agentId: sessionId, name: 'Main agent', isMain: true, todos: [], updatedAt: 0 },
@@ -20,6 +22,7 @@ function makeParser(opts: {
     listSessionDetail: (sessionId: string) => ({
       agents: agentsFor(sessionId),
       awaitingInput: opts.awaitingInput ?? null,
+      pendingQuestions: opts.pendingQuestions ?? [],
     }),
   };
 }
@@ -119,7 +122,7 @@ describe('SnapshotService', () => {
       transcriptMtime: () => 1000,
       readSessionTitle: () => null,
       listForSession: () => [], // no TodoWrite yet → no agents
-      listSessionDetail: () => ({ agents: [], awaitingInput: null }),
+      listSessionDetail: () => ({ agents: [], awaitingInput: null, pendingQuestions: [] }),
     };
     let receivedAgents: any[] | undefined;
     const usage = {
@@ -210,5 +213,24 @@ describe('SnapshotService', () => {
     const parser = makeParser({ mtimes: { a: 1000 } });
     const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
     expect('awaitingInput' in svc.build()!).toBe(false);
+  });
+
+  it('propaga pendingQuestions quando ha pendencia', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({
+      mtimes: { a: 10 },
+      pendingQuestions: [{ kind: 'question', header: 'H', text: 'Q', line: 3 }],
+    });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
+    expect(svc.build()?.pendingQuestions).toEqual([
+      { kind: 'question', header: 'H', text: 'Q', line: 3 },
+    ]);
+  });
+
+  it('omite pendingQuestions quando a lista e vazia', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 }] };
+    const parser = makeParser({ mtimes: { a: 10 } });
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
+    expect(svc.build()).not.toHaveProperty('pendingQuestions');
   });
 });
