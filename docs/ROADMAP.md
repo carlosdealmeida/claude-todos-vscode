@@ -104,7 +104,7 @@ de tokens do 0.3.0).
 ### 5. Seletor de sessão melhor: vivas/ativas, atalhos, sem corte — (d)+(b) ✅ (0.13.0)
 - **Issues:** [#28147](https://github.com/anthropics/claude-code/issues/28147) (`NOT_PLANNED`, `keybindings`) indicadores de atividade + atalhos · [#24435](https://github.com/anthropics/claude-code/issues/24435) (`NOT_PLANNED`) picker corta em ~8 sessões mais recentes · [#23275](https://github.com/anthropics/claude-code/issues/23275) (`NOT_PLANNED`) nomear sessões
 - **Status:** fatias (d)+(b) ✅ entregues na 0.13.0. Restam (a) sessões vivas e (c) apelidos —
-  📐 a planejar (investigado 2026-07-15).
+  📐 a planejar (investigado 2026-07-15), **3º da fila** (decidido 2026-07-27).
 - **Achados:**
   - **(b) não cortar lista:** ✅ já não cortamos — `listSessions()` não tem limite
     ([snapshotService.ts:19-33](../src/services/snapshotService.ts#L19)); o corte em ~8 é do
@@ -160,9 +160,10 @@ de tokens do 0.3.0).
   - [TodoItem](../src/webview/lib/TodoItem.svelte) / [AgentSection](../src/webview/lib/AgentSection.svelte) — UI.
 - **Sinergia:** reaproveita os `timestamp` que já existiam no transcript; degrada graciosamente quando ausentes.
 
-### 12. i18n da UI da extensão ✅ ENTREGUE (0.8.0)
+### 12. i18n da UI da extensão ✅ ENTREGUE (0.8.0 · chinês na 0.17.0)
 - **Origem:** inconsistência entre README trilíngue (pt/en/es) e UI monolíngue em português; demanda crescente por localização no ecossistema Claude Code ([#60914](https://github.com/anthropics/claude-code/issues/60914), [#64472](https://github.com/anthropics/claude-code/issues/64472), [#58688](https://github.com/anthropics/claude-code/issues/58688), [#35600](https://github.com/anthropics/claude-code/issues/35600) etc.).
-- **Status:** ✅ entregue — idiomas **en** (base/fallback), **pt-br**, **es**, **zh-cn** e **zh-tw**. Segue o idioma de exibição do VS Code (`display language`) com override opcional via setting `claudeTodos.language`. Corrige a inconsistência pt/en anterior da UI.
+- **Status:** ✅ entregue — idiomas **en** (base/fallback), **pt-br**, **es** (0.8.0), **zh-cn** e **zh-tw** (0.17.0). Segue o idioma de exibição do VS Code (`display language`) com override opcional via setting `claudeTodos.language`. Corrige a inconsistência pt/en anterior da UI.
+- **Chinês (0.17.0, 2026-07-27):** simplificado e tradicional nas duas superfícies — extensão VS Code **e** plugin JetBrains (mesmos catálogos, mesma cobertura de `package.nls.*` e de toasts nativos), mais READMEs [zh-cn](../README.zh-cn.md) / [zh-tw](../README.zh-tw.md). A resolução de locale passou a considerar **script e região**: `zh-TW`/`zh-HK`/`zh-MO` → tradicional; `zh-CN`/`zh-SG`/`zh` sem região → simplificado (`LocaleResolver` extraído no lado JetBrains para virar testável). **Pendência:** as traduções foram geradas por IA e aguardam revisão de falante nativo — glossário de terminologia em [docs/i18n/glossary-zh.md](i18n/glossary-zh.md). 🔍
 - **Superfícies cobertas:**
   - **Webview** — todos os textos visíveis no painel (labels, estados vazios, mensagens de erro, unidades de tempo, legenda de cache).
   - **Runtime da extensão** — notificações, mensagens de quick pick, títulos de sessão e demais strings do processo da extensão.
@@ -253,11 +254,15 @@ ecossistema está migrando de "um agente com todos" para **orquestração** (sub
 background, workflows, agent teams), e os dados disso **já estão no disco** no formato que o
 parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"**.
 
-> **Fila de brainstorming (prioridade, revisada em 2026-07-25):** 1º item 17 (agent teams —
-> gatilho atingido, schema em disco) · 2º item 5(a)+(c) (sessões vivas + nomes reais, agora
-> destravados por `~/.claude/sessions/*.json`) · 3º item 23 (estado certo de background tasks —
-> cluster mais quente da última varredura). Antes de qualquer um: decidir o posicionamento dos
-> itens 8 e 23. Itens 13, 14 e 15 saíram da fila — entregues nas 0.9.0, 0.10.0 e 0.10.0.
+> **Fila de brainstorming (prioridade, decidida em 2026-07-27):** 1º item **17** (agent teams —
+> gatilho atingido, schema em disco) · 2º item **22-ext** (perguntas pendentes **no painel**, não
+> só no toast — custo baixo, `detectAwaitingInput` já existe) · 3º item **5(a)+(c)** (sessões
+> vivas + nomes reais, destravados por `~/.claude/sessions/*.json`). O item **23** sai da fila
+> por ora — segue como o cluster mais quente das varreduras, mas depende de uma decisão de
+> posicionamento (junto com o item 8) que ainda não foi tomada. Itens 13, 14 e 15 saíram da
+> fila por entrega (0.9.0, 0.10.0, 0.10.0).
+>
+> Fila anterior (2026-07-25), para histórico: 1º 17 · 2º 5(a)+(c) · 3º 23.
 
 ### 13. Árvore de agentes ao vivo ("mission control") ✅ ENTREGUE (0.9.0)
 - **Origem:** descoberta de 2026-07-10 durante o debug do 0.8.2 — cada sub-agent agora tem um
@@ -327,7 +332,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   projeto atual só se for opt-in.
 - **Status:** ✅ entregue na 0.11.0 — spec: [docs/specs/2026-07-14-project-usage-dashboard-design.md](specs/2026-07-14-project-usage-dashboard-design.md) · plano: [docs/plans/2026-07-14-project-usage.md](plans/2026-07-14-project-usage.md). Bloco "Últimos 7 dias · este projeto" colapsável no painel (N sessões, tokens por modelo, cache agregado), agregação lazy com memo por arquivo, protocolo dedicado sem tocar o snapshot.
 
-### 17. Agent teams: dono por task 📐 gatilho atingido (2026-07-16)
+### 17. Agent teams: dono por task 📐 gatilho atingido (2026-07-16) · **1º da fila**
 - **Origem:** o schema `TaskCreate`/`TaskUpdate` que já suportamos é a fundação do modo teams
   (tasks com **owner**, agentes trocando mensagens via SendMessage).
 - **Ideia:** quando o campo de owner aparecer nos transcripts, exibi-lo por task (avatar/nome
@@ -467,7 +472,8 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   pede um painel lateral que **liste as perguntas em aberto** de uma conversa. Já detectamos a
   pendência (`detectAwaitingInput`) — falta só exibi-la no painel em vez de só notificar: uma
   faixa "aguardando sua resposta" com o texto da pergunta e clique levando à linha do
-  transcript (reusa `openTodoSource` do item 1). Custo baixo, tudo já parseado. 🔍 a avaliar.
+  transcript (reusa `openTodoSource` do item 1). Custo baixo, tudo já parseado.
+  📐 **2º da fila** (decidido 2026-07-27) — daqui em diante chamado de **item 22-ext**.
 
 ### 23. Background tasks (shells) no painel 🔍 a investigar / posicionamento
 - **Issues (varredura 2026-07-16):** [#75863](https://github.com/anthropics/claude-code/issues/75863)
@@ -681,7 +687,16 @@ antes de ranquear.
 da web, não lemos), painel do iOS Simulator, Remote Control, sidebar do app desktop (grupos,
 pins, filtros — outro produto), Workflow/effort por subagent (harness).
 
-Próxima varredura: filtrar `created:>2026-07-25`.
+**Ferramenta (atualizada junto com esta passada):** [docs/sweep_issues.py](sweep_issues.py)
+deixou de usar a API anônima e passou a chamar o `gh` CLI autenticado — 30 req/min em vez de
+10, o que derrubou o tempo de varredura. Ganhou também: modo incremental por argumento
+(`python sweep_issues.py 2026-07-25` vira `created:>2026-07-25`), o filtro `NOISE` que remove o
+cluster de billing do Fable 5 **antes** do ranqueamento por reações, o filtro `CORE` que
+classifica candidatos por título **e** corpo (600 chars), e a lista `KNOWN` estendida com tudo
+que as varreduras 07-16 e 07-25 já trataram. Sem esses dois filtros o sinal fica enterrado — é
+a razão de método descrita acima.
+
+Próxima varredura: `python docs/sweep_issues.py 2026-07-25`.
 
 Anotar novos achados abaixo:
 
