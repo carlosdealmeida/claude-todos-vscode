@@ -1,8 +1,8 @@
 # Site do projeto no GitHub Pages, com demo interativo do painel — design
 
-**Origem:** ideia de produto 2026-07-28. Objetivo declarado, em ordem: (1) deixar qualquer
-pessoa **explorar as funcionalidades do painel sem instalar nada**, (2) servir de vitrine para
-os três marketplaces, (3) hospedar a documentação já existente de forma navegável.
+**Origem:** ideia de produto 2026-07-28. Objetivo, em ordem: (1) deixar qualquer pessoa
+**explorar as funcionalidades do painel sem instalar nada**, (2) servir de vitrine para os três
+marketplaces. Hospedar documentação navegável foi considerado e cortado — ver *Fora de escopo*.
 
 ## Problema
 
@@ -48,8 +48,6 @@ claude-todos-vscode/
       pages/
         index.astro               ← landing + demo (en, sem prefixo)
         [lang]/index.astro        ← pt · es · zh-cn · zh-tw
-        [lang]/docs.astro
-        changelog.astro           ← rota única, não localizada (ver decisão 9)
       components/
         Demo.svelte               ← island: monta App + controles do player
         FeatureList.svelte        ← bullets ↔ marcadores do roteiro
@@ -58,15 +56,22 @@ claude-todos-vscode/
         player.ts
         theme.css                 ← as 20 vars --vscode-*, dark + light
         scripts/*.json            ← fixtures gravadas
+      i18n/                       ← só as strings do próprio site (player, cenários)
     scripts/
-      importDocs.mjs              ← copia markdown da raiz + reescreve links
+      extractLanding.mjs          ← extrai blocos dos 5 READMEs por índice de seção
 ```
 
-**Stack: Astro.** Svelte roda como island (o painel real vira componente da página, sem
-iframe), markdown vira página nativamente e o i18n por rota é first-class — cobre as quatro
-fatias sem gambiarra. VitePress foi descartado porque é Vue por baixo e o demo, que é a
-prioridade nº 1, entraria por iframe ou mount manual. Vite + Svelte puro foi descartado porque
-roteamento, i18n de páginas, markdown e sidebar sairiam todos na mão.
+**Stack: Astro.** Svelte roda como island — o painel real vira componente da página, sem iframe
+— e o i18n por rota é first-class. VitePress foi descartado por ser Vue por baixo: o demo, que é
+a prioridade nº 1, entraria por iframe ou mount manual.
+
+**Nota de revisão (2026-07-28):** a escolha foi feita quando o escopo incluía documentação, e
+"markdown vira página nativamente" pesou muito nela. Com as docs fora, esse argumento caiu e
+Vite + Svelte puro — que o repositório **já usa**, mesma toolchain, mesma versão do Svelte —
+ficou competitivo: restaria implementar à mão apenas roteamento estático de 5 rotas e i18n de
+página. Astro segue como decisão por trazer isso pronto e por manter o caminho aberto caso as
+docs voltem ao escopo, mas o custo agora é uma dependência de build nova para um ganho
+menor do que o originalmente avaliado.
 
 ### 3. Terceiro caminho no `createBridge()` — a única mudança em produção
 
@@ -172,26 +177,32 @@ do editor. `theme.css` as declara nas duas variantes. Quatorze delas já estão 
 `.claude/skills/preview-webview/preview.html` (dark) e são o ponto de partida; o toggle
 claro/escuro do site sai como subproduto.
 
-### 9. O markdown do repositório é fonte única; o site apenas renderiza
+### 9. O texto da landing é extraído dos READMEs por índice de seção
 
-Nenhum conteúdo textual novo é criado. `importDocs.mjs` copia os arquivos da raiz para dentro
-do site em tempo de build e **reescreve os links relativos**:
+A landing existe em cinco idiomas, e traduzir textos de marketing à mão criaria **um sexto
+conjunto de conteúdo para sincronizar** a cada mudança de posicionamento — precisamente o custo
+que o princípio de fonte única existe para evitar.
 
-| Link no markdown | Vira |
+Os cinco READMEs são **estruturalmente idênticos**: 11 seções `##`, na mesma ordem, com o mesmo
+conteúdo semântico — só os títulos mudam de idioma (`## O que você vê` / `## What you get` /
+`## 你能获得什么`). `extractLanding.mjs` explora isso e extrai os blocos **por índice, não por
+título**:
+
+| Bloco da landing | Origem |
 |---|---|
-| `README.md`, `README.en.md`, `README.es.md`, `README.zh-cn.md`, `README.zh-tw.md` (28 ocorrências) | rota do site: `/pt/`, `/`, `/es/`, `/zh-cn/`, `/zh-tw/` |
-| `screenshots/*` (10) | asset copiado para `public/` |
-| `LICENSE` (10), `CONTRIBUTING*.md` (5), `docs/**` (2) | URL absoluta em `github.com/carlosdealmeida/claude-todos-vscode/blob/master/…` |
+| tagline | primeiro parágrafo em negrito após os badges |
+| lista de features | seção de índice **0** |
+| tabela de instalação | seção de índice **2** |
+| nota de privacidade | seção de índice **5** |
 
-Cada README vira **uma página por idioma**, com sidebar gerada dos próprios cabeçalhos `##`.
-Não há fragmentação em múltiplas páginas: exigiria anotar o markdown com marcadores de quebra,
-e o README deixaria de ser fonte única limpa.
+Reescrita de links, restrita ao que é extraído: `screenshots/*` vira asset em `public/`;
+qualquer link relativo remanescente vira URL absoluta em
+`github.com/carlosdealmeida/claude-todos-vscode/blob/master/…`. Os links dos três marketplaces
+já são absolutos e passam intactos.
 
-`CONTRIBUTING` e `SECURITY` apenas linkam para o GitHub — são documentos de contribuidor, não de
-usuário.
-
-`CHANGELOG.md` (187 linhas, formato Keep a Changelog) vira `/changelog`, **em inglês nos cinco
-locales**: ele não é traduzido no repositório, e traduzi-lo criaria conteúdo novo para manter.
+O único conteúdo verdadeiramente próprio do site são as strings de UI do demo — controles do
+player, nomes dos cenários, rótulos de navegação. Ficam num catálogo pequeno em `site/src/i18n/`,
+**separado** do catálogo do produto: strings de marketing não pertencem a `src/i18n/`.
 
 ### 10. Cinco idiomas, com o demo incluído
 
@@ -213,6 +224,14 @@ subpath. As fixtures são versionadas no repositório — a build do site **não
 
 ## Fora de escopo
 
+- **Documentação navegável.** Pedida na conversa inicial e **cortada a pedido** (2026-07-28).
+  Renderizar os cinco READMEs como páginas com sidebar era a fatia menos valiosa e a mais
+  frágil — a reescrita de links relativos (28 links entre READMEs, 10 para `LICENSE`, 10 para
+  `screenshots/`, 5 para `CONTRIBUTING*`) é um viveiro de bugs, e o conteúdo já está a um clique
+  no GitHub. O rodapé linka cada README diretamente.
+- **Changelog renderizado.** Cai junto: existia apenas porque a máquina de importar markdown já
+  estaria construída para as docs. Isolado, exigiria montá-la inteira para servir 187 linhas que
+  ninguém procura num site. Reabrir depois é barato.
 - **Roadmap público.** Pedido na conversa inicial e **cortado deliberadamente**:
   [`docs/ROADMAP.md`](../ROADMAP.md) é documento interno de estratégia, não de comunicação.
   Contém decisões sobre onde comentar e onde não comentar em issues da Anthropic (a linha 44
@@ -226,7 +245,7 @@ subpath. As fixtures são versionadas no repositório — a build do site **não
 - **Rodar os parsers no browser.** Exigiria abstrair o I/O de seis serviços que hoje importam
   `fs` direto, mexendo no coração testado da extensão. A decisão 4 entrega o mesmo realismo
   gerando as fixtures com o parser real, offline.
-- Busca nas docs (uma página por idioma — `Ctrl+F` basta), domínio próprio, blog.
+- Domínio próprio e blog.
 
 ## Riscos aceitos
 
@@ -237,14 +256,19 @@ subpath. As fixtures são versionadas no repositório — a build do site **não
    **120 frames por roteiro**, com a gravação amostrando o `.jsonl` em intervalos uniformes
    quando o transcript excede isso. A 1 frame/s, cobre os ~2 min de roteiro previstos.
 3. **`base` path** `/claude-todos-vscode/` quebra links absolutos escritos à mão.
-4. **Reescrita de links** é a parte frágil da fatia 3; coberta por teste sobre as regras da
-   tabela da decisão 9.
+4. **Dessincronização estrutural dos READMEs** — a extração da decisão 9 depende de os cinco
+   manterem 11 seções na mesma ordem. Alguém adicionando uma seção em um só quebraria a landing
+   daquele idioma, silenciosamente. Mitigado por teste (ver abaixo).
 
 ## Proteção contra apodrecimento
 
-Teste no `vitest` validando cada fixture contra os tipos de `src/types.ts`. Se o schema do
-snapshot mudar, **o CI quebra — não o site em produção**. É o que impede a fixture de virar a
-nova versão do GIF de junho.
+Dois testes no `vitest`, ambos rodando no CI que já existe:
+
+1. **Fixtures contra os tipos** de `src/types.ts`. Se o schema do snapshot mudar, o CI quebra —
+   não o site em produção. É o que impede a fixture de virar a nova versão do GIF de junho.
+2. **Paridade estrutural dos READMEs**: os cinco têm a mesma contagem e ordem de seções `##`.
+   Falha na hora em que alguém dessincroniza, e não semanas depois numa landing torta em
+   chinês tradicional.
 
 ## Fatias de implementação
 
@@ -252,8 +276,7 @@ nova versão do GIF de junho.
 |---|---|---|
 | 1 | Infra: esqueleto Astro, build, `pages.yml`, deploy funcionando | — |
 | 2 | Demo: `createBridge` de 3 caminhos, `theme.css`, `demo:record`, player, navegação por feature | 1 |
-| 3 | Docs: `importDocs.mjs`, reescrita de links, 5 idiomas, sidebar | 1 |
-| 4 | Changelog renderizado | 3 |
+| 3 | Landing em 5 idiomas: `extractLanding.mjs`, catálogo do site, seletor de idioma ligado ao demo | 1 |
 
 ## Oportunidade adjacente (não faz parte deste spec)
 
