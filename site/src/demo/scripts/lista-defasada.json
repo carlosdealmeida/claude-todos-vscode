@@ -1,0 +1,128 @@
+{
+  "id": "lista-defasada",
+  "recordedAt": 1785000000000,
+  "durationMs": 3000,
+  "markers": [
+    { "feature": "agent-tree", "atMs": 0 },
+    { "feature": "task-timing", "atMs": 1000 },
+    { "feature": "dashboard", "atMs": 2000 },
+    { "feature": "i18n", "atMs": 2500 }
+  ],
+  "frames": [
+    {
+      "atMs": 0,
+      "snapshot": {
+        "sessionId": "demo-stale",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Orquestrando a migração do i18n",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "demo-stale",
+            "agentId": "demo-stale",
+            "name": "Main agent",
+            "isMain": true,
+            "status": "running",
+            "updatedAt": 1785000000000,
+            "todosUpdatedAt": 1784998800000,
+            "todos": [
+              { "content": "Extrair as strings da webview", "status": "completed", "activeForm": "Extraindo as strings da webview", "startedAt": 1784997000000, "completedAt": 1784998200000 },
+              { "content": "Traduzir os catálogos", "status": "in_progress", "activeForm": "Traduzindo os catálogos", "startedAt": 1784998800000 },
+              { "content": "Revisar a terminologia", "status": "pending", "activeForm": "Revisando a terminologia" }
+            ]
+          },
+          {
+            "sessionId": "demo-stale",
+            "agentId": "agent-explore-1",
+            "name": "explorador-a",
+            "isMain": false,
+            "status": "running",
+            "agentType": "Explore",
+            "depth": 1,
+            "updatedAt": 1785000000000,
+            "todos": [
+              { "content": "Listar os arquivos em src/webview/", "status": "completed", "activeForm": "Listando os arquivos em src/webview/", "startedAt": 1784999700000, "completedAt": 1784999820000 },
+              { "content": "Contar os componentes .svelte", "status": "in_progress", "activeForm": "Contando os componentes .svelte", "startedAt": 1784999820000 }
+            ]
+          }
+        ],
+        "usage": {
+          "byModel": [
+            { "model": "claude-opus-4-8", "input": 28000, "output": 9100, "cache": 410000 },
+            { "model": "claude-sonnet-4-5", "input": 9000, "output": 3200, "cache": 96000 }
+          ],
+          "byAgent": [
+            { "agentId": "demo-stale", "name": "Main agent", "isMain": true, "models": [{ "model": "claude-opus-4-8", "input": 28000, "output": 9100, "cache": 410000 }], "currentModel": "claude-opus-4-8" },
+            { "agentId": "agent-explore-1", "name": "explorador-a", "isMain": false, "models": [{ "model": "claude-sonnet-4-5", "input": 9000, "output": 3200, "cache": 96000 }], "currentModel": "claude-sonnet-4-5" }
+          ],
+          "context": { "tokens": 74000, "limit": 200000 },
+          "cache": { "input": 37000, "read": 460000, "creation": 46000 }
+        }
+      }
+    },
+    {
+      "atMs": 2000,
+      "snapshot": {
+        "sessionId": "demo-stale",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Orquestrando a migração do i18n",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "demo-stale",
+            "agentId": "demo-stale",
+            "name": "Main agent",
+            "isMain": true,
+            "status": "running",
+            "updatedAt": 1785000002000,
+            "todosUpdatedAt": 1784998800000,
+            "todos": [
+              { "content": "Extrair as strings da webview", "status": "completed", "activeForm": "Extraindo as strings da webview", "startedAt": 1784997000000, "completedAt": 1784998200000 },
+              { "content": "Traduzir os catálogos", "status": "in_progress", "activeForm": "Traduzindo os catálogos", "startedAt": 1784998800000 },
+              { "content": "Revisar a terminologia", "status": "pending", "activeForm": "Revisando a terminologia" }
+            ]
+          },
+          {
+            "sessionId": "demo-stale",
+            "agentId": "agent-explore-1",
+            "name": "explorador-a",
+            "isMain": false,
+            "status": "completed",
+            "agentType": "Explore",
+            "depth": 1,
+            "updatedAt": 1785000002000,
+            "todos": [
+              { "content": "Listar os arquivos em src/webview/", "status": "completed", "activeForm": "Listando os arquivos em src/webview/", "startedAt": 1784999700000, "completedAt": 1784999820000 },
+              { "content": "Contar os componentes .svelte", "status": "completed", "activeForm": "Contando os componentes .svelte", "startedAt": 1784999820000, "completedAt": 1785000001000 }
+            ]
+          }
+        ],
+        "usage": {
+          "byModel": [
+            { "model": "claude-opus-4-8", "input": 29000, "output": 9400, "cache": 418000 },
+            { "model": "claude-sonnet-4-5", "input": 11000, "output": 4100, "cache": 108000 }
+          ],
+          "byAgent": [
+            { "agentId": "demo-stale", "name": "Main agent", "isMain": true, "models": [{ "model": "claude-opus-4-8", "input": 29000, "output": 9400, "cache": 418000 }], "currentModel": "claude-opus-4-8" },
+            { "agentId": "agent-explore-1", "name": "explorador-a", "isMain": false, "models": [{ "model": "claude-sonnet-4-5", "input": 11000, "output": 4100, "cache": 108000 }], "currentModel": "claude-sonnet-4-5" }
+          ],
+          "context": { "tokens": 79000, "limit": 200000 },
+          "cache": { "input": 40000, "read": 480000, "creation": 46000 }
+        }
+      }
+    }
+  ],
+  "projectUsage": {
+    "sessions": 9,
+    "byModel": [
+      { "model": "claude-opus-4-8", "input": 210000, "output": 68000, "cache": 5400000 },
+      { "model": "claude-sonnet-4-5", "input": 88000, "output": 31000, "cache": 1900000 }
+    ],
+    "byAgentType": [
+      { "agentType": "main", "input": 180000, "output": 54000, "cache": 4100000 },
+      { "agentType": "Explore", "input": 74000, "output": 26000, "cache": 2100000 },
+      { "agentType": "general-purpose", "input": 44000, "output": 19000, "cache": 1100000 }
+    ],
+    "cache": { "input": 298000, "read": 6600000, "creation": 700000 }
+  }
+}

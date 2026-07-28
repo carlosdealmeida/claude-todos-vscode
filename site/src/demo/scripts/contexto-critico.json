@@ -1,0 +1,86 @@
+{
+  "id": "contexto-critico",
+  "recordedAt": 1785000000000,
+  "durationMs": 4000,
+  "markers": [
+    { "feature": "tokens-cache", "atMs": 0 },
+    { "feature": "notifications", "atMs": 2000 }
+  ],
+  "frames": [
+    {
+      "atMs": 0,
+      "snapshot": {
+        "sessionId": "demo-ctx",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Refatorando o parser de transcripts",
+        "pinned": false,
+        "agents": [
+          {
+            "sessionId": "demo-ctx",
+            "agentId": "demo-ctx",
+            "name": "Main agent",
+            "isMain": true,
+            "status": "running",
+            "updatedAt": 1785000000000,
+            "todos": [
+              { "content": "Mapear os consumidores do parser", "status": "completed", "activeForm": "Mapeando os consumidores do parser", "startedAt": 1784999400000, "completedAt": 1784999760000 },
+              { "content": "Unificar as duas passagens de leitura", "status": "in_progress", "activeForm": "Unificando as duas passagens de leitura", "startedAt": 1784999760000 }
+            ]
+          }
+        ],
+        "usage": {
+          "byModel": [{ "model": "claude-opus-4-8", "input": 41000, "output": 12800, "cache": 1290000 }],
+          "byAgent": [{ "agentId": "demo-ctx", "name": "Main agent", "isMain": true, "models": [{ "model": "claude-opus-4-8", "input": 41000, "output": 12800, "cache": 1290000 }], "currentModel": "claude-opus-4-8" }],
+          "context": { "tokens": 184000, "limit": 200000 },
+          "cache": { "input": 41000, "read": 1160000, "creation": 130000 }
+        }
+      }
+    },
+    {
+      "atMs": 2000,
+      "snapshot": {
+        "sessionId": "demo-ctx",
+        "cwd": "/home/dev/claude-todos-vscode",
+        "title": "Refatorando o parser de transcripts",
+        "pinned": false,
+        "awaitingInput": "question",
+        "pendingQuestions": [
+          { "kind": "question", "header": "Encoding legado", "text": "Qual encoding usar para as strings legadas: UTF-8 ou Latin-1?", "line": 42 }
+        ],
+        "agents": [
+          {
+            "sessionId": "demo-ctx",
+            "agentId": "demo-ctx",
+            "name": "Main agent",
+            "isMain": true,
+            "status": "running",
+            "updatedAt": 1785000002000,
+            "todos": [
+              { "content": "Mapear os consumidores do parser", "status": "completed", "activeForm": "Mapeando os consumidores do parser", "startedAt": 1784999400000, "completedAt": 1784999760000 },
+              { "content": "Unificar as duas passagens de leitura", "status": "in_progress", "activeForm": "Unificando as duas passagens de leitura", "startedAt": 1784999760000 }
+            ]
+          }
+        ],
+        "usage": {
+          "byModel": [{ "model": "claude-opus-4-8", "input": 43000, "output": 13400, "cache": 1310000 }],
+          "byAgent": [{ "agentId": "demo-ctx", "name": "Main agent", "isMain": true, "models": [{ "model": "claude-opus-4-8", "input": 43000, "output": 13400, "cache": 1310000 }], "currentModel": "claude-opus-4-8" }],
+          "context": { "tokens": 191000, "limit": 200000 },
+          "cache": { "input": 43000, "read": 1180000, "creation": 130000 }
+        }
+      }
+    }
+  ],
+  "projectUsage": {
+    "sessions": 9,
+    "byModel": [
+      { "model": "claude-opus-4-8", "input": 210000, "output": 68000, "cache": 5400000 },
+      { "model": "claude-sonnet-4-5", "input": 88000, "output": 31000, "cache": 1900000 }
+    ],
+    "byAgentType": [
+      { "agentType": "main", "input": 180000, "output": 54000, "cache": 4100000 },
+      { "agentType": "Explore", "input": 74000, "output": 26000, "cache": 2100000 },
+      { "agentType": "general-purpose", "input": 44000, "output": 19000, "cache": 1100000 }
+    ],
+    "cache": { "input": 298000, "read": 6600000, "creation": 700000 }
+  }
+}

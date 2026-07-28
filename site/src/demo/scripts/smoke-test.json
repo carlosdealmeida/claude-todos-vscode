@@ -7052,8 +7052,16 @@
     }
   ],
   "projectUsage": {
-    "sessions": 0,
-    "byModel": [],
-    "byAgentType": []
+    "sessions": 9,
+    "byModel": [
+      { "model": "claude-opus-4-8", "input": 210000, "output": 68000, "cache": 5400000 },
+      { "model": "claude-sonnet-4-5", "input": 88000, "output": 31000, "cache": 1900000 }
+    ],
+    "byAgentType": [
+      { "agentType": "main", "input": 180000, "output": 54000, "cache": 4100000 },
+      { "agentType": "Explore", "input": 74000, "output": 26000, "cache": 2100000 },
+      { "agentType": "general-purpose", "input": 44000, "output": 19000, "cache": 1100000 }
+    ],
+    "cache": { "input": 298000, "read": 6600000, "creation": 700000 }
   }
 }
