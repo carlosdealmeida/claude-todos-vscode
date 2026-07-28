@@ -5,9 +5,9 @@
 
   let { questions, sessionId }: { questions: PendingQuestion[]; sessionId: string } = $props();
 
-  // O agentId das perguntas pendentes e sempre o do agente main, que reusa o
-  // proprio sessionId (ver snapshotService/todosParser) — a linha aponta pro
-  // transcript principal.
+  // O agentId das perguntas pendentes é sempre o do agente main, que reusa o
+  // próprio sessionId (ver snapshotService/todosParser) — a linha aponta para
+  // o transcript principal.
   let summary = $derived(pendingSummary(questions, todosStore.t));
 </script>
 
