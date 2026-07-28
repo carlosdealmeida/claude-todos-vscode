@@ -51,4 +51,14 @@ describe('extractLanding', () => {
     const out = extractLanding('## A\n\n- see [contributing](CONTRIBUTING.md)\n');
     expect(out.features[0]).toContain('https://github.com/carlosdealmeida/claude-todos-vscode/blob/master/CONTRIBUTING.md');
   });
+
+  it('leaves in-page anchor links untouched', () => {
+    const out = extractLanding('## A\n\n- see [jump](#privacy)\n');
+    expect(out.features[0]).toBe('see [jump](#privacy)');
+  });
+
+  it('leaves already-absolute links untouched', () => {
+    const out = extractLanding('## A\n\n- see [site](https://example.com/page)\n');
+    expect(out.features[0]).toBe('see [site](https://example.com/page)');
+  });
 });
