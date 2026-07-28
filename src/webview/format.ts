@@ -1,4 +1,5 @@
 import type { Todo, AgentUsage, PendingQuestion } from '../types';
+import type { MessageKey } from '../i18n/messages';
 
 // Compact token formatting for the panel: 7361 -> "7,4k", 24580 -> "24,6k".
 // Uses a comma decimal separator to match pt-BR.
@@ -198,7 +199,7 @@ export function listStaleness(
 // componente) porque o repo testa módulos puros do webview, não componentes.
 export function pendingSummary(
   questions: PendingQuestion[],
-  t: (key: string, params?: Record<string, string | number>) => string,
+  t: (key: MessageKey, params?: Record<string, string | number>) => string,
 ): { title: string; items: Array<{ chip?: string; text: string; line: number }> } | null {
   if (questions.length === 0) return null;
   const onlyPlan = questions.length === 1 && questions[0].kind === 'plan';
