@@ -30,11 +30,51 @@ function splitSections(markdown) {
   return sections.map((s) => ({ title: s.title, body: s.body.join('\n').trim() }));
 }
 
+// O texto extraido e injetado no site com set:html (features, install, privacy),
+// entao precisa virar HTML de verdade, nao markdown cru. `toHtml` faz isso em
+// 3 passos, NESSA ORDEM:
+//
+//   1. escapeHtml    — escapa &, < e > no texto de origem. Tem que vir primeiro:
+//                       escapar depois destruiria as tags <strong>/<code>/<a>
+//                       que os passos seguintes geram.
+//   2. inlineMarkdown — converte **negrito** -> <strong> e `codigo` -> <code>.
+//                       Cobre so esses dois construtos, que sao os unicos que
+//                       ocorrem nas bullets/install/privacy dos cinco READMEs
+//                       (conferido manualmente) — nao e um parser markdown
+//                       generico (sem italico, listas aninhadas, etc.).
+//   3. rewriteLinks   — converte [texto](url) em <a href="url">texto</a>, com a
+//                       mesma logica de reescrita de URL de sempre (relativo ->
+//                       GitHub, `screenshots/` -> public/, absoluto/ancora
+//                       inalterado).
+//
+// O risco de injecao real hoje e nulo (o markdown vem dos READMEs versionados
+// neste repo, nao de input do usuario), mas escapar primeiro e defesa em
+// profundidade barata dado que o destino e set:html.
+function escapeHtml(text) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function inlineMarkdown(text) {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
 // Links relativos so fazem sentido dentro do repo; no site apontam para o GitHub.
 // `screenshots/` e a excecao: os arquivos sao copiados para public/.
 function rewriteLinks(text) {
-  return text.replace(/\]\((?!https?:|#)([^)]+)\)/g, (_match, target) =>
-    target.startsWith('screenshots/') ? `](/claude-todos-vscode/${target})` : `](${REPO}/${target})`);
+  return text.replace(/\[([^\]]*)\]\(([^)]+)\)/g, (_match, label, target) => {
+    const href = /^https?:|^#/.test(target)
+      ? target
+      : target.startsWith('screenshots/')
+        ? `/claude-todos-vscode/${target}`
+        : `${REPO}/${target}`;
+    return `<a href="${href}">${label}</a>`;
+  });
+}
+
+function toHtml(text) {
+  return rewriteLinks(inlineMarkdown(escapeHtml(text)));
 }
 
 export function extractLanding(markdown) {
@@ -44,7 +84,9 @@ export function extractLanding(markdown) {
   // O seletor de idioma tambem comeca com "**" quando o idioma da propria pagina
   // vem primeiro na lista (caso do pt-br, onde Portugues e o primeiro item) —
   // por isso descartamos linhas que contem links markdown "](", que so aparecem
-  // no seletor, nunca na tagline.
+  // no seletor, nunca na tagline. A tagline nao passa por toHtml: e injetada via
+  // interpolacao normal do Astro ({content.tagline}), que ja escapa sozinha, e
+  // nunca teve negrito/codigo/link alem do "**" que ja removemos aqui.
   const head = markdown.split('\n## ')[0];
   const taglineLine = head.split('\n').find((l) => l.startsWith('**') && !l.includes('](')) ?? '';
   const tagline = taglineLine.replace(/\*\*/g, '').trim();
@@ -53,13 +95,18 @@ export function extractLanding(markdown) {
   const features = featureBody
     .split('\n')
     .filter((l) => l.startsWith('- '))
-    .map((l) => rewriteLinks(l.slice(2).trim()));
+    .map((l) => toHtml(l.slice(2).trim()));
 
+  // install/privacy sao tabelas markdown inteiras. toHtml converte so o inline
+  // (negrito, codigo, links) — a estrutura da tabela (`| celula | celula |`,
+  // separador `|---|---|`) fica como texto cru, nao vira <table>. Nenhuma pagina
+  // consome essas duas strings hoje; quem for exibi-las precisa converter a
+  // tabela para HTML antes (ou trocar para um parser markdown de verdade).
   return {
     tagline,
     features,
-    install: rewriteLinks(sections[SECTION.INSTALL]?.body ?? ''),
-    privacy: rewriteLinks(sections[SECTION.PRIVACY]?.body ?? ''),
+    install: toHtml(sections[SECTION.INSTALL]?.body ?? ''),
+    privacy: toHtml(sections[SECTION.PRIVACY]?.body ?? ''),
   };
 }
 

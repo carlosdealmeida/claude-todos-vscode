@@ -47,18 +47,67 @@ describe('extractLanding', () => {
     expect(out.features).toEqual(['First feature', 'Second feature']);
   });
 
-  it('rewrites relative links to absolute GitHub URLs', () => {
+  it('rewrites relative links to absolute GitHub URLs, as a real <a> tag', () => {
     const out = extractLanding('## A\n\n- see [contributing](CONTRIBUTING.md)\n');
-    expect(out.features[0]).toContain('https://github.com/carlosdealmeida/claude-todos-vscode/blob/master/CONTRIBUTING.md');
+    expect(out.features[0]).toBe(
+      'see <a href="https://github.com/carlosdealmeida/claude-todos-vscode/blob/master/CONTRIBUTING.md">contributing</a>',
+    );
   });
 
-  it('leaves in-page anchor links untouched', () => {
+  it('leaves the URL of in-page anchor links untouched, but still emits a real <a> tag', () => {
     const out = extractLanding('## A\n\n- see [jump](#privacy)\n');
-    expect(out.features[0]).toBe('see [jump](#privacy)');
+    expect(out.features[0]).toBe('see <a href="#privacy">jump</a>');
   });
 
-  it('leaves already-absolute links untouched', () => {
+  it('leaves the URL of already-absolute links untouched, but still emits a real <a> tag', () => {
     const out = extractLanding('## A\n\n- see [site](https://example.com/page)\n');
-    expect(out.features[0]).toBe('see [site](https://example.com/page)');
+    expect(out.features[0]).toBe('see <a href="https://example.com/page">site</a>');
+  });
+
+  it('converts **bold** to <strong>', () => {
+    const out = extractLanding('## A\n\n- **Live agent tree** does the thing\n');
+    expect(out.features[0]).toBe('<strong>Live agent tree</strong> does the thing');
+    expect(out.features[0]).not.toContain('**');
+  });
+
+  it('converts `code` to <code>', () => {
+    const out = extractLanding('## A\n\n- transitions `pending -> completed` live\n');
+    expect(out.features[0]).toBe('transitions <code>pending -&gt; completed</code> live');
+    expect(out.features[0]).not.toContain('`');
+  });
+
+  it('escapes raw HTML-sensitive characters (&, <, >) before generating tags', () => {
+    const out = extractLanding('## A\n\n- Tom & Jerry: a <script> is not code, `< b >` is\n');
+    // `&`, `<` e `>` fora de marcacao markdown saem escapados...
+    expect(out.features[0]).toContain('Tom &amp; Jerry: a &lt;script&gt; is not code');
+    // ...e o `<`/`>` DENTRO do code span tambem, senao a tag <code> gerada
+    // no passo seguinte seria indistinguivel de HTML injetado pelo texto de
+    // origem.
+    expect(out.features[0]).toContain('<code>&lt; b &gt;</code>');
+    // A saida nao deve conter um "<script>" HTML de verdade.
+    expect(out.features[0]).not.toContain('<script>');
+  });
+
+  it('applies the same bold/code/link conversions to install and privacy', () => {
+    // splitSections indexa por posicao (SECTION.INSTALL = 2, SECTION.PRIVACY = 5),
+    // entao precisamos de 6 secoes na mesma ordem que um README real usa, com
+    // conteudo relevante so nos indices 2 e 5.
+    const md = [
+      '## Features',
+      '## How it works',
+      '## Install',
+      'See the **Marketplace** or run `npm install`, or read [the docs](README.md).',
+      '## Commands',
+      '## Settings',
+      '## Privacy',
+      'This is **fully local**, using `~/.claude`.',
+    ].join('\n');
+    const out = extractLanding(md);
+    expect(out.install).toContain('<strong>Marketplace</strong>');
+    expect(out.install).toContain('<code>npm install</code>');
+    expect(out.install).toContain(
+      '<a href="https://github.com/carlosdealmeida/claude-todos-vscode/blob/master/README.md">the docs</a>',
+    );
+    expect(out.privacy).toBe('This is <strong>fully local</strong>, using <code>~/.claude</code>.');
   });
 });
