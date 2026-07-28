@@ -76,6 +76,35 @@ describe('TodosParser', () => {
     };
   }
 
+  // Background teammates nomeados emitem `agent_id` (snake_case) em vez de
+  // `agentId` (camelCase) — formato real observado em transcripts com teams.
+  function agentResultSnakeCase(toolUseId: string, agentId: string): object {
+    return {
+      type: 'user',
+      toolUseResult: { agent_id: agentId, status: 'completed' },
+      message: {
+        content: [
+          { type: 'tool_result', tool_use_id: toolUseId, content: 'done' },
+        ],
+      },
+    };
+  }
+
+  // tool_result com toolUseResult presente mas sem agentId/agent_id — deve
+  // continuar contando como rejeitado (não é o mesmo caso de ausência total
+  // de toolUseResult, coberto por agentRejection).
+  function agentResultNoId(toolUseId: string): object {
+    return {
+      type: 'user',
+      toolUseResult: { status: 'completed' },
+      message: {
+        content: [
+          { type: 'tool_result', tool_use_id: toolUseId, content: 'done' },
+        ],
+      },
+    };
+  }
+
   function agentRejection(toolUseId: string): object {
     return {
       type: 'user',
@@ -392,6 +421,49 @@ describe('TodosParser', () => {
     writeSubAgent('s1', CWD, 'ddd444', 'Orphan prompt', null);
     const agents = parser.listForSession('s1', CWD);
     expect(agents).toHaveLength(1);
+  });
+
+  describe('dispatch matching: agentId (camelCase) vs agent_id (snake_case)', () => {
+    it('accepts toolUseResult.agentId (camelCase) as a completed dispatch', () => {
+      const prompt = 'Explorar A';
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('tool-1', 'explorador-a', prompt),
+        agentResult('tool-1', 'explorador-a@session-3bc32f6e'),
+      ]);
+      writeSubAgent('s1', CWD, 'explorador-a@session-3bc32f6e', prompt, null);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents).toHaveLength(2);
+      expect(agents[1].agentId).toBe('explorador-a@session-3bc32f6e');
+      expect(agents[1].status).toBe('completed');
+    });
+
+    it('accepts toolUseResult.agent_id (snake_case) as a completed dispatch', () => {
+      const prompt = 'Explorar A';
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('tool-1', 'explorador-a', prompt),
+        agentResultSnakeCase('tool-1', 'explorador-a@session-3bc32f6e'),
+      ]);
+      writeSubAgent('s1', CWD, 'explorador-a@session-3bc32f6e', prompt, null);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents).toHaveLength(2);
+      expect(agents[1].agentId).toBe('explorador-a@session-3bc32f6e');
+      expect(agents[1].status).toBe('completed');
+    });
+
+    it('still rejects a dispatch with neither agentId nor agent_id', () => {
+      const prompt = 'Explorar A';
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('tool-1', 'explorador-a', prompt),
+        agentResultNoId('tool-1'),
+      ]);
+      writeSubAgent('s1', CWD, 'explorador-a@session-3bc32f6e', prompt, null);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents).toHaveLength(1);
+      expect(agents[0].isMain).toBe(true);
+    });
   });
 
   it('sorts sub-agents: running, then with todos, then empty; recent first', () => {

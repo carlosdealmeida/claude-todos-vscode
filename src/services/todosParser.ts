@@ -55,6 +55,7 @@ interface TranscriptEntry {
   timestamp?: string;
   toolUseResult?: {
     agentId?: unknown;
+    agent_id?: unknown;
     task?: { id?: unknown };
   };
   message?: {
@@ -405,8 +406,13 @@ export class TodosParser {
   // pelo usuário ou morto por erro. `enriched` indica se o transcript recebe
   // o enriquecimento `toolUseResult` (só o transcript principal recebe —
   // transcripts de sub-agents nunca têm esse campo, verificado nos dados
-  // reais): quando `enriched`, um tool_result sem `toolUseResult.agentId` é
-  // rejeição; quando não, presença de tool_result já basta para 'completed'.
+  // reais): quando `enriched`, um tool_result sem `toolUseResult.agentId`
+  // NEM `toolUseResult.agent_id` é rejeição; quando não, presença de
+  // tool_result já basta para 'completed'. O CLI emite `agentId` para
+  // sub-agents comuns e `agent_id` (snake_case) para teammates nomeados
+  // despachados em background — os dois formatos coexistem num mesmo
+  // ecossistema (visto em transcripts reais), e aceitar só um faz o
+  // sub-agent correspondente sumir da árvore silenciosamente.
   private collectDispatches(lines: string[], enriched: boolean): Map<string, Dispatch> {
     const out = new Map<string, Dispatch>();
     for (const line of lines) {
@@ -433,7 +439,11 @@ export class TodosParser {
           const d = out.get(block.tool_use_id);
           if (d) {
             if (enriched) {
-              d.result = typeof entry.toolUseResult?.agentId === 'string' ? 'completed' : 'rejected';
+              const result = entry.toolUseResult;
+              const dispatchedId = typeof result?.agentId === 'string' ? result.agentId
+                : typeof result?.agent_id === 'string' ? result.agent_id
+                : null;
+              d.result = dispatchedId !== null ? 'completed' : 'rejected';
             } else {
               // Transcripts de sub-agents não recebem o enriquecimento
               // toolUseResult; um tool_result presente = o aninhado terminou.
