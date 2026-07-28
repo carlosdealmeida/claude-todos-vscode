@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- **Pending questions in the panel.** A strip at the top of the panel now lists what the session is waiting on — an `AskUserQuestion` call or an `ExitPlanMode` plan awaiting approval — each entry a short chip plus the question text; clicking one jumps to that line in the transcript. Unlike the 0.15.0 toast, it shows up regardless of window focus and isn't gated by the `claudeTodos.notifications` setting, and it disappears on its own once the pending call resolves. A single `AskUserQuestion` call can carry up to 4 questions; all of them show. Roadmap item 22-ext, from issue [#79078](https://github.com/anthropics/claude-code/issues/79078) (a sidebar listing the open questions of a conversation). Spec: `docs/specs/2026-07-27-perguntas-pendentes-no-painel-design.md`.
+- **Live sessions and real names in the picker.** The session picker now marks with "● live" the sessions whose Claude Code process is still running, and Auto mode prefers a live session over the most-recently-written one — fixing the case where closing the session that just ran left the panel stuck on a dead one. Session names set via `/session-name` are now shown, cached separately so they survive the session ending; a name the CLI derived on its own (`nameSource: 'derived'`) is ignored in favor of the semantic title the panel already used. Liveness comes from `~/.claude/sessions/{pid}.json`, one file per running process. Roadmap item 5, slices (a) and (c), from issues [#28147](https://github.com/anthropics/claude-code/issues/28147) (activity indicators in the picker) and [#23275](https://github.com/anthropics/claude-code/issues/23275) (naming sessions). Spec: `docs/specs/2026-07-27-sessoes-vivas-e-nomes-design.md`.
+
 ## [0.17.0] - 2026-07-27
 
 ### Added

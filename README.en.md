@@ -20,6 +20,8 @@
 - **Tokens, context and cache** — table by model or by agent, context-window indicator with a traffic light, and cache efficiency (reused × created × new).
 - **"Last 7 days" dashboard** — aggregated project usage, by model and by agent type.
 - **Notifications** — a toast when the session goes idle waiting for you, or when all tasks complete (only while the window is unfocused).
+- **Pending questions** — a strip at the top of the panel lists what the session is waiting on (an agent question or a plan awaiting approval), regardless of window focus; clicking jumps to that line in the transcript.
+- **Live sessions and real names** — the session picker marks with "● live" the sessions whose Claude Code process is still running, and Auto mode prioritizes a live session; names set via `/session-name` show up instead of the derived title.
 - **UI in 5 languages** — en, pt-br, es, zh-cn and zh-tw; follows VS Code's display language, with a setting override.
 
 ## How it works

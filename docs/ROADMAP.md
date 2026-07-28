@@ -101,10 +101,12 @@ de tokens do 0.3.0).
   sessão morta pinada segue mostrando `in_progress` até o usuário voltar para "Auto". É UX
   intencional; endurecer só se houver pedido.
 
-### 5. Seletor de sessão melhor: vivas/ativas, atalhos, sem corte — (d)+(b) ✅ (0.13.0)
+### 5. Seletor de sessão melhor: vivas/ativas, atalhos, sem corte — (a)+(b)+(c)+(d) ✅ ENTREGUE (0.13.0 · (a)+(c) sem versão ainda, 2026-07-27)
 - **Issues:** [#28147](https://github.com/anthropics/claude-code/issues/28147) (`NOT_PLANNED`, `keybindings`) indicadores de atividade + atalhos · [#24435](https://github.com/anthropics/claude-code/issues/24435) (`NOT_PLANNED`) picker corta em ~8 sessões mais recentes · [#23275](https://github.com/anthropics/claude-code/issues/23275) (`NOT_PLANNED`) nomear sessões
-- **Status:** fatias (d)+(b) ✅ entregues na 0.13.0. Restam (a) sessões vivas e (c) apelidos —
-  📐 a planejar (investigado 2026-07-15), **2º da fila** (decidido 2026-07-27).
+- **Status:** fatias (d)+(b) ✅ entregues na 0.13.0; (a) sessões vivas e (c) nomes reais ✅
+  entregues em 2026-07-27 (ainda sem número de release). Spec:
+  [docs/specs/2026-07-27-sessoes-vivas-e-nomes-design.md](specs/2026-07-27-sessoes-vivas-e-nomes-design.md)
+  · plano: [docs/plans/2026-07-27-perguntas-pendentes-e-sessoes-vivas.md](plans/2026-07-27-perguntas-pendentes-e-sessoes-vivas.md).
 - **Achados:**
   - **(b) não cortar lista:** ✅ já não cortamos — `listSessions()` não tem limite
     ([snapshotService.ts:19-33](../src/services/snapshotService.ts#L19)); o corte em ~8 é do
@@ -121,6 +123,19 @@ de tokens do 0.3.0).
     `globalState['sessionAliases']`, comando de rename e precedência alias > título derivado.
 - **Ordem sugerida:** (d)+(b) como quick win → (a) → (c). (a) e (c) mexem nos mesmos pontos
   (`SessionSummary`/`resolveTitle`/`showSessionPicker`), fazer em sequência.
+- **✅ (a)+(c) entregues (2026-07-27):** `liveSessions.ts` lê
+  `~/.claude/sessions/{pid}.json` e devolve um `Map<sessionId, LiveSession>`; `SessionSummary`
+  ganhou `alive?: boolean`, refletido no picker do VS Code (`● {picker.alive}`) **e** no picker
+  nativo do JetBrains (mesmo campo, mesma regra — paridade sem mudança de protocolo, o
+  `SessionSummary` inteiro já viajava para lá). O modo Auto passa a preferir pin > sessão viva
+  de maior mtime > sessão de maior mtime — corrige o caso de fechar a sessão que acabou de
+  rodar e o painel continuar preso na morta. Nomes: `name` do registro só quando
+  `nameSource === 'user'` (o valor `'derived'` do CLI é pior que o título semântico que já
+  usávamos e é ignorado), com cache próprio em `sessionNames.ts` para o nome sobreviver ao fim
+  do processo. **Limitação aceita conscientemente:** um PID reciclado pelo SO pode marcar uma
+  sessão morta como viva; o `procStart` do registro resolveria isso, mas exigiria comparação
+  fora do Node (`wmic`/PowerShell) a cada refresh — caro demais para um efeito puramente
+  cosmético (o pin resolve na hora). Documentado no spec, não mitigado.
 - **🔓 Destravado (varredura 2026-07-16):** o CLI agora mantém um **registro vivo de sessões**
   em `~/.claude/sessions/{pid}.json` — `{pid, sessionId, cwd, startedAt, version, kind,
   entrypoint, name, nameSource}` (verificado em disco, v2.1.211). Isso resolve (a) **e** (c) de
@@ -263,18 +278,20 @@ ecossistema está migrando de "um agente com todos" para **orquestração** (sub
 background, workflows, agent teams), e os dados disso **já estão no disco** no formato que o
 parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"**.
 
-> **Fila de brainstorming (prioridade, decidida em 2026-07-27):** 1º item **22-ext** (perguntas
-> pendentes **no painel**, não só no toast — custo baixo, `detectAwaitingInput` já existe) ·
-> 2º item **5(a)+(c)** (sessões vivas + nomes reais, destravados por
-> `~/.claude/sessions/*.json`, verificado em disco). O item **17** (agent teams) **saiu da
-> fila**: a inspeção de 2026-07-27 revogou o gatilho — não existe owner por task em dado
-> nenhum, e 61 dos 63 configs de team são auto-criados sem membros reais (detalhes no item). O
-> item **23** também fica fora por ora — segue como o cluster mais quente das varreduras, mas
-> depende de uma decisão de posicionamento (junto com o item 8) que ainda não foi tomada. Itens
+> **Fila de brainstorming — zerada em 2026-07-27.** Os dois itens que estavam no topo da fila
+> decidida em 2026-07-27 foram entregues no mesmo dia: 1º **22-ext** (perguntas pendentes **no
+> painel**, não só no toast) e 2º **5(a)+(c)** (sessões vivas + nomes reais, destravados por
+> `~/.claude/sessions/*.json`) — ver os itens para spec/plano. O item **17** (agent teams)
+> segue **arquivado**: a inspeção de 2026-07-27 revogou o gatilho — não existe owner por task em
+> dado nenhum, e 61 dos 63 configs de team são auto-criados sem membros reais (detalhes no
+> item); não reabrir sem um dos dois sinais listados lá. O que **sobra** fora da fila é só o
+> item **23** (background tasks no painel), que continua bloqueado por depender de uma decisão
+> de posicionamento (junto com o item 8) ainda não tomada — não reabrir sem essa decisão. Itens
 > 13, 14 e 15 saíram da fila por entrega (0.9.0, 0.10.0, 0.10.0).
 >
 > Filas anteriores, para histórico: 2026-07-25 → 1º 17 · 2º 5(a)+(c) · 3º 23. Manhã de
 > 2026-07-27 → 1º 17 · 2º 22-ext · 3º 5(a)+(c) (17 caiu na verificação de disco da mesma tarde).
+> Tarde de 2026-07-27 → 1º 22-ext · 2º 5(a)+(c) (ambos entregues no mesmo dia; fila zerada).
 
 ### 13. Árvore de agentes ao vivo ("mission control") ✅ ENTREGUE (0.9.0)
 - **Origem:** descoberta de 2026-07-10 durante o debug do 0.8.2 — cada sub-agent agora tem um
@@ -517,6 +534,17 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   faixa "aguardando sua resposta" com o texto da pergunta e clique levando à linha do
   transcript (reusa `openTodoSource` do item 1). Custo baixo, tudo já parseado.
   📐 **1º da fila** (decidido 2026-07-27) — daqui em diante chamado de **item 22-ext**.
+- **✅ item 22-ext entregue (2026-07-27, ainda sem número de release):** faixa
+  `PendingQuestions.svelte` no topo do painel (após o header, antes da `UsageTable`), no VS
+  Code **e** no JetBrains (webview e `SessionCore` compartilhados desde a 0.16.0, sem código
+  específico de host). Novo campo `pendingQuestions?: PendingQuestion[]` no snapshot —
+  `AwaitingInput` (usado pelo toast) fica intocado, as duas features leem a mesma detecção sem
+  se acoplar. Um `AskUserQuestion` pode trazer até 4 perguntas na mesma chamada; todas
+  aparecem. Aparece **independente do foco da janela** e do setting `claudeTodos.notifications`
+  — diferente do toast, que segue gated pelos dois. Some sozinha quando o `tool_result` chega
+  (resposta, rejeição ou timeout). Spec:
+  [docs/specs/2026-07-27-perguntas-pendentes-no-painel-design.md](specs/2026-07-27-perguntas-pendentes-no-painel-design.md)
+  · plano: [docs/plans/2026-07-27-perguntas-pendentes-e-sessoes-vivas.md](plans/2026-07-27-perguntas-pendentes-e-sessoes-vivas.md).
 
 ### 23. Background tasks (shells) no painel 🔍 a investigar / posicionamento
 - **Issues (varredura 2026-07-16):** [#75863](https://github.com/anthropics/claude-code/issues/75863)

@@ -29,7 +29,7 @@ interface RouterHost {
     fun warn(messageKey: String)
 }
 
-data class SessionItem(val sessionId: String, val title: String, val updatedAt: Long)
+data class SessionItem(val sessionId: String, val title: String, val updatedAt: Long, val alive: Boolean = false)
 
 /**
  * Traduz entre os vocabulários da webview (ExtensionMessage/WebviewMessage) e do
@@ -86,6 +86,7 @@ class MessageRouter(
                                 o["sessionId"]!!.jsonPrimitive.content,
                                 o["title"]!!.jsonPrimitive.content,
                                 o["updatedAt"]!!.jsonPrimitive.long,
+                                o["alive"]?.jsonPrimitive?.booleanOrNull ?: false,
                             )
                         }.getOrNull()
                     } ?: emptyList()
