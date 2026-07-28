@@ -909,7 +909,7 @@ Expected: PASS nos 7 testes.
 
 ```bash
 git add src/services/sessionNames.ts tests/services/sessionNames.test.ts
-git commit -m "feat(core): cache de nomes de sessao ao lado do bridge"
+git commit -m "feat(sessions): cache de nomes de sessao ao lado do bridge"
 ```
 
 ---
