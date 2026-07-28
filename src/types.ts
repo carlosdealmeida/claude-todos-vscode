@@ -99,6 +99,7 @@ export interface SessionSummary {
   cwd: string;
   title: string;
   updatedAt: number;
+  alive?: boolean;  // presente só quando há registro vivo em ~/.claude/sessions
 }
 
 export interface BridgeRecord {
