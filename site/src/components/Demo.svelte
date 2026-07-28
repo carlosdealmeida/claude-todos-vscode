@@ -28,6 +28,11 @@
 
   // Sentido inverso da navegacao: enquanto o roteiro toca, destaca a feature
   // cujo marcador foi o ultimo atingido.
+  //
+  // Premissa: script.markers precisa estar ordenado por atMs crescente — o
+  // loop para no primeiro marcador que ultrapassa tMs, entao um marcador fora
+  // de ordem seria ignorado (ou venceria cedo demais) sem erro visivel. Vale
+  // para as fixtures atuais; nao ha ordenacao defensiva aqui de proposito.
   function markerAt(tMs: number): FeatureId | null {
     let found: FeatureId | null = null;
     for (const marker of script.markers) {

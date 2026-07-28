@@ -18,12 +18,16 @@
   const strings = $derived(SITE_STRINGS[locale]);
 </script>
 
-<nav>
-  <h2>{strings.featuresTitle}</h2>
+<nav aria-labelledby="feature-list-title">
+  <h2 id="feature-list-title">{strings.featuresTitle}</h2>
   <ul>
     {#each available as feature (feature)}
       <li>
-        <button class:active={active === feature} onclick={() => onSelect(feature)}>
+        <button
+          class:active={active === feature}
+          aria-current={active === feature ? 'true' : undefined}
+          onclick={() => onSelect(feature)}
+        >
           {strings.features[feature]}
         </button>
       </li>
