@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { TodosParser, detectAwaitingInput } from '../../src/services/todosParser';
+import { TodosParser, detectAwaitingInput, detectPendingQuestions } from '../../src/services/todosParser';
 import { encodeCwdToProjectDir } from '../../src/services/projectDir';
 
 describe('TodosParser', () => {
@@ -967,5 +967,80 @@ describe('listSessionDetail', () => {
 
   it('awaitingInput is null for a missing transcript', () => {
     expect(new TodosParser(claudeDir).listSessionDetail(SID, CWD).awaitingInput).toBeNull();
+  });
+});
+
+describe('detectPendingQuestions', () => {
+  const ask = (id: string, questions: object[]) => JSON.stringify({
+    isSidechain: false,
+    message: { content: [{ type: 'tool_use', name: 'AskUserQuestion', id, input: { questions } }] },
+  });
+  const plan = (id: string, text: string) => JSON.stringify({
+    isSidechain: false,
+    message: { content: [{ type: 'tool_use', name: 'ExitPlanMode', id, input: { plan: text } }] },
+  });
+  const result = (id: string) => JSON.stringify({
+    isSidechain: false,
+    message: { content: [{ type: 'tool_result', tool_use_id: id, content: 'ok' }] },
+  });
+
+  it('devolve uma entrada por pergunta, com header, texto e linha', () => {
+    const lines = ['{}', ask('t1', [
+      { question: 'Qual abordagem?', header: 'Abordagem' },
+      { question: 'Qual layout?', header: 'Layout' },
+    ])];
+    expect(detectPendingQuestions(lines, true)).toEqual([
+      { kind: 'question', header: 'Abordagem', text: 'Qual abordagem?', line: 1 },
+      { kind: 'question', header: 'Layout', text: 'Qual layout?', line: 1 },
+    ]);
+  });
+
+  it('suporta chamada com quatro perguntas', () => {
+    const qs = [1, 2, 3, 4].map(n => ({ question: `P${n}`, header: `H${n}` }));
+    expect(detectPendingQuestions([ask('t1', qs)], true)).toHaveLength(4);
+  });
+
+  it('ExitPlanMode vira item unico com a primeira linha nao vazia do plano', () => {
+    expect(detectPendingQuestions([plan('t1', '\n\n## Plano\nDetalhe')], true)).toEqual([
+      { kind: 'plan', text: '## Plano', line: 0 },
+    ]);
+  });
+
+  it('pendencia resolvida por tool_result some da lista', () => {
+    expect(detectPendingQuestions([ask('t1', [{ question: 'Q', header: 'H' }]), result('t1')], true)).toEqual([]);
+  });
+
+  it('com duas chamadas, so a ainda aberta e considerada', () => {
+    const lines = [
+      ask('t1', [{ question: 'Antiga', header: 'A' }]),
+      result('t1'),
+      ask('t2', [{ question: 'Atual', header: 'B' }]),
+    ];
+    expect(detectPendingQuestions(lines, true)).toEqual([
+      { kind: 'question', header: 'B', text: 'Atual', line: 2 },
+    ]);
+  });
+
+  it('ignora sidechain quando skipSidechain', () => {
+    const side = JSON.stringify({
+      isSidechain: true,
+      message: { content: [{ type: 'tool_use', name: 'AskUserQuestion', id: 't1', input: { questions: [{ question: 'Q' }] } }] },
+    });
+    expect(detectPendingQuestions([side], true)).toEqual([]);
+  });
+
+  it('omite header quando ausente e ignora entradas malformadas', () => {
+    const lines = [ask('t1', [{ question: 'Sem header' }, { header: 'so header' }, 'lixo'])];
+    expect(detectPendingQuestions(lines, true)).toEqual([
+      { kind: 'question', text: 'Sem header', line: 0 },
+    ]);
+  });
+
+  it('transcript sem essas ferramentas devolve lista vazia', () => {
+    expect(detectPendingQuestions(['{"message":{"content":[]}}', 'nao-json'], true)).toEqual([]);
+  });
+
+  it('plano so com linhas vazias e ignorado', () => {
+    expect(detectPendingQuestions([plan('t1', '\n  \n')], true)).toEqual([]);
   });
 });

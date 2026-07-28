@@ -4,6 +4,13 @@ export type TodoStatus = 'pending' | 'in_progress' | 'completed';
 
 export type AwaitingInput = 'question' | 'plan';
 
+export interface PendingQuestion {
+  kind: 'question' | 'plan';
+  header?: string;  // chip curto; ausente em planos e quando o tool_use nao traz
+  text: string;     // texto da pergunta, ou 1a linha nao vazia do plano
+  line: number;     // linha (0-based) do tool_use no transcript do main
+}
+
 export interface Todo {
   content: string;
   status: TodoStatus;
@@ -84,6 +91,7 @@ export interface SessionSnapshot {
   agents: AgentTodos[];
   usage?: SessionUsage;
   awaitingInput?: AwaitingInput;
+  pendingQuestions?: PendingQuestion[];
 }
 
 export interface SessionSummary {

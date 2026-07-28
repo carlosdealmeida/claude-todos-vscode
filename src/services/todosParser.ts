@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { AgentTodos, AwaitingInput, Todo, TodoStatus } from '../types';
+import type { AgentTodos, AwaitingInput, PendingQuestion, Todo, TodoStatus } from '../types';
 import { transcriptPath as resolveTranscriptPath, subAgentsDir as resolveSubAgentsDir } from './transcriptPaths';
 import { readSubAgentMeta, type SubAgentMeta } from './subAgentMeta';
 
@@ -44,6 +44,8 @@ interface ContentBlock {
     activeForm?: unknown;
     taskId?: unknown;
     status?: unknown;
+    questions?: unknown;
+    plan?: unknown;
   };
 }
 
@@ -98,6 +100,62 @@ export function detectAwaitingInput(lines: string[], skipSidechain: boolean): Aw
   let last: AwaitingInput | null = null;
   for (const v of pending.values()) last = v;
   return last;
+}
+
+// Conteudo da espera pendente, para exibir no painel (a irma detectAwaitingInput
+// devolve so o tipo, que e o que o notifier compara por identidade).
+// So o ULTIMO tool_use ainda aberto vira lista: medido em 320 chamadas reais,
+// nunca ha duas chamadas concorrentes abertas — o que ha sao chamadas com ate
+// 4 perguntas (15% dos casos).
+export function detectPendingQuestions(lines: string[], skipSidechain: boolean): PendingQuestion[] {
+  const pending = new Map<string, PendingQuestion[]>();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line) continue;
+    let entry: TranscriptEntry;
+    try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
+    if (skipSidechain && entry.isSidechain) continue;
+    const content = entry.message?.content;
+    if (!Array.isArray(content)) continue;
+    for (const block of content) {
+      if (block?.type === 'tool_use' && typeof block.id === 'string') {
+        const items = pendingItemsFor(block, i);
+        if (items.length > 0) pending.set(block.id, items);
+      } else if (block?.type === 'tool_result' && typeof block.tool_use_id === 'string') {
+        pending.delete(block.tool_use_id);
+      }
+    }
+  }
+  let last: PendingQuestion[] = [];
+  for (const v of pending.values()) last = v;
+  return last;
+}
+
+function pendingItemsFor(block: ContentBlock, line: number): PendingQuestion[] {
+  if (block.name === 'AskUserQuestion') {
+    const raw = block.input?.questions;
+    if (!Array.isArray(raw)) return [];
+    const out: PendingQuestion[] = [];
+    for (const q of raw) {
+      if (!q || typeof q !== 'object') continue;
+      const { question, header } = q as { question?: unknown; header?: unknown };
+      if (typeof question !== 'string' || question === '') continue;
+      out.push({
+        kind: 'question',
+        ...(typeof header === 'string' && header !== '' ? { header } : {}),
+        text: question,
+        line,
+      });
+    }
+    return out;
+  }
+  if (block.name === 'ExitPlanMode') {
+    const plan = block.input?.plan;
+    if (typeof plan !== 'string') return [];
+    const first = plan.split('\n').map(l => l.trim()).find(l => l !== '');
+    return first ? [{ kind: 'plan', text: first, line }] : [];
+  }
+  return [];
 }
 
 export class TodosParser {
