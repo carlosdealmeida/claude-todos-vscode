@@ -94,6 +94,19 @@ describe('createDispatcher', () => {
     expect(events.filter(e => e.ev === 'snapshot')).toHaveLength(1);
   });
 
+  // Item 7 do review final: pruneBridge() so era chamado em extension.ts
+  // (VS Code) — quem usa so o sidecar JetBrains nunca podava o bridge nem o
+  // cache de nomes. O init do dispatcher e o unico ponto comum aos dois
+  // hosts, entao a poda precisa acontecer aqui, com a mesma janela de 30 dias.
+  it('init poda o bridge/cache de nomes (paridade com o activate() do VS Code)', () => {
+    const pruneBridge = vi.fn();
+    const core = fakeCore({ pruneBridge });
+    const dispatch = createDispatcher(() => {}, () => core);
+    dispatch({ cmd: 'init', claudeDir: '/c', cwds: ['/p'] });
+    expect(pruneBridge).toHaveBeenCalledTimes(1);
+    expect(pruneBridge).toHaveBeenCalledWith(30 * 24 * 3600 * 1000);
+  });
+
   it('re-init disposes the previous core and its watch subscription', () => {
     const coreDispose = vi.fn();
     const subDispose = vi.fn();
