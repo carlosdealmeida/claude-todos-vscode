@@ -112,13 +112,15 @@ export function activate(context: vscode.ExtensionContext): void {
     const multiRoot = workspaceCwds().length > 1;
     const items: SessionPickItem[] = [
       { label: t('picker.auto'), description: t('picker.autoDesc'), sessionId: null },
-      ...sessions.map(s => ({
-        label: s.title,
-        description: multiRoot
-          ? `${s.sessionId.slice(0, 8)} · ${path.basename(s.cwd)} · ${relativeTime(s.updatedAt, t)}`
-          : `${s.sessionId.slice(0, 8)} · ${relativeTime(s.updatedAt, t)}`,
-        sessionId: s.sessionId,
-      })),
+      ...sessions.map(s => {
+        const parts = [
+          ...(s.alive ? [`● ${t('picker.alive')}`] : []),
+          s.sessionId.slice(0, 8),
+          ...(multiRoot ? [path.basename(s.cwd)] : []),
+          relativeTime(s.updatedAt, t),
+        ];
+        return { label: s.title, description: parts.join(' · '), sessionId: s.sessionId };
+      }),
     ];
     const picked = await vscode.window.showQuickPick(items, {
       placeHolder: t('picker.placeholder'),
