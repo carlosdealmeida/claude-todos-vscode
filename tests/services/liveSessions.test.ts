@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { readLiveSessions } from '../../src/services/liveSessions';
+import { readLiveSessions, isPidAlive } from '../../src/services/liveSessions';
 
 describe('readLiveSessions', () => {
   let claudeDir: string;
@@ -45,6 +45,15 @@ describe('readLiveSessions', () => {
     expect(readLiveSessions(claudeDir, () => true).size).toBe(0);
   });
 
+  it('ignora registro com pid 0 ou negativo (nao identifica um processo individual)', () => {
+    // pid: 0 mira o grupo do processo atual (process.kill(0, 0) responde true)
+    // e negativos miram um grupo no POSIX — sem essa guarda um registro assim
+    // ficaria "vivo" pra sempre, mesmo com isAlive sempre true no teste.
+    write(0, { pid: 0, sessionId: 's-zero', cwd: '/p' });
+    write(-1, { pid: -1, sessionId: 's-neg', cwd: '/p' });
+    expect(readLiveSessions(claudeDir, () => true).size).toBe(0);
+  });
+
   it('nao apaga arquivos de sessoes mortas', () => {
     write(107, { pid: 107, sessionId: 's7', cwd: '/p' });
     readLiveSessions(claudeDir, () => false);
@@ -62,5 +71,31 @@ describe('isPidAlive (default)', () => {
     );
     expect(readLiveSessions(claudeDir).has('self')).toBe(true);
     fs.rmSync(claudeDir, { recursive: true, force: true });
+  });
+
+  it('trata EPERM como vivo (processo existe, so nao e sinalizavel por este usuario)', () => {
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
+      const err = new Error('EPERM simulado') as NodeJS.ErrnoException;
+      err.code = 'EPERM';
+      throw err;
+    });
+    try {
+      expect(isPidAlive(99999)).toBe(true);
+    } finally {
+      killSpy.mockRestore();
+    }
+  });
+
+  it('trata ESRCH como morto (processo nao existe)', () => {
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
+      const err = new Error('ESRCH simulado') as NodeJS.ErrnoException;
+      err.code = 'ESRCH';
+      throw err;
+    });
+    try {
+      expect(isPidAlive(99999)).toBe(false);
+    } finally {
+      killSpy.mockRestore();
+    }
   });
 });

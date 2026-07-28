@@ -22,6 +22,14 @@ export function isPidAlive(pid: number): boolean {
   }
 }
 
+// pid <= 0 nao identifica um processo individual: 0 mira o grupo do processo
+// atual (process.kill(0, 0) responde true) e negativos miram um grupo no
+// POSIX — um registro com pid: 0 viraria "vivo" pra sempre. `alive` dirige a
+// escolha automatica de sessao, entao essa validacao nao e cosmetica.
+function isValidPid(pid: unknown): pid is number {
+  return typeof pid === 'number' && Number.isInteger(pid) && pid > 0;
+}
+
 export function readLiveSessions(
   claudeDir: string,
   isAlive: (pid: number) => boolean = isPidAlive,
@@ -43,7 +51,7 @@ export function readLiveSessions(
       continue;
     }
     const { pid, sessionId, cwd, name, nameSource } = parsed;
-    if (typeof pid !== 'number' || typeof sessionId !== 'string' || typeof cwd !== 'string') continue;
+    if (!isValidPid(pid) || typeof sessionId !== 'string' || typeof cwd !== 'string') continue;
     if (!isAlive(pid)) continue;
     out.set(sessionId, {
       pid,
