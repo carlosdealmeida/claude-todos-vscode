@@ -1122,6 +1122,91 @@ git commit -m "feat(site): gravador de fixtures usando o parser de producao"
 
 ---
 
+### Task 8b: Aceitar `agent_id` (snake_case) no matching de dispatches
+
+**Task acrescentada em 2026-07-28**, durante a execução da Task 8, por decisão do dono do projeto.
+Não estava no spec do site: é um **bug de produção** descoberto ao gravar a fixture.
+
+**O bug:** [`todosParser.ts:436`](../../src/services/todosParser.ts#L436) decide se um dispatch de
+sub-agent vale com `typeof entry.toolUseResult?.agentId === 'string' ? 'completed' : 'rejected'` —
+apenas camelCase. Background teammates nomeados emitem `toolUseResult.agent_id` (snake_case), com
+valor no formato `"explorador-a@session-3bc32f6e"`. Esses dispatches viram `'rejected'`, e
+`listSubAgents()` os descarta antes mesmo de tentar o matching por prompt: **os sub-agents somem da
+árvore de agentes**, silenciosamente.
+
+**Evidência:** o transcript `~/.claude/projects/c---work-MyProjects-claude-todos-vscode/3bc32f6e-9c47-44ef-9c7a-f442f1bfa4da.jsonl`
+tem 3 `agent_id` (os três exploradores do smoke-test) contra 1 `agentId`; uma sessão com sub-agents
+comuns tem 18 `agentId` e nenhum `agent_id`. **Os dois formatos coexistem** — a correção precisa
+aceitar ambos, nunca trocar um pelo outro.
+
+**Files:**
+- Modify: `src/services/todosParser.ts` (o ponto de decisão em ~L436)
+- Test: `tests/services/todosParser.test.ts`
+
+**Interfaces:**
+- Consumes: nada novo.
+- Produces: nenhuma mudança de assinatura pública. `AgentTodos.agentId` passa a ser preenchido também
+  a partir de `agent_id`.
+
+- [ ] **Step 1: Escrever os testes que falham**
+
+Acrescentar a `tests/services/todosParser.test.ts`, seguindo o estilo de fixture já usado no arquivo
+(transcript sintético escrito em disco temporário). Três casos:
+
+```ts
+it('accepts toolUseResult.agentId (camelCase) as a completed dispatch', () => {
+  // um dispatch com agentId camelCase continua resolvendo o sub-agent
+});
+
+it('accepts toolUseResult.agent_id (snake_case) as a completed dispatch', () => {
+  // mesmo cenario, com agent_id — o sub-agent tem que aparecer igualmente
+});
+
+it('still rejects a dispatch with neither agentId nor agent_id', () => {
+  // ausencia dos dois continua marcando 'rejected'
+});
+```
+
+O segundo teste é o que falha hoje. Use `"explorador-a@session-3bc32f6e"` como valor, para casar com
+o formato real observado.
+
+- [ ] **Step 2: Rodar e confirmar que o segundo teste falha**
+
+Run: `npx vitest run tests/services/todosParser.test.ts`
+Expected: FAIL apenas no caso snake_case.
+
+- [ ] **Step 3: Implementar**
+
+Aceitar as duas grafias no ponto de decisão, sem privilegiar nenhuma:
+
+```ts
+// O CLI emite `agentId` para sub-agents comuns e `agent_id` para teammates
+// nomeados (background). Os dois formatos coexistem; aceitar so um faz o
+// sub-agent sumir da arvore.
+const result = entry.toolUseResult as { agentId?: unknown; agent_id?: unknown } | undefined;
+const dispatchedId = typeof result?.agentId === 'string' ? result.agentId
+  : typeof result?.agent_id === 'string' ? result.agent_id
+  : null;
+d.result = dispatchedId !== null ? 'completed' : 'rejected';
+```
+
+Se o `agentId` capturado for usado adiante para casar com o arquivo do sub-agent, propagar
+`dispatchedId` — não reler o campo camelCase mais abaixo.
+
+- [ ] **Step 4: Rodar os testes**
+
+Run: `npx vitest run tests/services/todosParser.test.ts` e depois `npm test`
+Expected: PASS, sem regressão nos testes existentes do parser (é o arquivo mais coberto do repo).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/services/todosParser.ts tests/services/todosParser.test.ts
+git commit -m "fix(parser): reconhece agent_id snake_case em dispatches de teammates"
+```
+
+---
+
 ### Task 9: Fixtures encenadas e o teste que impede apodrecimento
 
 **Files:**
