@@ -43,8 +43,7 @@ describe('README parity', () => {
     for (const file of READMES) {
       const section = getSection(file, 0);
       const bulletCount = section.split('\n').filter((l) => l.trim().startsWith('- ')).length;
-      expect(`${file}:bulletCount`).not.toBe(`${file}:0`);
-      expect(bulletCount).toBeGreaterThanOrEqual(6);
+      expect(bulletCount, `${file} section 0 should have at least 6 bullets`).toBeGreaterThanOrEqual(6);
     }
   });
 
@@ -55,18 +54,31 @@ describe('README parity', () => {
       const section = getSection(file, 2);
       const hasTable = section.includes('|');
       const hasMarketplace = section.includes('Marketplace');
-      expect(hasTable).toBe(true, `${file} section 2 should contain table (|)`);
-      expect(hasMarketplace).toBe(true, `${file} section 2 should contain Marketplace`);
+      expect(hasTable, `${file} section 2 should contain table (|)`).toBe(true);
+      expect(hasMarketplace, `${file} section 2 should contain Marketplace`).toBe(true);
+    }
+  });
+
+  // Índice 4: "Configurações" / "Settings" / ... — seção de configurações
+  // Deve conter referências a `claudeTodos.*` (chaves de configuração da extensão)
+  it('section index 4 (settings) has claudeTodos config references in all READMEs', () => {
+    for (const file of READMES) {
+      const section = getSection(file, 4);
+      const hasClaudeTodosConfig = section.includes('claudeTodos.');
+      expect(hasClaudeTodosConfig, `${file} section 4 should contain claudeTodos. configuration keys`).toBe(true);
     }
   });
 
   // Índice 5: "Privacidade e fluxo de dados" / "Privacy and data flow" / ...
-  // Deve conter tabela markdown (estrutura de dados tabulares)
-  it('section index 5 (privacy) has table structure in all READMEs', () => {
+  // Deve conter referências a `~/.claude` (caminhos de dados locais da extensão)
+  // Isso discrimina de índice 4 que fala de `claudeTodos.*`
+  it('section index 5 (privacy) has ~/.claude references and table structure in all READMEs', () => {
     for (const file of READMES) {
       const section = getSection(file, 5);
+      const hasClaudePath = section.includes('~/.claude');
       const hasTable = section.includes('|');
-      expect(hasTable).toBe(true, `${file} section 5 should contain table (|)`);
+      expect(hasClaudePath, `${file} section 5 should contain ~/.claude path references`).toBe(true);
+      expect(hasTable, `${file} section 5 should contain table (|)`).toBe(true);
     }
   });
 });
