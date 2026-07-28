@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createVscodeBridge, createJcefBridge } from '../../src/webview/bridge';
+import { createVscodeBridge, createJcefBridge, createBridge } from '../../src/webview/bridge';
 
 describe('createVscodeBridge', () => {
   it('post delegates to acquireVsCodeApi().postMessage', () => {
@@ -37,5 +37,21 @@ describe('createJcefBridge', () => {
     bridge.onMessage((msg) => seen.push(msg));
     captured!({ data: { type: 'locale', locale: 'pt-br' } });
     expect(seen).toEqual([{ type: 'locale', locale: 'pt-br' }]);
+  });
+});
+
+describe('createBridge', () => {
+  it('prefers window.__claudeTodosDemo when present', () => {
+    const demo = { post: vi.fn(), onMessage: vi.fn() };
+    const win = { __claudeTodosDemo: demo, __jcefPost: vi.fn(), addEventListener: vi.fn() };
+    expect(createBridge(win as any)).toBe(demo);
+  });
+
+  it('falls back to the JCEF bridge when there is no demo and no vscode api', () => {
+    const __jcefPost = vi.fn();
+    const win = { __jcefPost, addEventListener: vi.fn() };
+    const bridge = createBridge(win as any);
+    bridge.post({ type: 'ready' });
+    expect(__jcefPost).toHaveBeenCalledWith(JSON.stringify({ type: 'ready' }));
   });
 });
