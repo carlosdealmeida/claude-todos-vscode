@@ -71,7 +71,8 @@ Vite + Svelte puro — que o repositório **já usa**, mesma toolchain, mesma ve
 ficou competitivo: restaria implementar à mão apenas roteamento estático de 5 rotas e i18n de
 página. Astro segue como decisão por trazer isso pronto e por manter o caminho aberto caso as
 docs voltem ao escopo, mas o custo agora é uma dependência de build nova para um ganho
-menor do que o originalmente avaliado.
+menor do que o originalmente avaliado. **Reconfirmado com o corte já na mesa (2026-07-28):
+segue Astro.**
 
 ### 3. Terceiro caminho no `createBridge()` — a única mudança em produção
 
