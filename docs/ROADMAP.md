@@ -119,10 +119,19 @@ de tokens do 0.3.0).
   - **(a) marcar sessões vivas:** esforço **médio** — `terminalPid` já é gravado no bridge mas
     nada checa liveness (`process.kill(pid, 0)` + cruzar `startedAt` contra PID reuse); expor
     `alive` no `SessionSummary` e usar ícone/`detail` no picker.
-  - **(c) nomear sessões:** esforço **médio/alto** — não existe storage de alias; exigiria
-    `globalState['sessionAliases']`, comando de rename e precedência alias > título derivado.
-- **Ordem sugerida:** (d)+(b) como quick win → (a) → (c). (a) e (c) mexem nos mesmos pontos
-  (`SessionSummary`/`resolveTitle`/`showSessionPicker`), fazer em sequência.
+  - **(c) nomear sessões:** esforço **médio/alto**, estimativa anterior ao CLI ganhar
+    `/session-name`. A ideia original previa `globalState['sessionAliases']`, comando de rename
+    próprio na extensão e precedência alias > título derivado. Esse desenho foi **descartado**
+    na fase de design (ver spec, seção "Fora de escopo"): `globalState` é API do VS Code e o
+    sidecar do JetBrains não a alcança, e duplicar rename ao lado de `/session-name` só criaria
+    a pergunta de qual nome vence. O que foi entregue é mais simples — cache read-only em
+    `SessionNames` (arquivo, não `globalState`) só pra o nome escolhido via `/session-name`
+    sobreviver ao fim do processo; nenhum comando de rename na extensão.
+- **Ordem sugerida (planejamento pré-entrega, superado pelo que aconteceu):** a ideia original
+  era (d)+(b) como quick win → (a) → (c) em sequência, por mexerem nos mesmos pontos
+  (`SessionSummary`/`resolveTitle`/`showSessionPicker`). Na prática (d)+(b) saíram na 0.13.0 e
+  (a)+(c) foram implementados e entregues **juntos**, no mesmo plano, em 2026-07-27 — mexer nos
+  mesmos pontos acabou tornando fazer os dois de uma vez mais simples que sequenciar.
 - **✅ (a)+(c) entregues (2026-07-27):** `liveSessions.ts` lê
   `~/.claude/sessions/{pid}.json` e devolve um `Map<sessionId, LiveSession>`; `SessionSummary`
   ganhou `alive?: boolean`, refletido no picker do VS Code (`● {picker.alive}`) **e** no picker
@@ -142,8 +151,13 @@ de tokens do 0.3.0).
   uma vez: liveness real (arquivo por PID do próprio CLI, melhor que nosso `terminalPid`
   heurístico do bridge) e **nome de sessão real** (`name` + `nameSource: derived|user` — o CLI
   ganhou `/session-name`, [#2112](https://github.com/anthropics/claude-code/issues/2112)
-  `COMPLETED`). Investigar: ciclo de vida do arquivo (é removido no exit?), e se
-  `nameSource: "user"` aparece ao usar `/session-name`. Pode até substituir parte do bridge.
+  `COMPLETED`). **Perguntas respondidas na entrega (a)+(c):** `nameSource: "user"` de fato
+  aparece assim que o usuário roda `/session-name`, confirmado ao implementar a decisão 4 do
+  spec. O ciclo de vida do arquivo no exit acabou **irrelevante** pro design — `liveSessions.ts`
+  decide vivo/morto checando o PID (`process.kill(pid, 0)`), não a existência do arquivo, então
+  um órfão que sobreviva a um crash é simplesmente filtrado como morto, sem tratamento especial.
+  Não substituiu o bridge: o registro de sessões só contribui liveness e nome; `cwd`/candidatos
+  por workspace continuam vindo do bridge.
 - **Reforço (varredura 2026-07-25):** [#80099](https://github.com/anthropics/claude-code/issues/80099)
   é um **guarda-chuva** pedindo ciclo de vida de sessão no VS Code — *pin* + estado
   ativo/concluído + agrupamento (consolidando #63842, #66202, #64468); nós já temos o pin e o
