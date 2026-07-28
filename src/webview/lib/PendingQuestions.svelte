@@ -52,11 +52,17 @@
   .pending-item:hover .text { text-decoration: underline; }
   .chip {
     flex: none;
+    max-width: 45%;
     padding: 0 4px;
     border-radius: 3px;
     background: var(--vscode-badge-background);
     color: var(--vscode-badge-foreground);
     font-size: 0.9em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .text { min-width: 0; }
+  /* header do modelo pode trazer token sem espaco (URL, path) — sem isso o
+     texto estoura a largura da sidebar em vez de quebrar linha. */
+  .text { min-width: 0; overflow-wrap: anywhere; }
 </style>
