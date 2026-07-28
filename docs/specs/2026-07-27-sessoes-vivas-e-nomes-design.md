@@ -44,7 +44,7 @@ Três achados que mudaram o desenho:
 
 ## Decisões
 
-1. **`liveSessions.ts`: serviço novo, puro, no core.**
+1. **`src/services/liveSessions.ts`: serviço novo e puro.**
    - Lê `~/.claude/sessions/*.json` e devolve um `Map<sessionId, LiveSession>` com
      `{pid, sessionId, cwd, name?, nameSource?}` — só o que este design consome. O registro
      traz mais campos (`startedAt`, `version`, `kind`, `entrypoint`, `procStart`); carregá-los
@@ -54,7 +54,10 @@ Três achados que mudaram o desenho:
    - Arquivo malformado ou ilegível é ignorado item a item; nunca lança.
    - **Órfãos não são removidos.** O registro é espaço do CLI e nós somos read-only nele — a
      mesma regra que vale para transcripts.
-   - Fica no core (não em `services/` do VS Code) porque o JetBrains consome pelo sidecar.
+   - **Fica em `services/`**, ao lado de `bridgeFile.ts` e `todosParser.ts`: nenhum arquivo
+     desse diretório importa `vscode` (verificado), e é de lá que o `SessionCore` puxa tudo que
+     o sidecar do JetBrains consome. Pôr em `core/` inverteria a camada — `snapshotService.ts`,
+     que vive em `services/`, passaria a importar de `core/`.
 2. **`SessionSummary` ganha `alive?: boolean`;** o picker de cada host decide como mostrar. No
    VS Code, o `description` do QuickPick passa de `{id8} · {tempo}` para
    `● {picker.alive} · {id8} · {tempo}` quando viva, mantendo o formato atual quando não
@@ -74,7 +77,9 @@ Três achados que mudaram o desenho:
    `name` do registro (somente se `nameSource === 'user'`) → nome em cache → `aiTitle` do
    transcript → `Session · {id8}`.
 5. **Cache de nomes em arquivo, ao lado do bridge.**
-   - `~/.claude/.vscode-todos-bridge/session-names.json`, no mesmo diretório que o
+   - Classe `SessionNames` em `src/services/sessionNames.ts` (mesma camada do `BridgeFile`,
+     pelo mesmo motivo da decisão 1), gravando em
+     `~/.claude/.vscode-todos-bridge/session-names.json`, no mesmo diretório que o
      `sessions.json` do bridge ([sessionCore.ts:39](../../src/core/sessionCore.ts#L39)).
      Formato: `{ [sessionId]: { name, updatedAt } }`.
    - **Por que não `workspaceState`:** ele é API do VS Code, e o core é compartilhado com o

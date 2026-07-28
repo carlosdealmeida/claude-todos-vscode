@@ -132,5 +132,10 @@ formato verificado em disco:
 - Malformados (sem `questions`, `question` não-string, `plan` só com linhas vazias) → ignorados
   sem lançar.
 
-Webview: teste de que a faixa some quando `pendingQuestions` é vazio/ausente, e de que o chip
-é omitido quando `header` falta.
+Webview: o repo não tem infra de teste de componente Svelte —
+[tests/webview/](../../tests/webview/) cobre apenas módulos TS puros (`format.ts`, `tree.ts`,
+`bridge.ts`), e componentes são validados visualmente pela skill `preview-webview`. Seguindo
+esse padrão, a lógica de rotulagem sai do componente e vira `pendingSummary(questions, t)` em
+[format.ts](../../src/webview/format.ts), testável direto: escolhe entre `app.pendingPlanTitle`
+e `app.pendingQuestions` e resolve o chip de cada item. O `PendingQuestions.svelte` fica
+puramente declarativo e é conferido por screenshot.
