@@ -318,6 +318,12 @@ describe('pendingSummary', () => {
     ]);
   });
 
+  it('uma unica pergunta usa o titulo no singular, nao a forma contada', () => {
+    const out = pendingSummary([{ kind: 'question', header: 'A', text: 'P1', line: 1 }], t)!;
+    expect(out.title).toBe('app.pendingQuestionTitle');
+    expect(out.items).toEqual([{ chip: 'A', text: 'P1', line: 1 }]);
+  });
+
   it('plano unico usa titulo e chip proprios', () => {
     const out = pendingSummary([{ kind: 'plan', text: '## Plano', line: 7 }], t)!;
     expect(out.title).toBe('app.pendingPlanTitle');

@@ -203,8 +203,18 @@ export function pendingSummary(
 ): { title: string; items: Array<{ chip?: string; text: string; line: number }> } | null {
   if (questions.length === 0) return null;
   const onlyPlan = questions.length === 1 && questions[0].kind === 'plan';
+  // 85% das chamadas de AskUserQuestion trazem 1 so pergunta (medido em 320
+  // chamadas reais) — a forma contada ("1 perguntas em aberto") erra a
+  // concordancia no caso dominante. Singular dedicado so pra n===1, mesmo
+  // mecanismo de caso especial que ja existia pro plano solitario; sem motor
+  // de plural.
+  const title = onlyPlan
+    ? t('app.pendingPlanTitle')
+    : questions.length === 1
+      ? t('app.pendingQuestionTitle')
+      : t('app.pendingQuestions', { n: questions.length });
   return {
-    title: onlyPlan ? t('app.pendingPlanTitle') : t('app.pendingQuestions', { n: questions.length }),
+    title,
     items: questions.map(q => {
       const chip = q.kind === 'plan' ? t('app.pendingPlanChip') : q.header;
       return { ...(chip ? { chip } : {}), text: q.text, line: q.line };
