@@ -11,6 +11,7 @@ import { resolveLocale } from './localeResolver';
 import { pickWorkspaceCwds } from './services/workspaceFolders';
 import { SessionCore } from './core/sessionCore';
 import type { NotificationKind } from './services/sessionNotifier';
+import { sessionPickDescription } from './services/sessionPicker';
 
 const HOOK_EVENTS = DEFAULT_HOOK_EVENTS;
 // Retenção dos registros do bridge. Sessões saem do picker quando o transcript
@@ -112,15 +113,11 @@ export function activate(context: vscode.ExtensionContext): void {
     const multiRoot = workspaceCwds().length > 1;
     const items: SessionPickItem[] = [
       { label: t('picker.auto'), description: t('picker.autoDesc'), sessionId: null },
-      ...sessions.map(s => {
-        const parts = [
-          ...(s.alive ? [`● ${t('picker.alive')}`] : []),
-          s.sessionId.slice(0, 8),
-          ...(multiRoot ? [path.basename(s.cwd)] : []),
-          relativeTime(s.updatedAt, t),
-        ];
-        return { label: s.title, description: parts.join(' · '), sessionId: s.sessionId };
-      }),
+      ...sessions.map(s => ({
+        label: s.title,
+        description: sessionPickDescription(s, multiRoot, relativeTime(s.updatedAt, t), t),
+        sessionId: s.sessionId,
+      })),
     ];
     const picked = await vscode.window.showQuickPick(items, {
       placeHolder: t('picker.placeholder'),
