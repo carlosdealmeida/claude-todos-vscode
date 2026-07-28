@@ -110,4 +110,27 @@ describe('extractLanding', () => {
     );
     expect(out.privacy).toBe('This is <strong>fully local</strong>, using <code>~/.claude</code>.');
   });
+
+  it('escapes a double quote inside a link target so it cannot break out of the href attribute', () => {
+    const out = extractLanding('## A\n\n- see [x](http://example.com/" onmouseover="bad)\n');
+    expect(out.features[0]).toBe(
+      'see <a href="http://example.com/&quot; onmouseover=&quot;bad">x</a>',
+    );
+    // Nao pode sobrar uma aspa dupla crua dentro do valor do atributo href -
+    // isso quebraria para fora do atributo e deixaria um atributo novo
+    // (onmouseover=) ser anexado a tag <a>.
+    expect(out.features[0]).not.toContain('" onmouseover=');
+  });
+
+  it('keeps a code span with two ** occurrences fully inside <code>, without a nested <strong>', () => {
+    const out = extractLanding('## A\n\n- see `a ** b ** c` here\n');
+    expect(out.features[0]).toBe('see <code>a ** b ** c</code> here');
+    expect(out.features[0]).not.toContain('<strong>');
+  });
+
+  it('still converts a single ** inside a code span correctly (the glob pattern the real READMEs use)', () => {
+    const out = extractLanding('## A\n\n- exclude `dist/**/*.ts` from the build\n');
+    expect(out.features[0]).toBe('exclude <code>dist/**/*.ts</code> from the build');
+    expect(out.features[0]).not.toContain('<strong>');
+  });
 });
