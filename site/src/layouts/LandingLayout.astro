@@ -1,6 +1,7 @@
 ---
 import Explorer from '../components/Explorer.svelte';
 import LangSwitcher from '../components/LangSwitcher.svelte';
+import ThemeToggle from '../components/ThemeToggle.svelte';
 import script from '../demo/scripts/smoke-test.json';
 import landing from '../generated/landing.json';
 import '../demo/theme.css';
@@ -20,9 +21,28 @@ const content = landing[locale];
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Claude Todos</title>
     <meta name="description" content={content.tagline} />
+    <script is:inline>
+      // Aplica data-theme antes da primeira pintura, para nao piscar o tema
+      // errado enquanto ThemeToggle.svelte ainda nao hidratou. Mesma logica
+      // de precedencia do componente: localStorage > matchMedia > 'dark'.
+      (function () {
+        var KEY = 'claude-todos-theme';
+        var saved = localStorage.getItem(KEY);
+        var theme =
+          saved === 'light' || saved === 'dark'
+            ? saved
+            : window.matchMedia('(prefers-color-scheme: light)').matches
+              ? 'light'
+              : 'dark';
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
   </head>
   <body>
-    <LangSwitcher client:load current={locale} />
+    <div class="topbar">
+      <LangSwitcher client:load current={locale} />
+      <ThemeToggle client:load />
+    </div>
     <main>
       <h1>Claude Todos</h1>
       <p class="tagline">{content.tagline}</p>
@@ -33,3 +53,12 @@ const content = landing[locale];
     </main>
   </body>
 </html>
+
+<style>
+  .topbar {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+  }
+</style>

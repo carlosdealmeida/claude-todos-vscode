@@ -50,3 +50,11 @@
 
   --demo-editor-background: #ffffff;
 }
+
+body {
+  background: var(--demo-editor-background);
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-font-family);
+  margin: 0;
+  padding: 24px;
+}
