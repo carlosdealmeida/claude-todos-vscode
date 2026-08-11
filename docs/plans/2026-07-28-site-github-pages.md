@@ -2445,6 +2445,80 @@ git commit -m "feat(site): toggle claro/escuro alternando o tema do painel"
 
 ---
 
+### Task 16: Seletor de cenário
+
+**Task acrescentada em 2026-08-11**, por decisão do dono do projeto, após o review final de branch.
+
+**O problema:** a página carrega apenas `smoke-test.json`, cujos marcadores cobrem **4 das 7 features**.
+Os roteiros `contexto-critico` e `lista-defasada` são versionados e validados pelo teste de schema, mas
+**nenhum caminho da UI chega até eles** — então o semáforo vermelho de contexto, a faixa de lista
+defasada e o dashboard de 7 dias, que só as fixtures encenadas produzem, ficam inalcançáveis. O teste
+`covers every feature across the three scripts` passa verde enquanto o site mostra quatro.
+
+**A oportunidade:** o `demoBridge` já trata `pickSession` (Task 7) e o painel real tem um botão de troca
+de sessão. Ligar a troca de cenário a esse botão faz o **controle do próprio produto** virar a navegação
+do demo, em vez de criar um controle paralelo ao lado dele.
+
+**Files:**
+- Modify: `site/src/components/Explorer.svelte` (estado do roteiro ativo)
+- Modify: `site/src/components/Demo.svelte` (recriar player/bridge ao trocar de roteiro)
+- Modify: `site/src/i18n/site.ts` (nomes dos cenários nos 5 locales)
+- Test: `tests/site/scripts.test.ts` (garantir que todo roteiro embarcado é alcançável)
+
+**Interfaces:**
+- Consumes: `DemoScript` e `FeatureId` (`site/src/demo/types.ts`); `createPlayer`; `createDemoBridge`;
+  os três JSON de `site/src/demo/scripts/`.
+- Produces: nenhuma assinatura pública nova.
+
+- [ ] **Step 1: Teste que impede roteiro órfão**
+
+O teste atual verifica que as 7 features aparecem *em algum* roteiro, o que não diz nada sobre o site
+mostrá-las. Acrescente a `tests/site/scripts.test.ts` um caso que leia os roteiros embarcados em
+`site/src/demo/scripts/` e verifique que **todos** são referenciados pelo código do site — isto é, que
+nenhum fixture fica órfão. Falhe com mensagem que nomeie o arquivo não referenciado.
+
+- [ ] **Step 2: Rodar e ver falhar**
+
+Run: `npx vitest run tests/site/scripts.test.ts`
+Expected: FAIL — hoje só `smoke-test.json` é importado.
+
+- [ ] **Step 3: Trocar de roteiro pelo botão do painel**
+
+O `demoBridge` recebe `pickSession` e hoje chama `onPickSession`, que só registra uma nota. Ligue esse
+callback à troca de cenário: cada acionamento avança para o próximo roteiro, ou abre uma lista — a
+escolha é de quem implementa, desde que use o botão real do painel como gatilho principal.
+
+Ao trocar de roteiro é preciso **destruir o player e o bridge anteriores e criar novos**, porque o
+roteiro é lido na construção. Cuidados que o histórico deste plano já mostrou serem reais:
+- `window.__claudeTodosDemo` precisa apontar para o bridge novo **antes** de qualquer emissão;
+- o player antigo precisa ser encerrado (`destroy()`), senão dois `setInterval` disputam o painel;
+- a lista de features deriva de `script.markers` e precisa acompanhar o roteiro ativo;
+- o `locale` corrente tem que ser repassado ao bridge novo.
+
+- [ ] **Step 4: Nomes dos cenários em 5 idiomas**
+
+Acrescente ao catálogo `site/src/i18n/site.ts` um nome curto por roteiro, nos cinco locales. Traduções
+chinesas seguem `docs/i18n/glossary-zh.md`.
+
+- [ ] **Step 5: Verificar**
+
+Run: `npx vitest run tests/site/scripts.test.ts` e `npm test`
+Expected: PASS.
+
+Suba o preview e confirme, com evidência: os três cenários são alcançáveis pelo botão do painel; ao
+trocar, a lista de features muda junto; o semáforo **vermelho** de contexto aparece em
+`contexto-critico`; a faixa de lista defasada aparece em `lista-defasada`; e não há dois roteiros
+tocando ao mesmo tempo depois de várias trocas.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add site/src tests/site/scripts.test.ts
+git commit -m "feat(site): troca de cenario pelo botao de sessao do painel"
+```
+
+---
+
 ## Verificação final
 
 - [ ] `npm test` na raiz: todos os testes passam, incluindo `tests/site/`.
