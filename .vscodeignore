@@ -15,7 +15,9 @@ tsconfig.webview.json
 vite.config.mts
 vitest.config.mts
 **/*.ts
+**/*.mts
 **/*.map
+scripts/**
 **/.eslintrc.json
 .git/**
 .worktrees/**
