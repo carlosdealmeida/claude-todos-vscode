@@ -98,8 +98,7 @@ de tokens do 0.3.0).
   limitação nossa; e [#79155](https://github.com/anthropics/claude-code/issues/79155) pede
   exatamente o indicador **persistente** de contexto que já entregamos na 0.4.0.
 - **⚠️ Bug novo a corrigir (varredura 2026-08-10):** o rollup de `usage.iterations` em turnos
-  com `advisor` infla o top-level (~2×) que o `contextForFile` lê — ver **R5, achado 2** (com
-  medição local e correção proposta). Relacionados do período:
+  com `advisor` infla o top-level (~2×) que o `contextForFile` lê — corrigido — ver **R5** (✅ 2026-08-11). Relacionados do período:
   [#81702](https://github.com/anthropics/claude-code/issues/81702) contexto inflado ~4× no
   resume e [#83419](https://github.com/anthropics/claude-code/issues/83419) modelo alegando
   limite com 43–72% livres.
@@ -778,7 +777,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 - **Conecta com:** a melhoria R-perf do item 2 (o `usageParser` lê o transcript principal duas
   vezes: `modelsForFile` + `contextForFile`). Continua sendo a otimização óbvia se formos mexer.
 
-### R5. Contabilidade de tokens — soma linha-a-linha infla ~2×; formato novo `usage.iterations` 📐 **prioridade**
+### R5. Contabilidade de tokens — soma linha-a-linha infla ~2×; formato novo `usage.iterations` ✅ ENTREGUE (achados 1 e 2 · 2026-08-11)
 - **Origem:** varredura 2026-08-10 ([#84223](https://github.com/anthropics/claude-code/issues/84223),
   [#81620](https://github.com/anthropics/claude-code/issues/81620),
   [#84738](https://github.com/anthropics/claude-code/issues/84738)) + **medição local**. É o
@@ -809,6 +808,12 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   output por sub-agent é um mínimo, não um exato.
 - **Conecta com:** itens 2 (contexto), 6a (por agente), 16 (dashboard) e a R-perf do item 2 —
   o dedupe e a unificação de passada mexem na mesma função; fazer juntos.
+- **✅ Entregue (2026-08-11):** achado 1 (dedupe por `requestId`, vencedor = record final) e
+  achado 2 (contexto pela última iteration `type:"message"`) corrigidos, com a unificação
+  R-perf junto (`contextForFile` removido — uma leitura do transcript principal por refresh).
+  Achado 3 segue documentado como piso de subcontagem do dado. Spec:
+  [docs/specs/2026-08-11-token-accounting-dedupe-design.md](specs/2026-08-11-token-accounting-dedupe-design.md)
+  · plano: [docs/plans/2026-08-11-token-accounting-dedupe.md](plans/2026-08-11-token-accounting-dedupe.md).
 
 ---
 
