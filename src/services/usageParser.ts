@@ -34,13 +34,17 @@ interface RawUsage {
   output_tokens?: unknown;
   cache_creation_input_tokens?: unknown;
   cache_read_input_tokens?: unknown;
+  iterations?: unknown;
 }
 
 interface TranscriptEntry {
   type?: string;
   isSidechain?: boolean;
+  requestId?: unknown;
   message?: {
+    id?: unknown;
     model?: unknown;
+    stop_reason?: unknown;
     usage?: RawUsage;
   };
 }
@@ -49,11 +53,30 @@ function num(v: unknown): number {
   return typeof v === 'number' && Number.isFinite(v) ? v : 0;
 }
 
+// O usage top-level de um record com advisor server-side soma as iterations
+// (~2x o contexto real — #81620/#84738); o tamanho real do contexto é o da
+// última iteration de mensagem, não a soma.
+function contextTokens(u: RawUsage): number {
+  if (Array.isArray(u.iterations)) {
+    for (let i = u.iterations.length - 1; i >= 0; i--) {
+      const it = u.iterations[i] as Record<string, unknown> | null;
+      if (it && typeof it === 'object' && it['type'] === 'message') {
+        return num(it['input_tokens']) + num(it['cache_read_input_tokens']) + num(it['cache_creation_input_tokens']);
+      }
+    }
+  }
+  return num(u.input_tokens) + num(u.cache_read_input_tokens) + num(u.cache_creation_input_tokens);
+}
+
 // Lê um transcript em uma passada e devolve o uso por modelo + o breakdown de
-// cache do arquivo. No transcript principal, entradas isSidechain são puladas
+// cache do arquivo. O transcript grava um record por content block, replicando
+// o usage final do request em cada um (e às vezes só snapshots, quando o
+// backfill falha — #84223) — por isso a agregação elege um VENCEDOR por
+// requestId em vez de somar linhas: final (stop_reason/iterations) > snapshot
+// de maior output. No transcript principal, entradas isSidechain são puladas
 // (os turnos de sub-agents vêm dos próprios agent-*.jsonl). Compartilhada entre
 // o uso por sessão (UsageParser) e o agregado do projeto (ProjectUsageService).
-export function readFileUsage(filePath: string, skipSidechain: boolean): { models: ModelUsage[]; cache: CacheStats; lastModel?: string } {
+export function readFileUsage(filePath: string, skipSidechain: boolean): { models: ModelUsage[]; cache: CacheStats; lastModel?: string; context?: ContextUsage } {
   let lines: string[];
   try {
     lines = fs.readFileSync(filePath, 'utf-8').split('\n');
@@ -61,9 +84,11 @@ export function readFileUsage(filePath: string, skipSidechain: boolean): { model
     return { models: [], cache: { input: 0, read: 0, creation: 0 } };
   }
 
-  const byModel = new Map<string, ModelUsage>();
-  const cache: CacheStats = { input: 0, read: 0, creation: 0 };
+  interface Winner { model: string; usage: RawUsage; final: boolean }
+  const winners = new Map<string, Winner>();
+  let lineKey = 0;
   let lastModel: string | undefined;
+  let lastUsage: RawUsage | undefined;
   for (const line of lines) {
     if (!line) continue;
     let entry: TranscriptEntry;
@@ -74,20 +99,40 @@ export function readFileUsage(filePath: string, skipSidechain: boolean): { model
     // Entradas sintéticas de erro de API não são uso real do modelo.
     if (msg.model === '<synthetic>') continue;
     lastModel = msg.model;
+    lastUsage = msg.usage;
     const u = msg.usage;
-    const input = num(u.input_tokens);
-    const read = num(u.cache_read_input_tokens);
-    const creation = num(u.cache_creation_input_tokens);
-    const acc = byModel.get(msg.model) ?? { model: msg.model, input: 0, output: 0, cache: 0 };
+    const key = typeof entry.requestId === 'string' ? entry.requestId
+      : typeof msg.id === 'string' ? `msg:${msg.id}`
+      : `line:${lineKey++}`;
+    const final = msg.stop_reason != null || Array.isArray(u.iterations);
+    const prev = winners.get(key);
+    const replace = !prev
+      || final
+      || (!prev.final && num(u.output_tokens) >= num(prev.usage.output_tokens));
+    if (replace) winners.set(key, { model: msg.model, usage: u, final });
+  }
+
+  const byModel = new Map<string, ModelUsage>();
+  const cache: CacheStats = { input: 0, read: 0, creation: 0 };
+  for (const { model, usage } of winners.values()) {
+    const input = num(usage.input_tokens);
+    const read = num(usage.cache_read_input_tokens);
+    const creation = num(usage.cache_creation_input_tokens);
+    const acc = byModel.get(model) ?? { model, input: 0, output: 0, cache: 0 };
     acc.input += input;
-    acc.output += num(u.output_tokens);
+    acc.output += num(usage.output_tokens);
     acc.cache += creation + read;
-    byModel.set(msg.model, acc);
+    byModel.set(model, acc);
     cache.input += input;
     cache.read += read;
     cache.creation += creation;
   }
-  return { models: [...byModel.values()], cache, lastModel };
+  let context: ContextUsage | undefined;
+  if (lastUsage !== undefined && lastModel !== undefined) {
+    const tokens = contextTokens(lastUsage);
+    context = { tokens, limit: contextLimitFor(lastModel, tokens) };
+  }
+  return { models: [...byModel.values()], cache, lastModel, context };
 }
 
 export class UsageParser {
@@ -101,13 +146,15 @@ export class UsageParser {
     const byAgent: AgentUsage[] = [];
     const sessionCache: CacheStats = { input: 0, read: 0, creation: 0 };
 
+    let context: ContextUsage | undefined;
     for (const agent of agents) {
       const filePath = agent.isMain
         ? transcriptPath(this.claudeDir, sessionId, cwd)
         : this.subAgentFile(sessionId, cwd, agent.agentId);
       if (!filePath) continue;
 
-      const { models, cache, lastModel } = readFileUsage(filePath, agent.isMain);
+      const { models, cache, lastModel, context: fileContext } = readFileUsage(filePath, agent.isMain);
+      if (agent.isMain) context = fileContext;
       if (models.length === 0) continue;
 
       byAgent.push({
@@ -122,13 +169,6 @@ export class UsageParser {
       sessionCache.creation += cache.creation;
     }
 
-    let context: ContextUsage | undefined;
-    const hasMain = agents.some(a => a.isMain);
-    if (hasMain) {
-      const mainFile = transcriptPath(this.claudeDir, sessionId, cwd);
-      if (mainFile) context = this.contextForFile(mainFile);
-    }
-
     const cacheTotal = sessionCache.input + sessionCache.read + sessionCache.creation;
     const cache = cacheTotal > 0 ? sessionCache : undefined;
 
@@ -140,35 +180,6 @@ export class UsageParser {
     if (!dir) return null;
     const file = path.join(dir, `agent-${agentId}.jsonl`);
     return fs.existsSync(file) ? file : null;
-  }
-
-  // The current context size = input + cache of the LAST usage-bearing message
-  // in the main transcript (output is excluded; sidechain entries are skipped).
-  // Returns undefined when the transcript has no usage yet.
-  private contextForFile(filePath: string): ContextUsage | undefined {
-    let lines: string[];
-    try {
-      lines = fs.readFileSync(filePath, 'utf-8').split('\n');
-    } catch {
-      return undefined;
-    }
-
-    let last: { usage: RawUsage; model: string } | undefined;
-    for (const line of lines) {
-      if (!line) continue;
-      let entry: TranscriptEntry;
-      try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
-      if (entry.isSidechain) continue;
-      const msg = entry.message;
-      if (!msg || !msg.usage || typeof msg.model !== 'string') continue;
-      if (msg.model === '<synthetic>') continue;
-      last = { usage: msg.usage, model: msg.model };
-    }
-    if (!last) return undefined;
-
-    const u = last.usage;
-    const tokens = num(u.input_tokens) + num(u.cache_read_input_tokens) + num(u.cache_creation_input_tokens);
-    return { tokens, limit: contextLimitFor(last.model, tokens) };
   }
 
   // Aggregates per-agent models into session-wide totals per model, in

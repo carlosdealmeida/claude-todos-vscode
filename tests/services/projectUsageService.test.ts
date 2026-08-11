@@ -155,4 +155,19 @@ describe('ProjectUsageService', () => {
     expect(second).toEqual(first);
     expect(second.byModel).toEqual([{ model: 'claude-opus-4-8', input: 100, output: 10, cache: 40 }]);
   });
+
+  it('nao infla o agregado quando o transcript tem multiplos records por request', () => {
+    const usageFinal = {
+      input_tokens: 4, output_tokens: 428,
+      cache_creation_input_tokens: 0, cache_read_input_tokens: 100,
+    };
+    const rec = {
+      type: 'assistant',
+      requestId: 'req_1',
+      message: { model: 'claude-opus-4-8', role: 'assistant', stop_reason: 'end_turn', usage: usageFinal },
+    };
+    writeSession('multi', [rec, rec, rec], NOW - 1000);
+    const usage = service.usageForProject(CWD, SINCE);
+    expect(usage.byModel).toEqual([{ model: 'claude-opus-4-8', input: 4, output: 428, cache: 100 }]);
+  });
 });

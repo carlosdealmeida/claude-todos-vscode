@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Pending questions in the panel.** A strip at the top of the panel now lists what the session is waiting on — an `AskUserQuestion` call or an `ExitPlanMode` plan awaiting approval — each entry a short chip plus the question text; clicking one jumps to that line in the transcript. Unlike the 0.15.0 toast, it shows up regardless of window focus and isn't gated by the `claudeTodos.notifications` setting, and it disappears on its own once the pending call resolves. A single `AskUserQuestion` call can carry up to 4 questions; all of them show. Roadmap item 22-ext, from issue [#79078](https://github.com/anthropics/claude-code/issues/79078) (a sidebar listing the open questions of a conversation). Spec: `docs/specs/2026-07-27-perguntas-pendentes-no-painel-design.md`.
 - **Live sessions and real names in the picker.** The session picker now marks with "● live" the sessions whose Claude Code process is still running, and Auto mode prefers a live session over the most-recently-written one — fixing the case where closing the session that just ran left the panel stuck on a dead one. Session names set via `/session-name` are now shown, cached separately so they survive the session ending; a name the CLI derived on its own (`nameSource: 'derived'`) is ignored in favor of the semantic title the panel already used. Liveness comes from `~/.claude/sessions/{pid}.json`, one file per running process. Roadmap item 5, slices (a) and (c), from issues [#28147](https://github.com/anthropics/claude-code/issues/28147) (activity indicators in the picker) and [#23275](https://github.com/anthropics/claude-code/issues/23275) (naming sessions). Spec: `docs/specs/2026-07-27-sessoes-vivas-e-nomes-design.md`.
 
+### Fixed
+- **Token totals were roughly doubled — they now reflect real usage.** Claude Code writes one
+  transcript record per content block, repeating the request's final `usage` on each record
+  (and sometimes leaving only early snapshots, see
+  [#84223](https://github.com/anthropics/claude-code/issues/84223)); the parser summed every
+  line, so the session table, the per-agent breakdown and the 7-day dashboard showed ~2× the
+  real token counts (measured 1.97× across 40 local transcripts). Usage is now deduplicated
+  per request, keeping the final record. **Numbers will visibly drop after updating — the old
+  ones were inflated, no data was lost.** Cache-efficiency percentages were unaffected (both
+  sides of the ratio were equally inflated).
+- **Context indicator no longer doubles on server-side advisor turns.** Turns that consult
+  the `advisor` roll up all sampling iterations into the top-level `usage` (~2× the real
+  context, [#81620](https://github.com/anthropics/claude-code/issues/81620) /
+  [#84738](https://github.com/anthropics/claude-code/issues/84738)); the context indicator
+  now reads the last `type:"message"` iteration instead. The main transcript is also read
+  once per refresh instead of twice (tokens and context come from the same pass).
+
 ## [0.17.0] - 2026-07-27
 
 ### Added
