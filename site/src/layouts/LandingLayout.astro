@@ -4,6 +4,14 @@ import LangSwitcher from '../components/LangSwitcher.svelte';
 import ThemeToggle from '../components/ThemeToggle.svelte';
 import script from '../demo/scripts/smoke-test.json';
 import landing from '../generated/landing.json';
+// Ordem importa: app.css define body{margin:0;padding:0} e theme.css define
+// body{...padding:24px}; mesma especificidade, vence quem carrega por ultimo.
+// app.css precisa vir primeiro para o padding do site nao ser zerado. E a
+// unica fonte dos 9 tokens de design (--sp-*, --radius, --accent, --ok,
+// --run, --muted, --card-accent) que o painel usa e que theme.css nao
+// define — sem ele o painel publicado perde espacamento, raio de borda,
+// destaques "ao vivo" e o respeito a prefers-reduced-motion.
+import '../../../src/webview/app.css';
 import '../demo/theme.css';
 import type { Locale } from '../../../src/i18n/locale';
 
