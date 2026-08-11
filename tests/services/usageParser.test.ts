@@ -227,6 +227,70 @@ describe('UsageParser', () => {
       const usage = parser.usageForSession(SID, CWD, [mainRef]);
       expect(usage.context?.tokens).toBe(150);
     });
+
+    it('usa a ultima iteration type:"message" quando o usage tem iterations (rollup do advisor)', () => {
+      writeMain([
+        {
+          type: 'assistant',
+          requestId: 'req_1',
+          message: {
+            model: 'claude-opus-4-8', role: 'assistant', stop_reason: 'end_turn',
+            usage: {
+              input_tokens: 4, output_tokens: 428,
+              cache_creation_input_tokens: 3249, cache_read_input_tokens: 1_031_027,
+              iterations: [
+                { type: 'message', input_tokens: 2, cache_read_input_tokens: 515_122, cache_creation_input_tokens: 783, output_tokens: 65 },
+                { type: 'advisor_message', model: 'claude-opus-5', input_tokens: 516_328, output_tokens: 13_610 },
+                { type: 'message', input_tokens: 2, cache_read_input_tokens: 515_905, cache_creation_input_tokens: 2466, output_tokens: 363 },
+              ],
+            },
+          },
+        },
+      ]);
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      // ultima iteration message: 2 + 515905 + 2466 = 518373 — NAO o rollup (1034280)
+      expect(usage.context).toEqual({ tokens: 518_373, limit: 1_000_000 });
+    });
+
+    it('iterations vazio ou sem type:"message" cai no top-level', () => {
+      writeMain([
+        {
+          type: 'assistant', requestId: 'r1',
+          message: {
+            model: 'claude-opus-4-8', role: 'assistant', stop_reason: 'end_turn',
+            usage: { input_tokens: 100, output_tokens: 1, cache_read_input_tokens: 50, cache_creation_input_tokens: 0, iterations: [] },
+          },
+        },
+      ]);
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      expect(usage.context).toEqual({ tokens: 150, limit: 1_000_000 });
+    });
+
+    it('iterations sem nenhuma type:"message" (so advisor) tambem cai no top-level', () => {
+      writeMain([
+        {
+          type: 'assistant', requestId: 'r1',
+          message: {
+            model: 'claude-opus-4-8', role: 'assistant', stop_reason: 'end_turn',
+            usage: {
+              input_tokens: 100, output_tokens: 1, cache_read_input_tokens: 50, cache_creation_input_tokens: 0,
+              iterations: [{ type: 'advisor_message', model: 'claude-opus-5', input_tokens: 9999, output_tokens: 10 }],
+            },
+          },
+        },
+      ]);
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      expect(usage.context).toEqual({ tokens: 150, limit: 1_000_000 });
+    });
+
+    it('readFileUsage expoe o context do arquivo (mesma passada)', () => {
+      writeMain([
+        assistant('claude-opus-4-8', { input: 100, cacheCreate: 200, cacheRead: 50 }),
+        assistant('claude-opus-4-8', { input: 1000, output: 30, cacheCreate: 2000, cacheRead: 5000 }),
+      ]);
+      const filePath = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD), `${SID}.jsonl`);
+      expect(readFileUsage(filePath, true).context).toEqual({ tokens: 8000, limit: 1_000_000 });
+    });
   });
 
   describe('cache stats', () => {
