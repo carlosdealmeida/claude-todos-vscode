@@ -22,12 +22,23 @@ const content = landing[locale];
     <title>Claude Todos</title>
     <meta name="description" content={content.tagline} />
     <script is:inline>
-      // Aplica data-theme antes da primeira pintura, para nao piscar o tema
-      // errado enquanto ThemeToggle.svelte ainda nao hidratou. Mesma logica
-      // de precedencia do componente: localStorage > matchMedia > 'dark'.
+      // Unica fonte da precedencia de tema (localStorage > matchMedia >
+      // 'dark'); ThemeToggle.svelte so le o data-theme que este script ja
+      // aplicou, nunca recalcula. Precisa rodar inline e sincrono aqui no
+      // <head>, antes do <body>, porque a island Svelte so hidrata depois
+      // da primeira pintura — sem isso, quem escolheu claro veria um
+      // lampejo escuro a cada carregamento.
       (function () {
         var KEY = 'claude-todos-theme';
-        var saved = localStorage.getItem(KEY);
+        var saved = null;
+        try {
+          saved = localStorage.getItem(KEY);
+        } catch (e) {
+          // Storage bloqueado (modo privado/politica): cai no fallback de
+          // matchMedia abaixo em vez de interromper o script.
+        }
+        // So 'dark'/'light' viram data-theme; qualquer outro valor (de
+        // outra origem, ou corrompido) e tratado como "nao salvo".
         var theme =
           saved === 'light' || saved === 'dark'
             ? saved

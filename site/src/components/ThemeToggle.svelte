@@ -18,8 +18,16 @@
 
   function toggle(): void {
     theme = theme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem(KEY, theme);
+    // apply() nao pode depender de conseguir persistir: em Safari modo
+    // privado (ou storage bloqueado por politica), setItem lanca, e sem
+    // isso o icone trocaria sem o tema real acompanhar.
     apply();
+    try {
+      localStorage.setItem(KEY, theme);
+    } catch {
+      // Falha em salvar degrada para "tema muda mas nao persiste" — nunca
+      // para "botao mente sobre o tema aplicado".
+    }
   }
 </script>
 
