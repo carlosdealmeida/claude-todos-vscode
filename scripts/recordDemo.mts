@@ -2,7 +2,7 @@
 // real, truncado progressivamente. Cada corte vira um frame. Roda em Node, onde
 // `fs` existe — o site so consome o JSON resultante.
 //
-// Uso: npm run demo:record -- <caminho-do-.jsonl> <id-do-roteiro> [--cwd <valor>] [--title <valor>]
+// Uso: npm run demo:record -- <caminho-do-.jsonl> <id-do-roteiro> [--cwd <valor>] [--title <valor>] [--fresh]
 //
 // O transcript de origem carrega o `cwd` absoluto de quem gravou (estrutura de
 // pastas do dono do repo) — isso nunca pode ir para um site publico, entao
@@ -14,6 +14,15 @@
 // 2026-07-28: "Executar smoke test") e deve ser preservado. Por isso, ao
 // contrario do cwd, o titulo so e reescrito quando `--title` e passado
 // explicitamente — sem a flag, o `ai-title` real do transcript sobrevive.
+//
+// `markers` e `projectUsage` sao preenchidos a mao (o gravador nao sabe
+// escolher instantes nem agregar 7 dias de projeto) — entao regravar por
+// cima de um roteiro existente (ex.: parser corrigido, precisa atualizar os
+// numeros) NAO pode apagar esse trabalho manual silenciosamente. Se
+// `<id>.json` ja existe, o gravador preserva os `markers` e o `projectUsage`
+// desse arquivo por default (e avisa o que preservou). `--fresh` desliga
+// isso e comeca com `markers: []` / `projectUsage` zerado, para quando o
+// roteiro e genuinamente novo.
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -22,8 +31,10 @@ import { SessionResolver } from '../src/services/sessionResolver';
 import { TodosParser } from '../src/services/todosParser';
 import { UsageParser } from '../src/services/usageParser';
 import { encodeCwdToProjectDir } from '../src/services/projectDir';
-import type { SessionSnapshot } from '../src/types';
-import type { DemoScript } from '../site/src/demo/types';
+import type { SessionSnapshot, ProjectUsage } from '../src/types';
+import type { DemoScript, DemoMarker } from '../site/src/demo/types';
+
+const EMPTY_PROJECT_USAGE: ProjectUsage = { sessions: 0, byModel: [], byAgentType: [] };
 
 const MAX_FRAMES = 120;          // teto do spec — evita inchar o bundle
 const FRAME_SPACING_MS = 1000;   // 1 frame/s de roteiro
@@ -35,17 +46,19 @@ const DEFAULT_SHOWCASE_CWD = '/home/dev/claude-todos-vscode';
 const positional: string[] = [];
 let cwdOverride: string | undefined;
 let titleOverride: string | undefined;
+let fresh = false;
 {
   const argv = process.argv.slice(2);
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--cwd') { cwdOverride = argv[++i]; continue; }
     if (argv[i] === '--title') { titleOverride = argv[++i]; continue; }
+    if (argv[i] === '--fresh') { fresh = true; continue; }
     positional.push(argv[i]);
   }
 }
 const [transcriptPath, scriptId] = positional;
 if (!transcriptPath || !scriptId) {
-  console.error('uso: npm run demo:record -- <caminho-do-.jsonl> <id> [--cwd <valor>] [--title <valor>]');
+  console.error('uso: npm run demo:record -- <caminho-do-.jsonl> <id> [--cwd <valor>] [--title <valor>] [--fresh]');
   process.exit(1);
 }
 
@@ -97,29 +110,63 @@ try {
     frames.push({ atMs: index * FRAME_SPACING_MS, snapshot });
   }
 
+  const outPath = path.join('site', 'src', 'demo', 'scripts', `${scriptId}.json`);
+  const preserved = loadPreserved(outPath);
+
   const script = {
     id: scriptId,
     recordedAt: Date.now(),
     durationMs: frames.length * FRAME_SPACING_MS,
-    // Preenchidos a mao apos inspecionar os frames (ver relatorio da Task 8).
-    markers: [],
+    markers: preserved.markers,
     frames,
-    // O dashboard agrega a JANELA DE 7 DIAS do projeto, nao esta sessao unica: nao
-    // ha o que derivar de um transcript so. A Task 9 preenche com os numeros
-    // reais das fixtures encenadas.
-    projectUsage: { sessions: 0, byModel: [], byAgentType: [] },
+    projectUsage: preserved.projectUsage,
   } satisfies DemoScript;
 
-  const outPath = path.join('site', 'src', 'demo', 'scripts', `${scriptId}.json`);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, `${JSON.stringify(script, null, 2)}\n`);
   console.log(`${frames.length} frames -> ${outPath}`);
-  console.log('Proximos passos: preencher `markers` (e conferir `projectUsage`).');
+  if (preserved.markers.length === 0 && preserved.projectUsage === EMPTY_PROJECT_USAGE) {
+    console.log('Proximos passos: preencher `markers` (e conferir `projectUsage`).');
+  }
 } finally {
   fs.rmSync(sandbox, { recursive: true, force: true });
 }
 
 // ---- helpers ----
+
+// `markers` e `projectUsage` sao trabalho manual, nao algo que este script
+// deriva do transcript — ver comentario de topo. Sem `--fresh`, um roteiro
+// `<id>.json` ja existente tem os dois preservados; qualquer coisa que
+// impeça a leitura (arquivo ausente, JSON invalido, campo no formato
+// errado) cai em "comeca vazio", nunca lanca — regravar um roteiro NOVO
+// nao pode falhar so porque nao ha nada pra preservar ainda.
+function loadPreserved(outPath: string): { markers: DemoMarker[]; projectUsage: ProjectUsage } {
+  if (fresh) {
+    console.log('--fresh: comecando com `markers: []` e `projectUsage` zerado (arquivo anterior, se houver, ignorado).');
+    return { markers: [], projectUsage: EMPTY_PROJECT_USAGE };
+  }
+  if (!fs.existsSync(outPath)) {
+    return { markers: [], projectUsage: EMPTY_PROJECT_USAGE };
+  }
+  try {
+    const prev = JSON.parse(fs.readFileSync(outPath, 'utf8')) as Partial<DemoScript>;
+    const markers = Array.isArray(prev.markers) ? prev.markers : [];
+    const projectUsage = prev.projectUsage && typeof prev.projectUsage === 'object'
+      ? prev.projectUsage
+      : EMPTY_PROJECT_USAGE;
+    console.log(
+      `Preservando de ${outPath}: ${markers.length} marker(s) e projectUsage `
+      + `(sessions: ${projectUsage.sessions}). Use --fresh para comecar vazio.`,
+    );
+    return { markers, projectUsage };
+  } catch (err) {
+    console.warn(
+      `Nao consegui ler ${outPath} para preservar markers/projectUsage `
+      + `(${(err as Error).message}) — comecando vazio.`,
+    );
+    return { markers: [], projectUsage: EMPTY_PROJECT_USAGE };
+  }
+}
 
 function sandboxProjectDir(): string {
   return path.join(sandbox, 'projects', encodeCwdToProjectDir(SHOWCASE_CWD));
