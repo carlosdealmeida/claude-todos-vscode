@@ -6,6 +6,13 @@ on:
     paths:
       - 'site/**'
       - 'src/webview/**'
+      # App.svelte e stores.svelte.ts saem de src/webview/ para consumir
+      # src/types.ts (formas de SessionSnapshot/Todo/etc.) e src/i18n/ (t.ts,
+      # messages.ts, locale.ts — as traducoes do painel nos 5 idiomas). Sem
+      # isso, mudar uma traducao nao redeploya o site, que fica exibindo
+      # texto velho indefinidamente.
+      - 'src/i18n/**'
+      - 'src/types.ts'
       - 'README*.md'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
