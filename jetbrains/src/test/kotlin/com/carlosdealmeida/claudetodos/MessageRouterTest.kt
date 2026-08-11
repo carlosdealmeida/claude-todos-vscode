@@ -109,10 +109,20 @@ class MessageRouterTest {
         val id = parse(toSidecar.single())["id"]!!.jsonPrimitive.content
         router.onSidecarEvent("""{"ev":"sessions","sessions":[{"sessionId":"s1","cwd":"/p","title":"T1","updatedAt":5}],"id":"$id"}""")
         assertEquals("s1", host.pickSessions!!.single().sessionId)
+        assertEquals(false, host.pickSessions!!.single().alive)
         host.onPick!!("s1")
         assertEquals("setPinned", parse(toSidecar[1])["cmd"]!!.jsonPrimitive.content)
         assertEquals("s1", parse(toSidecar[1])["sessionId"]!!.jsonPrimitive.content)
         assertEquals("getSnapshot", parse(toSidecar[2])["cmd"]!!.jsonPrimitive.content)
+    }
+
+    @Test fun `pickSession propagates alive from the sidecar`() {
+        router.onWebviewMessage("""{"type":"pickSession"}""")
+        val id = parse(toSidecar.single())["id"]!!.jsonPrimitive.content
+        router.onSidecarEvent(
+            """{"ev":"sessions","sessions":[{"sessionId":"s1","cwd":"/p","title":"T1","updatedAt":5,"alive":true}],"id":"$id"}""",
+        )
+        assertEquals(true, host.pickSessions!!.single().alive)
     }
 
     @Test fun `pickSession Auto sends null pin`() {

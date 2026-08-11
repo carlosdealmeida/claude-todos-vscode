@@ -1,0 +1,83 @@
+---
+import Explorer from '../components/Explorer.svelte';
+import LangSwitcher from '../components/LangSwitcher.svelte';
+import ThemeToggle from '../components/ThemeToggle.svelte';
+import script from '../demo/scripts/smoke-test.json';
+import landing from '../generated/landing.json';
+// Ordem importa: app.css define body{margin:0;padding:0} e theme.css define
+// body{...padding:24px}; mesma especificidade, vence quem carrega por ultimo.
+// app.css precisa vir primeiro para o padding do site nao ser zerado. E a
+// unica fonte dos 9 tokens de design (--sp-*, --radius, --accent, --ok,
+// --run, --muted, --card-accent) que o painel usa e que theme.css nao
+// define — sem ele o painel publicado perde espacamento, raio de borda,
+// destaques "ao vivo" e o respeito a prefers-reduced-motion.
+import '../../../src/webview/app.css';
+import '../demo/theme.css';
+import type { Locale } from '../../../src/i18n/locale';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const content = landing[locale];
+---
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Claude Todos</title>
+    <meta name="description" content={content.tagline} />
+    <script is:inline>
+      // Unica fonte da precedencia de tema (localStorage > matchMedia >
+      // 'dark'); ThemeToggle.svelte so le o data-theme que este script ja
+      // aplicou, nunca recalcula. Precisa rodar inline e sincrono aqui no
+      // <head>, antes do <body>, porque a island Svelte so hidrata depois
+      // da primeira pintura — sem isso, quem escolheu claro veria um
+      // lampejo escuro a cada carregamento.
+      (function () {
+        var KEY = 'claude-todos-theme';
+        var saved = null;
+        try {
+          saved = localStorage.getItem(KEY);
+        } catch (e) {
+          // Storage bloqueado (modo privado/politica): cai no fallback de
+          // matchMedia abaixo em vez de interromper o script.
+        }
+        // So 'dark'/'light' viram data-theme; qualquer outro valor (de
+        // outra origem, ou corrompido) e tratado como "nao salvo".
+        var theme =
+          saved === 'light' || saved === 'dark'
+            ? saved
+            : window.matchMedia('(prefers-color-scheme: light)').matches
+              ? 'light'
+              : 'dark';
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="topbar">
+      <LangSwitcher client:load current={locale} />
+      <ThemeToggle client:load {locale} />
+    </div>
+    <main>
+      <h1>Claude Todos</h1>
+      <p class="tagline">{content.tagline}</p>
+      <Explorer client:only="svelte" script={script} locale={locale} />
+      <ul class="features">
+        {content.features.map((f: string) => <li set:html={f} />)}
+      </ul>
+    </main>
+  </body>
+</html>
+
+<style>
+  .topbar {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+  }
+</style>

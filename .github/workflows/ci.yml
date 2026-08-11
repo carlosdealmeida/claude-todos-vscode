@@ -36,6 +36,30 @@ jobs:
       - name: Package .vsix (dry run)
         run: npx vsce package --no-dependencies --allow-missing-repository
 
+  site:
+    name: Site build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      # site/ tem arvore de dependencia propria (Astro); os componentes do
+      # webview entram como arquivos-fonte, sem precisar do node_modules da
+      # raiz.
+      - run: npm ci
+        working-directory: site
+
+      - run: npm run prebuild
+        working-directory: site
+
+      - run: npm run build
+        working-directory: site
+
   jetbrains:
     name: JetBrains plugin
     runs-on: ubuntu-latest

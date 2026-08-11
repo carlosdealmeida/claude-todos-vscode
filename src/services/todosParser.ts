@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { AgentTodos, AwaitingInput, Todo, TodoStatus } from '../types';
+import type { AgentTodos, AwaitingInput, PendingQuestion, Todo, TodoStatus } from '../types';
 import { transcriptPath as resolveTranscriptPath, subAgentsDir as resolveSubAgentsDir } from './transcriptPaths';
 import { readSubAgentMeta, type SubAgentMeta } from './subAgentMeta';
 
@@ -44,6 +44,8 @@ interface ContentBlock {
     activeForm?: unknown;
     taskId?: unknown;
     status?: unknown;
+    questions?: unknown;
+    plan?: unknown;
   };
 }
 
@@ -53,6 +55,7 @@ interface TranscriptEntry {
   timestamp?: string;
   toolUseResult?: {
     agentId?: unknown;
+    agent_id?: unknown;
     task?: { id?: unknown };
   };
   message?: {
@@ -100,6 +103,104 @@ export function detectAwaitingInput(lines: string[], skipSidechain: boolean): Aw
   return last;
 }
 
+// Conteudo da espera pendente, para exibir no painel (a irma detectAwaitingInput
+// devolve so o tipo, que e o que o notifier compara por identidade).
+// So o ULTIMO tool_use ainda aberto vira lista: medido em 320 chamadas reais,
+// nunca ha duas chamadas concorrentes abertas — o que ha sao chamadas com ate
+// 4 perguntas (15% dos casos).
+export function detectPendingQuestions(lines: string[], skipSidechain: boolean): PendingQuestion[] {
+  const pending = new Map<string, PendingQuestion[]>();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line) continue;
+    let entry: TranscriptEntry;
+    try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
+    if (skipSidechain && entry.isSidechain) continue;
+    const content = entry.message?.content;
+    if (!Array.isArray(content)) continue;
+    for (const block of content) {
+      if (block?.type === 'tool_use' && typeof block.id === 'string') {
+        const items = pendingItemsFor(block, i);
+        if (items.length > 0) pending.set(block.id, items);
+      } else if (block?.type === 'tool_result' && typeof block.tool_use_id === 'string') {
+        pending.delete(block.tool_use_id);
+      }
+    }
+  }
+  let last: PendingQuestion[] = [];
+  for (const v of pending.values()) last = v;
+  return last;
+}
+
+// Varredura unica que alimenta detectAwaitingInput e detectPendingQuestions ao
+// mesmo tempo — listSessionDetail() rodava as duas em passes separadas sobre o
+// MESMO mainLines (mais collectDispatches, ate 3 JSON.parse por linha), custo
+// que se paga a cada 10s de polling e a cada evento do watcher. Mantem DOIS
+// acumuladores (nao deriva um do outro): um AskUserQuestion malformado conta
+// como pendencia pro awaitingInput mas produz zero itens pro pendingQuestions
+// — semantica que detectAwaitingInput/detectPendingQuestions ja tinham
+// separadamente e que esta funcao preserva.
+function scanPendingWaits(
+  lines: string[],
+  skipSidechain: boolean,
+): { awaitingInput: AwaitingInput | null; pendingQuestions: PendingQuestion[] } {
+  const awaitingPending = new Map<string, AwaitingInput>();
+  const questionsPending = new Map<string, PendingQuestion[]>();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line) continue;
+    let entry: TranscriptEntry;
+    try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
+    if (skipSidechain && entry.isSidechain) continue;
+    const content = entry.message?.content;
+    if (!Array.isArray(content)) continue;
+    for (const block of content) {
+      if (block?.type === 'tool_use' && typeof block.id === 'string') {
+        if (typeof block.name === 'string' && block.name in WAIT_TOOLS) {
+          awaitingPending.set(block.id, WAIT_TOOLS[block.name]);
+        }
+        const items = pendingItemsFor(block, i);
+        if (items.length > 0) questionsPending.set(block.id, items);
+      } else if (block?.type === 'tool_result' && typeof block.tool_use_id === 'string') {
+        awaitingPending.delete(block.tool_use_id);
+        questionsPending.delete(block.tool_use_id);
+      }
+    }
+  }
+  let awaitingInput: AwaitingInput | null = null;
+  for (const v of awaitingPending.values()) awaitingInput = v;
+  let pendingQuestions: PendingQuestion[] = [];
+  for (const v of questionsPending.values()) pendingQuestions = v;
+  return { awaitingInput, pendingQuestions };
+}
+
+function pendingItemsFor(block: ContentBlock, line: number): PendingQuestion[] {
+  if (block.name === 'AskUserQuestion') {
+    const raw = block.input?.questions;
+    if (!Array.isArray(raw)) return [];
+    const out: PendingQuestion[] = [];
+    for (const q of raw) {
+      if (!q || typeof q !== 'object') continue;
+      const { question, header } = q as { question?: unknown; header?: unknown };
+      if (typeof question !== 'string' || question === '') continue;
+      out.push({
+        kind: 'question',
+        ...(typeof header === 'string' && header !== '' ? { header } : {}),
+        text: question,
+        line,
+      });
+    }
+    return out;
+  }
+  if (block.name === 'ExitPlanMode') {
+    const plan = block.input?.plan;
+    if (typeof plan !== 'string') return [];
+    const first = plan.split('\n').map(l => l.trim()).find(l => l !== '');
+    return first ? [{ kind: 'plan', text: first, line }] : [];
+  }
+  return [];
+}
+
 export class TodosParser {
   constructor(private readonly claudeDir: string) {}
 
@@ -107,9 +208,13 @@ export class TodosParser {
     return this.listSessionDetail(sessionId, cwd).agents;
   }
 
-  listSessionDetail(sessionId: string, cwd: string): { agents: AgentTodos[]; awaitingInput: AwaitingInput | null } {
+  listSessionDetail(sessionId: string, cwd: string): {
+    agents: AgentTodos[];
+    awaitingInput: AwaitingInput | null;
+    pendingQuestions: PendingQuestion[];
+  } {
     const transcriptPath = this.transcriptPath(sessionId, cwd);
-    if (!transcriptPath) return { agents: [], awaitingInput: null };
+    if (!transcriptPath) return { agents: [], awaitingInput: null, pendingQuestions: [] };
 
     const mainLines = this.readLines(transcriptPath);
     const agents: AgentTodos[] = [];
@@ -129,7 +234,12 @@ export class TodosParser {
     }
 
     agents.push(...this.listSubAgents(sessionId, cwd, mainLines));
-    return { agents, awaitingInput: detectAwaitingInput(mainLines, true) };
+    const waits = scanPendingWaits(mainLines, true);
+    return {
+      agents,
+      awaitingInput: waits.awaitingInput,
+      pendingQuestions: waits.pendingQuestions,
+    };
   }
 
   transcriptMtime(sessionId: string, cwd: string): number | null {
@@ -296,8 +406,13 @@ export class TodosParser {
   // pelo usuário ou morto por erro. `enriched` indica se o transcript recebe
   // o enriquecimento `toolUseResult` (só o transcript principal recebe —
   // transcripts de sub-agents nunca têm esse campo, verificado nos dados
-  // reais): quando `enriched`, um tool_result sem `toolUseResult.agentId` é
-  // rejeição; quando não, presença de tool_result já basta para 'completed'.
+  // reais): quando `enriched`, um tool_result sem `toolUseResult.agentId`
+  // NEM `toolUseResult.agent_id` é rejeição; quando não, presença de
+  // tool_result já basta para 'completed'. O CLI emite `agentId` para
+  // sub-agents comuns e `agent_id` (snake_case) para teammates nomeados
+  // despachados em background — os dois formatos coexistem num mesmo
+  // ecossistema (visto em transcripts reais), e aceitar só um faz o
+  // sub-agent correspondente sumir da árvore silenciosamente.
   private collectDispatches(lines: string[], enriched: boolean): Map<string, Dispatch> {
     const out = new Map<string, Dispatch>();
     for (const line of lines) {
@@ -324,7 +439,11 @@ export class TodosParser {
           const d = out.get(block.tool_use_id);
           if (d) {
             if (enriched) {
-              d.result = typeof entry.toolUseResult?.agentId === 'string' ? 'completed' : 'rejected';
+              const result = entry.toolUseResult;
+              const dispatchedId = typeof result?.agentId === 'string' ? result.agentId
+                : typeof result?.agent_id === 'string' ? result.agent_id
+                : null;
+              d.result = dispatchedId !== null ? 'completed' : 'rejected';
             } else {
               // Transcripts de sub-agents não recebem o enriquecimento
               // toolUseResult; um tool_result presente = o aninhado terminou.

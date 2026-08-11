@@ -1,0 +1,16 @@
+---
+import LandingLayout from '../../layouts/LandingLayout.astro';
+import type { Locale } from '../../../../src/i18n/locale';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'pt' }, props: { locale: 'pt-br' as Locale } },
+    { params: { lang: 'es' }, props: { locale: 'es' as Locale } },
+    { params: { lang: 'zh-cn' }, props: { locale: 'zh-cn' as Locale } },
+    { params: { lang: 'zh-tw' }, props: { locale: 'zh-tw' as Locale } },
+  ];
+}
+
+const { locale } = Astro.props as { locale: Locale };
+---
+<LandingLayout locale={locale} />

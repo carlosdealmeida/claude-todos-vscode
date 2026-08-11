@@ -70,7 +70,10 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
                         // Título fallback ("Session · <id8>") já contém o shortId — não repetir.
                         val shortId = s.sessionId.take(8)
                         val idPart = if (s.title.contains(shortId)) "" else " · $shortId"
-                        labels += "${s.title}$idPart · ${relativeTime(now, s.updatedAt, locale)}"
+                        // Mesma regra da paridade VS Code: marca com "● " + rótulo localizado
+                        // as sessões cujo processo do Claude Code ainda está vivo.
+                        val aliveMarker = if (s.alive) "● ${NotifyMessages.get(locale, "picker.alive")} · " else ""
+                        labels += "$aliveMarker${s.title}$idPart · ${relativeTime(now, s.updatedAt, locale)}"
                         ids += s.sessionId
                     }
                     com.intellij.openapi.ui.popup.JBPopupFactory.getInstance()

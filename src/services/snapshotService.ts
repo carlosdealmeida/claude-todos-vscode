@@ -1,6 +1,8 @@
 import type { SessionResolver } from './sessionResolver';
 import type { TodosParser } from './todosParser';
 import type { UsageParser } from './usageParser';
+import type { LiveSession } from './liveSessions';
+import type { SessionNames } from './sessionNames';
 import type { AgentTodos, SessionSnapshot, SessionSummary } from '../types';
 
 export class SnapshotService {
@@ -10,6 +12,11 @@ export class SnapshotService {
     private readonly resolver: SessionResolver,
     private readonly parser: TodosParser,
     private readonly usageParser: UsageParser,
+    private readonly liveSessions: () => Map<string, LiveSession> = () => new Map(),
+    private readonly names?: SessionNames,
+    // Injetavel pra testar o updatedAt gravado por resolveTitle() sem depender
+    // do relogio real — mesmo padrao do `now` que o SessionCore ja usa pra poda.
+    private readonly now: () => number = () => Date.now(),
   ) {}
 
   setPinnedSession(sessionId: string | null): void {
@@ -17,6 +24,10 @@ export class SnapshotService {
   }
 
   listSessions(): SessionSummary[] {
+    const live = this.liveSessions();
+    // Uma leitura do arquivo de nomes por chamada, igual ao `live` — resolveTitle
+    // roda em laço por sessão candidata e não pode reabrir o arquivo a cada volta.
+    const cachedNames = this.names?.entries() ?? {};
     const out: SessionSummary[] = [];
     for (const record of this.resolver.resolveCandidates()) {
       const updatedAt = this.parser.transcriptMtime(record.sessionId, record.cwd);
@@ -24,10 +35,12 @@ export class SnapshotService {
       out.push({
         sessionId: record.sessionId,
         cwd: record.cwd,
-        title: this.resolveTitle(record.sessionId, record.cwd),
+        title: this.resolveTitle(record.sessionId, record.cwd, live.get(record.sessionId), cachedNames[record.sessionId]),
         updatedAt,
+        ...(live.has(record.sessionId) ? { alive: true } : {}),
       });
     }
+    // Ordem por mtime, inalterada: a preferência por sessão viva vive no choose().
     out.sort((a, b) => b.updatedAt - a.updatedAt);
     return out;
   }
@@ -59,6 +72,7 @@ export class SnapshotService {
       agents,
       usage: this.usageParser.usageForSession(chosen.sessionId, chosen.cwd, usageAgents),
       ...(detail.awaitingInput !== null ? { awaitingInput: detail.awaitingInput } : {}),
+      ...(detail.pendingQuestions.length > 0 ? { pendingQuestions: detail.pendingQuestions } : {}),
     };
   }
 
@@ -72,10 +86,20 @@ export class SnapshotService {
     const pinned = this.pinnedSessionId
       ? sessions.find(s => s.sessionId === this.pinnedSessionId)
       : undefined;
-    return pinned ?? sessions[0];
+    if (pinned) return pinned;
+    // `sessions` já vem por mtime DESC, então o primeiro vivo é o vivo mais recente.
+    return sessions.find(s => s.alive) ?? sessions[0];
   }
 
-  private resolveTitle(sessionId: string, cwd: string): string {
+  // name do registro (só nameSource 'user') > nome em cache > aiTitle > id curto.
+  // 'derived' é ignorado de propósito: é {basename}-{sufixo}, pior que o aiTitle.
+  // `cachedName` vem do lote resolvido em listSessions() — nunca lido aqui.
+  private resolveTitle(sessionId: string, cwd: string, live?: LiveSession, cachedName?: string): string {
+    if (live?.nameSource === 'user' && live.name) {
+      this.names?.remember(sessionId, live.name, this.now());
+      return live.name;
+    }
+    if (cachedName) return cachedName;
     return this.parser.readSessionTitle(sessionId, cwd) ?? `Session · ${sessionId.slice(0, 8)}`;
   }
 }

@@ -1,0 +1,17 @@
+{
+  "name": "claude-todos-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prebuild": "node scripts/extractLanding.mjs && node -e \"require('fs').cpSync('../screenshots','public/screenshots',{recursive:true})\"",
+    "dev": "npm run prebuild && astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "devDependencies": {
+    "@astrojs/svelte": "^7.0.0",
+    "astro": "^5.0.0",
+    "svelte": "^5.55.9",
+    "typescript": "^5.9.3"
+  }
+}

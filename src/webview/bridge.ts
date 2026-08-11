@@ -41,6 +41,17 @@ export function createJcefBridge(win: JcefWindow = window as unknown as JcefWind
   };
 }
 
-export function createBridge(): WebviewBridge {
-  return typeof acquireVsCodeApi !== 'undefined' ? createVscodeBridge() : createJcefBridge();
+// Host demo (site publico): a pagina injeta uma implementacao completa em
+// `window.__claudeTodosDemo` antes de montar o App. A variavel nunca existe no
+// VS Code nem no JCEF, entao os dois hosts reais seguem inalterados.
+export interface DemoWindow {
+  __claudeTodosDemo?: WebviewBridge;
+}
+
+export function createBridge(win: Window = window): WebviewBridge {
+  const demo = (win as unknown as DemoWindow).__claudeTodosDemo;
+  if (demo) return demo;
+  return typeof acquireVsCodeApi !== 'undefined'
+    ? createVscodeBridge(win)
+    : createJcefBridge(win as unknown as JcefWindow);
 }
