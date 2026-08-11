@@ -61,6 +61,18 @@ KNOWN = {
     79298, 78821, 78578, 79122, 80434,          # R3
     80662, 80459, 80136, 78550, 78843, 78940,   # R3
     78449, 79042, 78825,                        # R4
+    # varredura 2026-08-10
+    83289, 83512, 82215, 83181, 84705,          # validação: statusline/usage por agente
+    82766, 84028, 81801, 84368, 82603,          # validação: modelo/usage/pin/nome derivado
+    84223, 81620, 84738, 81702, 83419,          # R5 (contabilidade de tokens)
+    82084, 83019, 84279, 81946,                 # R3 (retenção 30 dias)
+    83730, 85209, 83164, 83826,                 # R3 (índice perdido, dados intactos)
+    83577, 84669, 81788, 84006, 82764,          # itens 14/22 (hook Notification)
+    85534, 83848, 84981, 82617, 83627,          # item 23 (reforço)
+    85129, 81270, 85161,                        # item 23 (reforço)
+    82141, 82581, 85160,                        # item 21 (fontes de sessão)
+    82641, 84040, 84540, 84556,                 # item 8 (grouping)
+    81549,                                      # item 1 (viewer: timestamps)
 }
 
 # (rótulo, query) — todas com repo: e is:issue implícitos

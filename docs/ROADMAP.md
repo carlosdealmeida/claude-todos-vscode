@@ -51,6 +51,19 @@ material para README/divulgação. Comentários já postados com disclosure de a
 | [#79281](https://github.com/anthropics/claude-code/issues/79281) | aberta | Agents view: marcar a sessão main e usar cor para manter o paralelo legível | = nossa árvore (0.9.0) com badge de tipo colorido. **Não comentar:** é a agents view do **TUI**, outra superfície. |
 | [#78692](https://github.com/anthropics/claude-code/issues/78692) | aberta | Sidebar do desktop deveria mostrar **todas** as sessões de `~/.claude/projects/` | Munição para a decisão de posicionamento do item 8. |
 
+**Achadas na varredura 2026-08-10 (ainda sem comentário nosso):**
+
+| Issue | Estado | Título | Nota |
+|---|---|---|---|
+| [#83289](https://github.com/anthropics/claude-code/issues/83289) / [#83512](https://github.com/anthropics/claude-code/issues/83512) | abertas | statusLine ignora o sub-agent focado — sempre reporta a sessão main | = nossa `UsageTable` por agente (item 6a): mostramos contexto/tokens de cada nó da árvore. |
+| [#82215](https://github.com/anthropics/claude-code/issues/82215) | aberta | Desktop: painel de uso mostra só tokens absolutos, sem % nem limite | = item 2 (0.4.0): %, limite e semáforo. |
+| [#83181](https://github.com/anthropics/claude-code/issues/83181) / [#84705](https://github.com/anthropics/claude-code/issues/84705) | abertas | Tokens/custo de **todos** os agentes do workflow, não só o orquestrador; notificação de conclusão com split de tokens + modelo resolvido | = itens 6a e 20, entregues. |
+| [#82766](https://github.com/anthropics/claude-code/issues/82766) | aberta | Badge de modelo do sidebar VS Code mostra Haiku com `/model` em Sonnet 5 | **Quarto** caso de modelo errado no painel nativo (ver item 20). |
+| [#84028](https://github.com/anthropics/claude-code/issues/84028) | aberta | CLI e mobile reportam modelos **diferentes** para a mesma sessão viva | Idem item 20 — nosso badge lê o transcript do agente. |
+| [#81801](https://github.com/anthropics/claude-code/issues/81801) | aberta | Expor usage/rate-limit nas extensões de IDE (VS Code / JetBrains) | Metade usage já entregue nas **duas** superfícies (0.16.0); rate-limit não tem dado local (fora de escopo, como billing). |
+| [#84368](https://github.com/anthropics/claude-code/issues/84368) | aberta | Pin de sessões no sidebar de histórico | Temos pin desde o início. Superfície = desktop → **não comentar**. |
+| [#82603](https://github.com/anthropics/claude-code/issues/82603) | aberta | Título auto-gerado sai em russo para sessão ucraniana | Valida a decisão do item 5(c) de **ignorar** `nameSource: "derived"` e manter nosso título semântico. |
+
 ---
 
 ## Alta aderência (candidatas fortes)
@@ -68,6 +81,9 @@ de tokens do 0.3.0).
 - **Extensão da ideia (2026-07-11):** combinar com um viewer simples de transcript (renderizar
   o `.jsonl` legível em vez de abrir o JSON cru) — transforma o painel de *monitor* em
   *navegador* da sessão.
+- **Sinal para o viewer (varredura 2026-08-10):** [#81549](https://github.com/anthropics/claude-code/issues/81549)
+  pede timestamps por mensagem na UI de transcript — dado que o `.jsonl` já tem e um viewer
+  nosso mostraria de graça.
 
 ### 2. Indicador de uso de contexto/token na barra ✅ ENTREGUE
 - **Issue:** [#58159](https://github.com/anthropics/claude-code/issues/58159) — labels `platform:vscode`, `area:statusline`
@@ -81,6 +97,12 @@ de tokens do 0.3.0).
   sessões que passam disso. Ou seja, a heurística de janela é dor do ecossistema inteiro, não
   limitação nossa; e [#79155](https://github.com/anthropics/claude-code/issues/79155) pede
   exatamente o indicador **persistente** de contexto que já entregamos na 0.4.0.
+- **⚠️ Bug novo a corrigir (varredura 2026-08-10):** o rollup de `usage.iterations` em turnos
+  com `advisor` infla o top-level (~2×) que o `contextForFile` lê — ver **R5, achado 2** (com
+  medição local e correção proposta). Relacionados do período:
+  [#81702](https://github.com/anthropics/claude-code/issues/81702) contexto inflado ~4× no
+  resume e [#83419](https://github.com/anthropics/claude-code/issues/83419) modelo alegando
+  limite com 43–72% livres.
 
 ### 3. Visibilidade de custo: cached vs uncached ✅ ENTREGUE (0.5.0)
 - **Issue:** [#44779](https://github.com/anthropics/claude-code/issues/44779) — labels `area:cost`, `area:tui`, `area:statusline`
@@ -256,6 +278,14 @@ de tokens do 0.3.0).
 - **Tensão:** vai **contra o princípio de escopo-por-workspace** que é o nosso diferencial de
   privacidade (duas janelas nunca veem os todos uma da outra). Se entrar, tem que ser opt-in
   explícito e bem isolado. Decidir posicionamento antes de planejar.
+- **Reforço (varredura 2026-08-10):** a demanda por organização multi-projeto segue —
+  [#82641](https://github.com/anthropics/claude-code/issues/82641) grouping/labels de sessão
+  no painel, mais um cluster grande de grouping no sidebar do desktop
+  ([#84040](https://github.com/anthropics/claude-code/issues/84040),
+  [#84540](https://github.com/anthropics/claude-code/issues/84540),
+  [#84556](https://github.com/anthropics/claude-code/issues/84556) etc. — outra superfície,
+  não comentar). E a nota de retenção em R3 vale aqui: histórico "entre todos os projetos"
+  teria horizonte máximo de 30 dias.
 
 ### 9. Multi-root: escolher a pasta ativa ✅ ENTREGUE (0.13.0)
 - **Issues:** [#58044](https://github.com/anthropics/claude-code/issues/58044) sem como selecionar a pasta ativa · [#36949](https://github.com/anthropics/claude-code/issues/36949) setting `workingDirectory` · [#12808](https://github.com/anthropics/claude-code/issues/12808) (20c) "sempre começa na primeira pasta" · [#18814](https://github.com/anthropics/claude-code/issues/18814) (`NOT_PLANNED`)
@@ -302,6 +332,10 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 > item **23** (background tasks no painel), que continua bloqueado por depender de uma decisão
 > de posicionamento (junto com o item 8) ainda não tomada — não reabrir sem essa decisão. Itens
 > 13, 14 e 15 saíram da fila por entrega (0.9.0, 0.10.0, 0.10.0).
+>
+> **Atualização 2026-08-10:** a varredura desta data promoveu o **R5** (contabilidade de
+> tokens — inflação ~2× medida no disco) a 📐 **prioridade**; é correção de exatidão do que já
+> está entregue, então passa na frente de qualquer feature nova da fila.
 >
 > Filas anteriores, para histórico: 2026-07-25 → 1º 17 · 2º 5(a)+(c) · 3º 23. Manhã de
 > 2026-07-27 → 1º 17 · 2º 22-ext · 3º 5(a)+(c) (17 caiu na verificação de disco da mesma tarde).
@@ -479,6 +513,13 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   entrada da lista de background tasks. Nosso badge lê o modelo da **última mensagem do
   transcript daquele agente**, então acerta exatamente onde os três erram — vale citar isso no
   README/divulgação.
+- **Reforço (varredura 2026-08-10):** o cluster não seca —
+  [#82766](https://github.com/anthropics/claude-code/issues/82766) badge do sidebar VS Code
+  mostra Haiku com `/model` em Sonnet 5 (e **bloqueia** o modo Auto);
+  [#84028](https://github.com/anthropics/claude-code/issues/84028) CLI e mobile reportam
+  modelos diferentes para a mesma sessão, 60s de intervalo;
+  [#84705](https://github.com/anthropics/claude-code/issues/84705) pede o modelo **resolvido**
+  (não o alias) nas notificações de conclusão de sub-agent. Quarto, quinto e sexto casos.
 
 ### 21. Fontes de dados novas em `~/.claude` (tasks persistentes + dependências) 🔍 a investigar
 - **Origem:** varredura 2026-07-16 + inspeção local do disco.
@@ -514,6 +555,14 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   heurística de liveness do item 5(a). Terceira fonte candidata de liveness (junto com
   `~/.claude/sessions/{pid}.json` e nosso `terminalPid` do bridge); avaliar qual é a mais
   confiável antes de implementar.
+- **Achado 4 (varredura 2026-08-10) — MCP `ccd_*` não documentado:**
+  [#82141](https://github.com/anthropics/claude-code/issues/82141) descreve servers MCP
+  internos (`ccd_*`) com mensageria sessão-a-sessão e um `list_sessions` com escopo próprio —
+  quarta fonte candidata de lista/liveness de sessões. Complementam:
+  [#82581](https://github.com/anthropics/claude-code/issues/82581) pin de sessão invisível em
+  `agents --json` e [#85160](https://github.com/anthropics/claude-code/issues/85160) pedindo
+  sessionIds no `ListAgents`. Só observar — nossa leitura do registro de sessões (item 5a)
+  continua suficiente.
 
 ### 22. Notificação "aguardando sua resposta" (AskUserQuestion) ✅ ENTREGUE (0.15.0)
 - **Issues (varredura 2026-07-16):** [#57230](https://github.com/anthropics/claude-code/issues/57230)
@@ -542,6 +591,15 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   [#79362](https://github.com/anthropics/claude-code/issues/79362) (com repro). Somadas a #8985
   (63 reações), são o argumento mais forte do nosso notifier: ele deriva do transcript e
   **independe de hook**, então funciona exatamente no cenário onde o oficial falha.
+- **Reforço (varredura 2026-08-10):** o cluster segue crescendo, agora nas duas superfícies —
+  [#83577](https://github.com/anthropics/claude-code/issues/83577) e
+  [#84669](https://github.com/anthropics/claude-code/issues/84669) painel nativo do VS Code;
+  [#81788](https://github.com/anthropics/claude-code/issues/81788) e
+  [#84006](https://github.com/anthropics/claude-code/issues/84006) app desktop. Um ano de
+  issue aberta (#8985) e o hook continua não disparando. Relacionada:
+  [#82764](https://github.com/anthropics/claude-code/issues/82764) pede painel unificado de
+  **aprovações pendentes** multi-sessão — é a metade permission-prompt que já documentamos não
+  alcançar (não chega ao transcript); segue fora.
 - **Extensão natural (nova, 2026-07-25):** [#79078](https://github.com/anthropics/claude-code/issues/79078)
   pede um painel lateral que **liste as perguntas em aberto** de uma conversa. Já detectamos a
   pendência (`detectAwaitingInput`) — falta só exibi-la no painel em vez de só notificar: uma
@@ -591,6 +649,21 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   Todo esse cluster é **estado de vida errado no painel nativo** — que é exatamente onde um
   modelo derivado do transcript (o nosso) tende a acertar. Muda a leitura da "tensão" acima: o
   pedido não é "mostrar tudo que roda", é "mostrar o estado **certo** do que roda".
+- **Reforço (varredura 2026-08-10):** segue o cluster mais quente, agora com perda além de
+  estado errado — [#85534](https://github.com/anthropics/claude-code/issues/85534) notificação
+  de conclusão enfileirada e **nunca entregue** ·
+  [#83848](https://github.com/anthropics/claude-code/issues/83848) sub-agents em background
+  travam sem texto final e o harness reporta `status:completed` ·
+  [#84981](https://github.com/anthropics/claude-code/issues/84981) background tasks mortas por
+  SIGTERM num timer interno de exatos 30min ·
+  [#82617](https://github.com/anthropics/claude-code/issues/82617) botão Stop mata bg subagents
+  de turnos **anteriores** · [#83627](https://github.com/anthropics/claude-code/issues/83627)
+  Bash em bg morto quando o sub-agent que o lançou retorna ·
+  [#85129](https://github.com/anthropics/claude-code/issues/85129) headless (`-p`) mata
+  `run_in_background` no fim do turno ·
+  [#81270](https://github.com/anthropics/claude-code/issues/81270) exit 1 reportado como 0 ·
+  [#85161](https://github.com/anthropics/claude-code/issues/85161) pede painel de atividade de
+  background — o pedido de UI continua vivo e sem resposta oficial.
 
 ---
 
@@ -676,6 +749,24 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   respeitar a env var é barato e cobre esses usuários. Já existe como follow-up no ledger do
   item 24 (*"`resolveClaudeDir` do VS Code consultar `CLAUDE_CONFIG_DIR`"*); esta issue é a
   evidência externa de que vale priorizar. 🔍
+- **Reforço (varredura 2026-08-10)** — dois sub-temas distintos:
+  - **Retenção de 30 dias virou revolta:** [#82084](https://github.com/anthropics/claude-code/issues/82084)
+    transcripts deletados sem aviso nem recuperação ·
+    [#84279](https://github.com/anthropics/claude-code/issues/84279) "meses de histórico
+    destruídos silenciosamente" · [#83019](https://github.com/anthropics/claude-code/issues/83019)
+    o diretório fica **fora** da cobertura típica de backup e ainda auto-deleta ·
+    [#81946](https://github.com/anthropics/claude-code/issues/81946) pede transcripts portáveis
+    por projeto. Para nós é o mesmo recado do #79122: a fonte tem prazo de validade — o
+    dashboard 7 dias está confortavelmente dentro, mas qualquer feature futura de histórico
+    longo (item 8) precisa assumir horizonte de 30 dias.
+  - **"Dados intactos, índice perdido":** [#83730](https://github.com/anthropics/claude-code/issues/83730)
+    sidebar esvaziado após reinstall com `--resume` funcionando ·
+    [#85209](https://github.com/anthropics/claude-code/issues/85209) idem com dados locais
+    intactos · [#83164](https://github.com/anthropics/claude-code/issues/83164) sessões somem
+    do sidebar em modo Gateway · [#83826](https://github.com/anthropics/claude-code/issues/83826)
+    projeto some após crash com dados no disco. O painel nativo depende de um índice próprio
+    que dessincroniza do disco; nós listamos **direto dos `.jsonl`** — imunes a essa classe
+    inteira. Argumento de divulgação, mesmo padrão do item 20.
 
 ### R4. Performance com transcripts grandes — agora com evidência externa 🔍 a avaliar
 - **Origem:** o tema era preocupação interna sem issue; a varredura 2026-07-25 trouxe evidência
@@ -686,6 +777,38 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   Control falha em transcript grande.
 - **Conecta com:** a melhoria R-perf do item 2 (o `usageParser` lê o transcript principal duas
   vezes: `modelsForFile` + `contextForFile`). Continua sendo a otimização óbvia se formos mexer.
+
+### R5. Contabilidade de tokens — soma linha-a-linha infla ~2×; formato novo `usage.iterations` 📐 **prioridade**
+- **Origem:** varredura 2026-08-10 ([#84223](https://github.com/anthropics/claude-code/issues/84223),
+  [#81620](https://github.com/anthropics/claude-code/issues/81620),
+  [#84738](https://github.com/anthropics/claude-code/issues/84738)) + **medição local**. É o
+  único achado da varredura que é **bug nosso**, não do harness — promovido direto a prioridade.
+- **Achado 1 — inflação ~2× nos totais (medido).** O transcript grava **um record por content
+  block**, e o `usage` final do request é replicado/backfilled em cada record do mesmo
+  `requestId` (formato descrito em #84223). O
+  [readFileUsage](../src/services/usageParser.ts#L56) soma **todas** as linhas → medido em 40
+  transcripts recentes deste disco: **70% dos requests têm 2+ records e a soma dá 1.97× o valor
+  real** (vs. dedupe por `requestId`). Tabela de tokens, breakdown por agente/modelo (6a) e
+  dashboard 7 dias (16) exibem ~2× o consumo real. A eficiência de cache (%) escapa por ser
+  razão entre grandezas igualmente infladas. **Correção:** agregar por `requestId` ficando com o
+  usage final (record com `stop_reason` non-null / `usage.iterations` / maior `output_tokens`) —
+  o mesmo dedupe que o `ccusage` faz por `message.id`+`requestId`.
+- **Achado 2 — rollup do advisor contamina o indicador de contexto.** #81620/#84738: turnos que
+  chamam o `advisor` server-side somam as iterations no `usage` **top-level** (≈2× o contexto
+  real; o próprio auto-compact dispara cedo por isso). É esse top-level que o
+  [contextForFile](../src/services/usageParser.ts#L148) lê da última mensagem. **Correção:**
+  quando `usage.iterations` existir, usar a **última iteration `type:"message"`** em vez do
+  rollup. Verificado localmente (2026-08-10): `iterations` já está em **313/314** transcripts
+  dos últimos 14 dias e **267** têm rollup na última mensagem — hoje **0 divergem** (1 arquivo
+  com `advisor_message` no disco), ou seja, a exposição é estrutural e o gatilho ainda é raro
+  aqui; corrigir antes de virar report de usuário.
+- **Achado 3 — subcontagem sem correção possível (documentar).** #84223: ~20% dos requests de
+  **sub-agent** nunca recebem o usage final — ficam com o snapshot inicial (`output_tokens: 1`,
+  thinking zerado). Medido local: **15.9%** (6.392 requests em 286 `agent-*.jsonl` de 14 dias).
+  É piso de subcontagem **do dado**, não do parser; nada a fazer além de saber que o número de
+  output por sub-agent é um mínimo, não um exato.
+- **Conecta com:** itens 2 (contexto), 6a (por agente), 16 (dashboard) e a R-perf do item 2 —
+  o dedupe e a unificação de passada mexem na mesma função; fazer juntos.
 
 ---
 
@@ -781,7 +904,40 @@ classifica candidatos por título **e** corpo (600 chars), e a lista `KNOWN` est
 que as varreduras 07-16 e 07-25 já trataram. Sem esses dois filtros o sinal fica enterrado — é
 a razão de método descrita acima.
 
-Próxima varredura: `python docs/sweep_issues.py 2026-07-25`.
+### Varredura 2026-08-10 (incremental, `created:>2026-07-25`)
+
+Quarta passada, incremental: 28 consultas via `gh` autenticado, 475 candidatos únicos fora do
+ROADMAP, 266 no núcleo de escopo.
+
+**Nota de método:** as reações do período são baixas (máx. 4) — issue recém-criada não acumulou
+reação ainda, então o ranking por reações perde valor na janela incremental curta. O sinal desta
+passada está nos **clusters de títulos repetidos**, não no topo do ranking.
+
+**Resultados:**
+- **Achado principal — R5 (novo, 📐 prioridade):** contabilidade de tokens. Três problemas
+  encadeados, todos **medidos contra o disco local**: (1) nossa soma linha-a-linha infla os
+  totais em ~1.97× porque o usage final é replicado em cada record do `requestId` (#84223
+  descreve o formato; 70% dos requests locais têm 2+ records) — bug **nosso**; (2) o rollup de
+  `usage.iterations` em turnos com `advisor` (~2× contexto, #81620/#84738) contamina o
+  indicador de contexto, que lê o top-level da última mensagem (313/314 transcripts locais já
+  têm `iterations`; 0 divergem hoje); (3) ~16% dos requests de sub-agent nunca recebem usage
+  final (medido: 15.9%) — subcontagem do dado, sem correção possível. Único item da varredura
+  que exige código; os demais são validação/reforço.
+- **10 issues novas de validação** (tabela no topo) — destaque para o par de statusline que
+  ignora o sub-agent focado (#83289/#83512) e o quarto caso de modelo errado no painel nativo
+  (#82766, que ainda bloqueia o modo Auto do usuário).
+- **Reforços:** item 23 (8 issues novas — segue o cluster mais quente, agora com *perda* de
+  background tasks além de estado errado); R3 (dois sub-temas: revolta com a retenção de 30
+  dias e "dados intactos, índice perdido" — onde nossa listagem direto do disco é imune); itens
+  14/22 (hook `Notification` segue quebrado nas duas superfícies, um ano de #8985); item 20
+  (3 novos casos de modelo errado); item 21 (fonte nova: MCP `ccd_*` não documentado, #82141);
+  item 8 (grouping multi-projeto + horizonte de 30 dias); item 1-viewer (#81549 timestamps).
+- **Temas varridos sem nada aplicável nesta passada:** bugs do plugin JetBrains **oficial**
+  (#82400, #84097, #84460… — outra extensão, não a nossa), sidebar/grouping do app desktop
+  (dezenas de issues, outro produto), Cowork/Dispatch/Routines, iOS Simulator, cluster de
+  billing (ruído já filtrado pelo `NOISE`).
+
+Próxima varredura: `python docs/sweep_issues.py 2026-08-10`.
 
 Anotar novos achados abaixo:
 
