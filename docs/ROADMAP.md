@@ -90,7 +90,7 @@ de tokens do 0.3.0).
 - **Reforçada por:** [#516](https://github.com/anthropics/claude-code/issues/516) (`NOT_PLANNED`) "Always show available context percentage" — pedido antigo, nunca atendido.
 - **Status:** ✅ entregue — badge "{pct}% ctx" + barra fina com semáforo (verde <60% / amarelo 60–85% / vermelho ≥85%) na `UsageTable`. Spec: [docs/specs/2026-06-03-context-usage-indicator-design.md](specs/2026-06-03-context-usage-indicator-design.md). Plano: [docs/plans/2026-06-03-context-usage-indicator.md](plans/2026-06-03-context-usage-indicator.md).
 - **Como:** o parser extrai o tamanho do contexto da última mensagem do transcript principal (`input + cache`); limite 200k/1M detectado pelo modelo. Lógica de nível em `format.contextLevel`.
-- **Melhoria futura (R-perf):** `usageParser` lê o transcript principal duas vezes (`modelsForFile` + `contextForFile`). Para transcripts grandes vale unificar numa passagem única. Conecta com o tema "performance de transcripts grandes" do backlog. 🔍 a avaliar.
+- **R-perf: ✅ entregue junto com o R5 (2026-08-11)** — o transcript principal passou a ser lido uma única vez por refresh (tokens e contexto na mesma passada de `readFileUsage`; `contextForFile` removido).
 - **Bug + melhoria futura (detecção de janela):** o limite 200k/1M é detectado por heurística (família `opus`/`sonnet` 4+ ou evidência observada), porque a janela exata **não** está no transcript nem nos hooks. A **única** fonte de verdade local é o `context_window.context_window_size` do **statusline JSON**, mas captá-lo exige registrar um statusline (barra visível na TUI + conflito com statusline existente). Registrado como **"statusline bridge (opt-in)"** — um comando explícito tipo *"Enable precise context"* — se algum usuário pedir precisão exata. 🔍 a avaliar.
   **Reforço (varredura 2026-07-25):** [#81039](https://github.com/anthropics/claude-code/issues/81039)
   mostra o **próprio app desktop** errando isso — `/context` exibindo denominador de 200.0K em
@@ -774,8 +774,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   [#79042](https://github.com/anthropics/claude-code/issues/79042) sessões grandes retomadas com
   scrollback truncado · [#78825](https://github.com/anthropics/claude-code/issues/78825) Remote
   Control falha em transcript grande.
-- **Conecta com:** a melhoria R-perf do item 2 (o `usageParser` lê o transcript principal duas
-  vezes: `modelsForFile` + `contextForFile`). Continua sendo a otimização óbvia se formos mexer.
+- **Conecta com:** a R-perf do item 2, ✅ entregue no R5 (2026-08-11): o transcript principal é lido uma vez por refresh. Se este item evoluir, o próximo alvo é leitura incremental/streaming, não a passada dupla (que já morreu).
 
 ### R5. Contabilidade de tokens — soma linha-a-linha infla ~2×; formato novo `usage.iterations` ✅ ENTREGUE (achados 1 e 2 · 2026-08-11)
 - **Origem:** varredura 2026-08-10 ([#84223](https://github.com/anthropics/claude-code/issues/84223),
