@@ -34,13 +34,17 @@ interface RawUsage {
   output_tokens?: unknown;
   cache_creation_input_tokens?: unknown;
   cache_read_input_tokens?: unknown;
+  iterations?: unknown;
 }
 
 interface TranscriptEntry {
   type?: string;
   isSidechain?: boolean;
+  requestId?: unknown;
   message?: {
+    id?: unknown;
     model?: unknown;
+    stop_reason?: unknown;
     usage?: RawUsage;
   };
 }
@@ -50,7 +54,11 @@ function num(v: unknown): number {
 }
 
 // Lê um transcript em uma passada e devolve o uso por modelo + o breakdown de
-// cache do arquivo. No transcript principal, entradas isSidechain são puladas
+// cache do arquivo. O transcript grava um record por content block, replicando
+// o usage final do request em cada um (e às vezes só snapshots, quando o
+// backfill falha — #84223) — por isso a agregação elege um VENCEDOR por
+// requestId em vez de somar linhas: final (stop_reason/iterations) > snapshot
+// de maior output. No transcript principal, entradas isSidechain são puladas
 // (os turnos de sub-agents vêm dos próprios agent-*.jsonl). Compartilhada entre
 // o uso por sessão (UsageParser) e o agregado do projeto (ProjectUsageService).
 export function readFileUsage(filePath: string, skipSidechain: boolean): { models: ModelUsage[]; cache: CacheStats; lastModel?: string } {
@@ -61,8 +69,9 @@ export function readFileUsage(filePath: string, skipSidechain: boolean): { model
     return { models: [], cache: { input: 0, read: 0, creation: 0 } };
   }
 
-  const byModel = new Map<string, ModelUsage>();
-  const cache: CacheStats = { input: 0, read: 0, creation: 0 };
+  interface Winner { model: string; usage: RawUsage; final: boolean }
+  const winners = new Map<string, Winner>();
+  let lineKey = 0;
   let lastModel: string | undefined;
   for (const line of lines) {
     if (!line) continue;
@@ -75,14 +84,28 @@ export function readFileUsage(filePath: string, skipSidechain: boolean): { model
     if (msg.model === '<synthetic>') continue;
     lastModel = msg.model;
     const u = msg.usage;
-    const input = num(u.input_tokens);
-    const read = num(u.cache_read_input_tokens);
-    const creation = num(u.cache_creation_input_tokens);
-    const acc = byModel.get(msg.model) ?? { model: msg.model, input: 0, output: 0, cache: 0 };
+    const key = typeof entry.requestId === 'string' ? entry.requestId
+      : typeof msg.id === 'string' ? `msg:${msg.id}`
+      : `line:${lineKey++}`;
+    const final = msg.stop_reason != null || Array.isArray(u.iterations);
+    const prev = winners.get(key);
+    const replace = !prev
+      || final
+      || (!prev.final && num(u.output_tokens) >= num(prev.usage.output_tokens));
+    if (replace) winners.set(key, { model: msg.model, usage: u, final });
+  }
+
+  const byModel = new Map<string, ModelUsage>();
+  const cache: CacheStats = { input: 0, read: 0, creation: 0 };
+  for (const { model, usage } of winners.values()) {
+    const input = num(usage.input_tokens);
+    const read = num(usage.cache_read_input_tokens);
+    const creation = num(usage.cache_creation_input_tokens);
+    const acc = byModel.get(model) ?? { model, input: 0, output: 0, cache: 0 };
     acc.input += input;
-    acc.output += num(u.output_tokens);
+    acc.output += num(usage.output_tokens);
     acc.cache += creation + read;
-    byModel.set(msg.model, acc);
+    byModel.set(model, acc);
     cache.input += input;
     cache.read += read;
     cache.creation += creation;

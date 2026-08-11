@@ -381,3 +381,153 @@ describe('usageForSession — currentModel', () => {
     expect(usage.byAgent[1].currentModel).toBe('claude-sonnet-4-5');
   });
 });
+
+describe('readFileUsage — dedupe por request (formato multi-record)', () => {
+  let dir: string;
+  beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dedupe-')); });
+  afterEach(() => { fs.rmSync(dir, { recursive: true, force: true }); });
+
+  interface Tokens { input?: number; output?: number; cacheCreate?: number; cacheRead?: number }
+  function record(
+    requestId: string | undefined,
+    model: string,
+    t: Tokens,
+    opts: { msgId?: string; stopReason?: string; iterations?: object[] } = {},
+  ): object {
+    return {
+      type: 'assistant',
+      ...(requestId !== undefined ? { requestId } : {}),
+      message: {
+        ...(opts.msgId !== undefined ? { id: opts.msgId } : {}),
+        model,
+        role: 'assistant',
+        stop_reason: opts.stopReason ?? null,
+        usage: {
+          input_tokens: t.input ?? 0,
+          output_tokens: t.output ?? 0,
+          cache_creation_input_tokens: t.cacheCreate ?? 0,
+          cache_read_input_tokens: t.cacheRead ?? 0,
+          ...(opts.iterations !== undefined ? { iterations: opts.iterations } : {}),
+        },
+      },
+    };
+  }
+  function write(lines: object[]): string {
+    const p = path.join(dir, 't.jsonl');
+    fs.writeFileSync(p, lines.map(l => JSON.stringify(l)).join('\n'));
+    return p;
+  }
+
+  it('conta uma unica vez um request com o usage final replicado em N records (backfill completo)', () => {
+    const final = { input: 4, output: 428, cacheCreate: 3249, cacheRead: 100_000 };
+    const p = write([
+      record('req_1', 'claude-opus-4-8', final, { stopReason: 'end_turn' }),
+      record('req_1', 'claude-opus-4-8', final, { stopReason: 'end_turn' }),
+      record('req_1', 'claude-opus-4-8', final, { stopReason: 'end_turn' }),
+    ]);
+    expect(readFileUsage(p, false).models).toEqual([
+      { model: 'claude-opus-4-8', input: 4, output: 428, cache: 103_249 },
+    ]);
+  });
+
+  it('prefere o record final (stop_reason) ao snapshot inicial do mesmo request', () => {
+    const p = write([
+      record('req_1', 'claude-opus-4-8', { input: 2, output: 1, cacheRead: 50_000 }),
+      record('req_1', 'claude-opus-4-8', { input: 4, output: 250, cacheRead: 50_000 }, { stopReason: 'end_turn' }),
+    ]);
+    expect(readFileUsage(p, false).models).toEqual([
+      { model: 'claude-opus-4-8', input: 4, output: 250, cache: 50_000 },
+    ]);
+  });
+
+  it('um final ja visto nao e substituido por snapshot posterior', () => {
+    const p = write([
+      record('req_1', 'claude-opus-4-8', { input: 4, output: 250 }, { stopReason: 'end_turn' }),
+      record('req_1', 'claude-opus-4-8', { input: 2, output: 999 }),
+    ]);
+    expect(readFileUsage(p, false).models[0].output).toBe(250);
+  });
+
+  it('sem record final (backfill perdido, #84223), vence o snapshot de maior output', () => {
+    const p = write([
+      record('req_1', 'claude-opus-4-8', { input: 2, output: 1, cacheRead: 10_000 }),
+      record('req_1', 'claude-opus-4-8', { input: 2, output: 65, cacheRead: 10_000 }),
+      record('req_1', 'claude-opus-4-8', { input: 2, output: 3, cacheRead: 10_000 }),
+    ]);
+    expect(readFileUsage(p, false).models).toEqual([
+      { model: 'claude-opus-4-8', input: 2, output: 65, cache: 10_000 },
+    ]);
+  });
+
+  it('usage com iterations conta como final mesmo sem stop_reason', () => {
+    const p = write([
+      record('req_1', 'claude-opus-4-8', { input: 2, output: 999 }),
+      record('req_1', 'claude-opus-4-8', { input: 4, output: 428 }, {
+        iterations: [{ type: 'message', input_tokens: 4, output_tokens: 428 }],
+      }),
+    ]);
+    expect(readFileUsage(p, false).models[0].output).toBe(428);
+  });
+
+  it('os totais de um request com iterations usam o usage top-level (rollup = consumo real)', () => {
+    // rollup do advisor (#84738): top-level soma as iterations; os TOTAIS usam isso mesmo
+    const p = write([
+      record('req_1', 'claude-opus-4-8', { input: 4, output: 428, cacheCreate: 3249, cacheRead: 1_031_027 }, {
+        stopReason: 'end_turn',
+        iterations: [
+          { type: 'message', input_tokens: 2, cache_read_input_tokens: 515_122, cache_creation_input_tokens: 783, output_tokens: 65 },
+          { type: 'advisor_message', model: 'claude-opus-5', input_tokens: 516_328, output_tokens: 13_610 },
+          { type: 'message', input_tokens: 2, cache_read_input_tokens: 515_905, cache_creation_input_tokens: 2466, output_tokens: 363 },
+        ],
+      }),
+    ]);
+    expect(readFileUsage(p, false).models).toEqual([
+      { model: 'claude-opus-4-8', input: 4, output: 428, cache: 1_034_276 },
+    ]);
+  });
+
+  it('requests distintos somam normalmente', () => {
+    const p = write([
+      record('req_1', 'claude-opus-4-8', { input: 10, output: 5 }, { stopReason: 'end_turn' }),
+      record('req_2', 'claude-opus-4-8', { input: 20, output: 7 }, { stopReason: 'end_turn' }),
+    ]);
+    expect(readFileUsage(p, false).models).toEqual([
+      { model: 'claude-opus-4-8', input: 30, output: 12, cache: 0 },
+    ]);
+  });
+
+  it('sem requestId, deduplica pelo message.id (transcripts antigos)', () => {
+    const p = write([
+      record(undefined, 'claude-opus-4-8', { input: 10, output: 5 }, { msgId: 'msg_1', stopReason: 'end_turn' }),
+      record(undefined, 'claude-opus-4-8', { input: 10, output: 5 }, { msgId: 'msg_1', stopReason: 'end_turn' }),
+    ]);
+    expect(readFileUsage(p, false).models[0]).toEqual(
+      { model: 'claude-opus-4-8', input: 10, output: 5, cache: 0 });
+  });
+
+  it('sem requestId nem message.id, cada linha conta sozinha (legado)', () => {
+    const p = write([
+      record(undefined, 'claude-opus-4-8', { input: 10, output: 5 }),
+      record(undefined, 'claude-opus-4-8', { input: 10, output: 5 }),
+    ]);
+    expect(readFileUsage(p, false).models[0]).toEqual(
+      { model: 'claude-opus-4-8', input: 20, output: 10, cache: 0 });
+  });
+
+  it('cache stats seguem o mesmo dedupe', () => {
+    const final = { input: 4, output: 100, cacheCreate: 500, cacheRead: 9000 };
+    const p = write([
+      record('req_1', 'claude-opus-4-8', final, { stopReason: 'end_turn' }),
+      record('req_1', 'claude-opus-4-8', final, { stopReason: 'end_turn' }),
+    ]);
+    expect(readFileUsage(p, false).cache).toEqual({ input: 4, read: 9000, creation: 500 });
+  });
+
+  it('lastModel continua sendo o da ultima entrada valida, mesmo com dedupe', () => {
+    const p = write([
+      record('req_1', 'claude-opus-4-8', { input: 1, output: 1 }, { stopReason: 'end_turn' }),
+      record('req_2', 'claude-sonnet-4-6', { input: 1, output: 1 }, { stopReason: 'end_turn' }),
+    ]);
+    expect(readFileUsage(p, false).lastModel).toBe('claude-sonnet-4-6');
+  });
+});
