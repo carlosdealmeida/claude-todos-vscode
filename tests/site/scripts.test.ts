@@ -5,6 +5,7 @@ import type { DemoScript } from '../../site/src/demo/types';
 import type { Todo } from '../../src/types';
 
 const DIR = path.join('site', 'src', 'demo', 'scripts');
+const SITE_SRC = path.join('site', 'src');
 const FEATURES = new Set(['agent-tree', 'live-tasks', 'task-timing', 'tokens-cache', 'dashboard', 'notifications', 'i18n']);
 const STATUSES = new Set(['pending', 'in_progress', 'completed']);
 
@@ -12,6 +13,24 @@ function load(): { name: string; script: DemoScript }[] {
   return fs.readdirSync(DIR)
     .filter((f) => f.endsWith('.json'))
     .map((name) => ({ name, script: JSON.parse(fs.readFileSync(path.join(DIR, name), 'utf8')) as DemoScript }));
+}
+
+// Varredura rasa recursiva do codigo do site (svelte/ts/astro) — usada para
+// verificar que cada fixture embarcada e de fato referenciada por algum
+// componente, e nao so validada pelo schema abaixo enquanto fica inalcancavel
+// na UI publicada.
+function readSiteSource(): string {
+  const files: string[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.astro') continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (/\.(svelte|ts|astro)$/.test(entry.name)) files.push(full);
+    }
+  };
+  walk(SITE_SRC);
+  return files.map((f) => fs.readFileSync(f, 'utf8')).join('\n');
 }
 
 describe('demo scripts', () => {
@@ -60,5 +79,13 @@ describe('demo scripts', () => {
   it('covers every feature across the three scripts', () => {
     const covered = new Set(load().flatMap(({ script }) => script.markers.map((m) => m.feature)));
     for (const feature of FEATURES) expect(covered.has(feature)).toBe(true);
+  });
+
+  it('every embedded script is reachable from the site UI (no orphan fixture)', () => {
+    const source = readSiteSource();
+    for (const { name } of load()) {
+      const stem = name.replace(/\.json$/, '');
+      expect(source.includes(stem), `${name} is validated by the schema tests above but no file under site/src references "${stem}" — it can never be shown on the published demo`).toBe(true);
+    }
   });
 });

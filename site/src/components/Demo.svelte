@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import type { Locale } from '../../../src/i18n/locale';
   import type { DemoWindow } from '../../../src/webview/bridge';
+  import type { ExtensionMessage } from '../../../src/types';
   import type { DemoScript, FeatureId } from '../demo/types';
   import { createPlayer, type Player } from '../demo/player';
   import { createDemoBridge, type DemoBridge } from '../demo/demoBridge';
@@ -11,6 +12,7 @@
     script,
     locale = 'en' as Locale,
     onFeatureChange,
+    onRequestScenario,
   }: {
     script: DemoScript;
     locale?: Locale;
@@ -18,9 +20,21 @@
     // realce da FeatureList em sincronia com o marcador que o player cruzou
     // por ultimo (nao apenas com o clique do usuario).
     onFeatureChange?: (feature: FeatureId | null) => void;
+    // Acionado quando o usuario clica o botao de troca de sessao do proprio
+    // painel (App.svelte -> stores.svelte.ts -> pickSession). Explorer.svelte
+    // usa isto como gatilho para avancar o cenario ativo.
+    onRequestScenario?: () => void;
   } = $props();
 
   let host: HTMLDivElement;
+  // window.__claudeTodosDemo so pode ser atribuido uma vez: src/webview/
+  // stores.svelte.ts le essa variavel ao carregar o modulo (uma unica vez, no
+  // mount do App) e nunca mais relê window depois disso — o objeto capturado
+  // ali fica sendo o unico canal de post()/onMessage() pelo resto da pagina.
+  // Para trocar de roteiro sem remontar o App (armadilha conhecida deste
+  // plano), este proxy e o unico objeto que a pagina injeta em window; ele
+  // delega para o DemoBridge "de verdade" que muda a cada troca de cenario.
+  let proxy: (DemoBridge & { setInner(next: DemoBridge): void }) | null = null;
   let player: Player | null = null;
   let bridge: DemoBridge | null = null;
   let note = $state<string | null>(null);
@@ -34,13 +48,63 @@
   // loop para no primeiro marcador que ultrapassa tMs, entao um marcador fora
   // de ordem seria ignorado (ou venceria cedo demais) sem erro visivel. Vale
   // para as fixtures atuais; nao ha ordenacao defensiva aqui de proposito.
-  function markerAt(tMs: number): FeatureId | null {
+  function markerAt(forScript: DemoScript, tMs: number): FeatureId | null {
     let found: FeatureId | null = null;
-    for (const marker of script.markers) {
+    for (const marker of forScript.markers) {
       if (marker.atMs > tMs) break;
       found = marker.feature;
     }
     return found;
+  }
+
+  function createScenarioProxy(): DemoBridge & { setInner(next: DemoBridge): void } {
+    let inner: DemoBridge | null = null;
+    let handler: ((msg: ExtensionMessage) => void) | null = null;
+    return {
+      onMessage(next) {
+        handler = next;
+        inner?.onMessage(next);
+      },
+      post(msg) { inner?.post(msg); },
+      pushSnapshot(s) { inner?.pushSnapshot(s); },
+      pushLocale(l) { inner?.pushLocale(l); },
+      setInner(next) {
+        inner = next;
+        // O handler foi capturado uma unica vez por stores.svelte.ts; cada
+        // bridge novo precisa recebe-lo de volta explicitamente, senao os
+        // snapshots do roteiro novo nunca chegam ao painel ja montado.
+        if (handler) inner.onMessage(handler);
+      },
+    };
+  }
+
+  // Destroi o player/bridge do roteiro anterior (se houver) e cria os do
+  // roteiro `forScript`, sem tocar no App.svelte ja montado. Chamada tanto no
+  // primeiro mount quanto em cada troca de cenario via switchScript().
+  function setupForScript(forScript: DemoScript): void {
+    player?.destroy();
+    note = null;
+    activeFeature = null;
+    player = createPlayer(forScript, {
+      onSnapshot: (s) => {
+        bridge?.pushSnapshot(s);
+        activeFeature = markerAt(forScript, player?.tMs ?? 0);
+      },
+    });
+    bridge = createDemoBridge({
+      script: forScript,
+      player,
+      locale,
+      // No editor isto abriria o transcript na linha; no site vira uma nota.
+      onOpenSource: (_s, _a, line) => { note = `line ${line}`; },
+      onPickSession: () => { onRequestScenario?.(); },
+    });
+    proxy?.setInner(bridge);
+    // O 'ready' que dispara a locale so e enviado uma vez, no primeiro mount
+    // do App — sem isto o painel voltaria para o ingles a cada troca.
+    proxy?.pushLocale(locale);
+    player.play();
+    playing = true;
   }
 
   $effect(() => {
@@ -48,24 +112,12 @@
   });
 
   onMount(async () => {
-    player = createPlayer(script, {
-      onSnapshot: (s) => {
-        bridge?.pushSnapshot(s);
-        activeFeature = markerAt(player?.tMs ?? 0);
-      },
-    });
-    bridge = createDemoBridge({
-      script,
-      player,
-      locale,
-      // No editor isto abriria o transcript na linha; no site vira uma nota.
-      onOpenSource: (_s, _a, line) => { note = `line ${line}`; },
-      onPickSession: () => { note = 'scenario'; },
-    });
+    proxy = createScenarioProxy();
 
     // O App resolve o bridge no load do modulo, entao a injecao vem antes do
     // import dinamico — nao inverter a ordem.
-    (window as unknown as DemoWindow).__claudeTodosDemo = bridge;
+    (window as unknown as DemoWindow).__claudeTodosDemo = proxy;
+    setupForScript(script);
 
     // O import('svelte') dinamico aqui, ao lado do import estatico do modulo
     // 'svelte' que o proprio Astro/@astrojs/svelte ja injeta neste componente,
@@ -86,7 +138,7 @@
 
   onDestroy(() => {
     player?.destroy();
-    // O bridge injetado em window.__claudeTodosDemo sobrevive ao componente se
+    // O proxy injetado em window.__claudeTodosDemo sobrevive ao componente se
     // nao for limpo aqui — ele fecha sobre um player ja destruido e o script
     // inteiro. Baixo impacto hoje (pagina estatica de view unica), mas e uma
     // referencia global a objeto morto por uma linha de custo.
@@ -96,6 +148,13 @@
   export function seekToFeature(feature: FeatureId): void {
     player?.seekToFeature(feature);
     activeFeature = feature;
+  }
+
+  // Chamado por Explorer.svelte (via bind:this) quando o usuario aciona a
+  // troca de cenario. Destroi o player/bridge do roteiro anterior e cria os
+  // do novo, sem remontar o App.svelte ja em tela — ver setupForScript().
+  export function switchScript(next: DemoScript): void {
+    setupForScript(next);
   }
 
   function toggle(): void {

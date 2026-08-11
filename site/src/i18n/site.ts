@@ -1,9 +1,18 @@
 import type { Locale } from '../../../src/i18n/locale';
 import type { FeatureId } from '../demo/types';
 
+// IDs dos tres roteiros embarcados em site/src/demo/scripts/*.json — o `id`
+// de cada DemoScript. Nao importado de demo/types.ts (fora do diff permitido
+// desta task) porque DemoScript.id e string generica, sem union literal.
+export type ScenarioId = 'smoke-test' | 'contexto-critico' | 'lista-defasada';
+
 export interface SiteStrings {
   featuresTitle: string;
   features: Record<FeatureId, string>;
+  // Nome curto por cenario, usado pelo FeatureList para anunciar qual dos
+  // tres roteiros embarcados esta tocando (Task 16 — troca de cenario pelo
+  // botao de sessao do painel).
+  scenarios: Record<ScenarioId, string>;
   // Nome acessivel do botao play/pause do demo (Demo.svelte), um por estado
   // atual — reflete a acao que o clique vai executar.
   demoPlay: string;
@@ -26,6 +35,11 @@ const en: SiteStrings = {
     notifications: 'Notifications',
     i18n: 'UI in 5 languages',
   },
+  scenarios: {
+    'smoke-test': 'Everyday session',
+    'contexto-critico': 'Context near the limit',
+    'lista-defasada': 'Stale checklist',
+  },
   demoPlay: 'Play demo',
   demoPause: 'Pause demo',
   themeToggleToLight: 'Switch to light theme',
@@ -43,6 +57,11 @@ const ptBr: SiteStrings = {
     notifications: 'Notificações',
     i18n: 'UI em 5 idiomas',
   },
+  scenarios: {
+    'smoke-test': 'Sessão do dia a dia',
+    'contexto-critico': 'Contexto no limite',
+    'lista-defasada': 'Lista desatualizada',
+  },
   demoPlay: 'Reproduzir demo',
   demoPause: 'Pausar demo',
   themeToggleToLight: 'Mudar para tema claro',
@@ -59,6 +78,11 @@ const es: SiteStrings = {
     dashboard: 'Últimos 7 días',
     notifications: 'Notificaciones',
     i18n: 'IU en 5 idiomas',
+  },
+  scenarios: {
+    'smoke-test': 'Sesión del día a día',
+    'contexto-critico': 'Contexto al límite',
+    'lista-defasada': 'Lista desactualizada',
   },
   demoPlay: 'Reproducir demo',
   demoPause: 'Pausar demo',
@@ -80,6 +104,11 @@ const zhCn: SiteStrings = {
     notifications: '通知',
     i18n: '5 种语言界面',
   },
+  scenarios: {
+    'smoke-test': '日常会话',
+    'contexto-critico': '上下文逼近上限',
+    'lista-defasada': '过时的待办清单',
+  },
   demoPlay: '播放演示',
   demoPause: '暂停演示',
   themeToggleToLight: '切换到浅色主题',
@@ -96,6 +125,11 @@ const zhTw: SiteStrings = {
     dashboard: '最近 7 天',
     notifications: '通知',
     i18n: '5 種語言介面',
+  },
+  scenarios: {
+    'smoke-test': '日常工作階段',
+    'contexto-critico': '上下文逼近上限',
+    'lista-defasada': '過時的待辦清單',
   },
   demoPlay: '播放示範',
   demoPause: '暫停示範',
