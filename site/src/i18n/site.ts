@@ -4,6 +4,15 @@ import type { FeatureId } from '../demo/types';
 export interface SiteStrings {
   featuresTitle: string;
   features: Record<FeatureId, string>;
+  // Nome acessivel do botao play/pause do demo (Demo.svelte), um por estado
+  // atual — reflete a acao que o clique vai executar.
+  demoPlay: string;
+  demoPause: string;
+  // aria-label do ThemeToggle.svelte, um por tema atual — reflete o tema
+  // para o qual o clique vai trocar (o icone exibido ja segue essa logica:
+  // sol quando o tema atual e escuro, lua quando e claro).
+  themeToggleToLight: string;
+  themeToggleToDark: string;
 }
 
 const en: SiteStrings = {
@@ -17,6 +26,10 @@ const en: SiteStrings = {
     notifications: 'Notifications',
     i18n: 'UI in 5 languages',
   },
+  demoPlay: 'Play demo',
+  demoPause: 'Pause demo',
+  themeToggleToLight: 'Switch to light theme',
+  themeToggleToDark: 'Switch to dark theme',
 };
 
 const ptBr: SiteStrings = {
@@ -30,6 +43,10 @@ const ptBr: SiteStrings = {
     notifications: 'Notificações',
     i18n: 'UI em 5 idiomas',
   },
+  demoPlay: 'Reproduzir demo',
+  demoPause: 'Pausar demo',
+  themeToggleToLight: 'Mudar para tema claro',
+  themeToggleToDark: 'Mudar para tema escuro',
 };
 
 const es: SiteStrings = {
@@ -43,6 +60,10 @@ const es: SiteStrings = {
     notifications: 'Notificaciones',
     i18n: 'IU en 5 idiomas',
   },
+  demoPlay: 'Reproducir demo',
+  demoPause: 'Pausar demo',
+  themeToggleToLight: 'Cambiar a tema claro',
+  themeToggleToDark: 'Cambiar a tema oscuro',
 };
 
 // zh-cn/zh-tw: terminologia de docs/i18n/glossary-zh.md ("agent" -> 智能体/智慧體,
@@ -59,6 +80,10 @@ const zhCn: SiteStrings = {
     notifications: '通知',
     i18n: '5 种语言界面',
   },
+  demoPlay: '播放演示',
+  demoPause: '暂停演示',
+  themeToggleToLight: '切换到浅色主题',
+  themeToggleToDark: '切换到深色主题',
 };
 
 const zhTw: SiteStrings = {
@@ -72,6 +97,10 @@ const zhTw: SiteStrings = {
     notifications: '通知',
     i18n: '5 種語言介面',
   },
+  demoPlay: '播放示範',
+  demoPause: '暫停示範',
+  themeToggleToLight: '切換到淺色主題',
+  themeToggleToDark: '切換到深色主題',
 };
 
 export const SITE_STRINGS: Record<Locale, SiteStrings> = {

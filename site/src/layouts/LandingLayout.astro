@@ -60,7 +60,7 @@ const content = landing[locale];
   <body>
     <div class="topbar">
       <LangSwitcher client:load current={locale} />
-      <ThemeToggle client:load />
+      <ThemeToggle client:load {locale} />
     </div>
     <main>
       <h1>Claude Todos</h1>

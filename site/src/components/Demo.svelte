@@ -5,6 +5,7 @@
   import type { DemoScript, FeatureId } from '../demo/types';
   import { createPlayer, type Player } from '../demo/player';
   import { createDemoBridge, type DemoBridge } from '../demo/demoBridge';
+  import { SITE_STRINGS } from '../i18n/site';
 
   let {
     script,
@@ -102,11 +103,15 @@
     if (player.playing) { player.pause(); playing = false; }
     else { player.play(); playing = true; }
   }
+
+  const strings = $derived(SITE_STRINGS[locale]);
 </script>
 
 <div class="panel">
   <div class="chrome">
-    <button onclick={toggle}>{playing ? '⏸' : '▶'}</button>
+    <button onclick={toggle} aria-label={playing ? strings.demoPause : strings.demoPlay}>
+      <span aria-hidden="true">{playing ? '⏸' : '▶'}</span>
+    </button>
     {#if note}<span class="note">{note}</span>{/if}
   </div>
   <div class="webview" bind:this={host}></div>

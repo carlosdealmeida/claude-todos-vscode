@@ -1,5 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import type { Locale } from '../../../src/i18n/locale';
+  import { SITE_STRINGS } from '../i18n/site';
+
+  let { locale = 'en' as Locale }: { locale?: Locale } = $props();
 
   const KEY = 'claude-todos-theme';
   let theme = $state<'dark' | 'light'>('dark');
@@ -29,10 +33,16 @@
       // para "botao mente sobre o tema aplicado".
     }
   }
+
+  const strings = $derived(SITE_STRINGS[locale]);
+  // O icone ja mostra o alvo do clique (sol = vai para claro, lua = vai para
+  // escuro); o aria-label segue a mesma logica em vez de descrever o tema
+  // atual.
+  const label = $derived(theme === 'dark' ? strings.themeToggleToLight : strings.themeToggleToDark);
 </script>
 
-<button onclick={toggle} aria-label="Toggle color theme">
-  {theme === 'dark' ? '☀' : '☾'}
+<button onclick={toggle} aria-label={label}>
+  <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
 </button>
 
 <style>
