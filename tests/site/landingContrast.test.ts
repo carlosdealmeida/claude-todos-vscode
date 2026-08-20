@@ -10,6 +10,16 @@ import * as path from 'node:path';
 // Licao de uma task anterior deste projeto: cores herdadas de um mockup
 // ficaram em 2,48:1 sem que ninguem notasse ate a medicao programatica —
 // julgamento visual sozinho nao pega isso.
+//
+// Fix round 1 (revisao da Task 1) acrescentou uma segunda licao: comparar
+// so os VALORES dos tokens (--brand-on-coral vs --brand-coral) nao prova
+// nada sobre o que a pagina realmente pinta — um bug de especificidade
+// (`.landing a { color: inherit }` vencendo `.cta { color: ... }`) fazia o
+// CTA renderizar um par diferente do que os tokens prometiam, e o teste de
+// entao (so token-a-token) nao via isso. A describe "cascata real" abaixo
+// resolve qual DECLARACAO vence (especificidade + ordem de origem, como um
+// navegador faria) para os elementos onde existe mais de uma regra
+// competindo pela mesma propriedade, em vez de comparar tokens soltos.
 
 const LANDING_CSS = path.join(__dirname, '..', '..', 'site', 'src', 'styles', 'landing.css');
 
@@ -57,7 +67,7 @@ function parseColor(value: string): RGB {
 }
 
 // Compoe `fg` (com seu proprio alpha) sobre um `bg` opaco — necessario para
-// medir o contraste real de um token com transparencia (--brand-line), que
+// medir o contraste real de um token com transparencia (--brand-line*), que
 // e o que o navegador de fato renderiza.
 function compositeOver(fg: RGB, bg: RGB): RGB {
   return {
@@ -96,6 +106,236 @@ function ratioOf(css: string, fgName: string, bgName: string): number {
   return contrastRatio(fg, bg);
 }
 
+// =========================================================================
+// Resolvedor de cascata: dado um elemento alvo (tag + classes), decide qual
+// declaracao de uma propriedade REALMENTE vence entre todas as regras do
+// CSS que o atingem — especificidade primeiro, ordem de origem como
+// desempate — em vez de assumir que a regra "obvia" (ex.: `.cta`) e quem
+// manda. E o que faltava no teste original: ele comparava valores de token
+// sem nunca perguntar "qual regra o navegador aplicaria de fato aqui".
+// =========================================================================
+
+interface CssRule {
+  selectors: string[];
+  decls: Record<string, string>;
+  order: number;
+}
+
+// Remove comentarios /* ... */ antes de qualquer outro parsing.
+function stripComments(css: string): string {
+  return css.replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+// Remove um bloco @regra{...} inteiro (com chaves balanceadas), preservando
+// o resto do texto. Usado para tirar @media do fluxo de regras simples que
+// parseRules espera — nenhuma declaracao de cor deste arquivo vive dentro
+// de um @media, entao descartar o bloco inteiro (em vez de achatar seu
+// conteudo) e seguro para o proposito deste resolvedor.
+function stripAtBlocks(css: string, atKeyword: string): string {
+  let out = '';
+  let i = 0;
+  for (;;) {
+    const idx = css.indexOf(atKeyword, i);
+    if (idx === -1) {
+      out += css.slice(i);
+      return out;
+    }
+    out += css.slice(i, idx);
+    const braceStart = css.indexOf('{', idx);
+    if (braceStart === -1) return out;
+    let depth = 1;
+    let j = braceStart + 1;
+    while (j < css.length && depth > 0) {
+      if (css[j] === '{') depth++;
+      else if (css[j] === '}') depth--;
+      j++;
+    }
+    i = j;
+  }
+}
+
+function parseRules(rawCss: string): CssRule[] {
+  let css = stripComments(rawCss);
+  // A url() do @import de Google Fonts tem ";" DENTRO da string de query
+  // (ex.: "...wght@400;500;600..."), entao um `[^;]*;` ingenuo para no
+  // primeiro ";" de dentro da URL, nao no fim real do statement — e engole
+  // o resto da linha para dentro do proximo seletor, corrompendo todo o
+  // parse depois dela. Casa a url(...) entre aspas primeiro (nao-guloso ate
+  // a aspa de fechamento), so entao qualquer coisa ate o ";" real.
+  css = css.replace(/@import\s+url\((['"])[\s\S]*?\1\)[^;]*;/g, '');
+  css = stripAtBlocks(css, '@media');
+  const rules: CssRule[] = [];
+  const ruleRe = /([^{}]+)\{([^{}]*)\}/g;
+  let match: RegExpExecArray | null;
+  let order = 0;
+  while ((match = ruleRe.exec(css))) {
+    const selectors = match[1].split(',').map((s) => s.trim()).filter(Boolean);
+    const decls: Record<string, string> = {};
+    for (const decl of match[2].split(';')) {
+      const colon = decl.indexOf(':');
+      if (colon === -1) continue;
+      const prop = decl.slice(0, colon).trim();
+      const value = decl.slice(colon + 1).trim();
+      if (prop) decls[prop] = value;
+    }
+    rules.push({ selectors, decls, order: order++ });
+  }
+  return rules;
+}
+
+// Especificidade CSS (a, b, c) = (ids, classes/atributos/pseudo-classes,
+// tipos/pseudo-elementos). :where(...) contribui ZERO especificidade —
+// mesmo com um seletor dentro (ex.: :where(a)) — por definicao da spec;
+// e exatamente o mecanismo usado para consertar o bug do item 1.
+function specificity(rawSelector: string): [number, number, number] {
+  let s = rawSelector.trim();
+  s = s.replace(/:where\([^)]*\)/g, ' ');
+  let a = 0;
+  let b = 0;
+  let c = 0;
+  a += (s.match(/#[-\w]+/g) || []).length;
+  s = s.replace(/#[-\w]+/g, ' ');
+  c += (s.match(/::[-\w]+/g) || []).length;
+  s = s.replace(/::[-\w]+/g, ' ');
+  b += (s.match(/:[-\w]+(\([^)]*\))?/g) || []).length;
+  s = s.replace(/:[-\w]+(\([^)]*\))?/g, ' ');
+  b += (s.match(/\.[-\w]+/g) || []).length;
+  s = s.replace(/\.[-\w]+/g, ' ');
+  b += (s.match(/\[[^\]]*\]/g) || []).length;
+  s = s.replace(/\[[^\]]*\]/g, ' ');
+  c += (s.match(/[a-zA-Z][-\w]*/g) || []).length;
+  return [a, b, c];
+}
+
+function compareSpecificity(x: [number, number, number], y: [number, number, number]): number {
+  for (let i = 0; i < 3; i++) {
+    if (x[i] !== y[i]) return x[i] - y[i];
+  }
+  return 0;
+}
+
+interface TargetEl {
+  tag: string;
+  classes: string[];
+  // Cadeia real de ancestrais do elemento no HTML gerado (LandingLayout.astro),
+  // um token por ancestral, do mais interno ao mais externo — ".classe" para
+  // ancestral com classe, "tag" (sem ponto) para seletor de tipo (ex.:
+  // "footer"). Usado para nao confundir regras com ancestral qualificado
+  // (".privacy a", "footer a") com regras que de fato atingem o alvo so
+  // porque o compound mais a direita bate ("a") — a primeira ronda deste
+  // resolvedor ignorava isso e media 1.08:1 em vez dos ~2.90:1 reais,
+  // porque ".privacy a"/"footer a" (nenhum dos dois um ancestral verdadeiro
+  // do CTA) venciam a cascata simulada por especificidade/ordem sem nunca
+  // ter sido elegiveis para competir.
+  ancestors: string[];
+}
+
+// Um "compound selector" e o trecho entre combinadores (so espaco em
+// branco neste arquivo — nenhuma regra usa `>`/`+`/`~`). :where(inner) e
+// tratado a parte: casa se o alvo casar com QUALQUER seletor da lista
+// dentro dos parenteses.
+function compoundMatches(compound: string, target: TargetEl): boolean {
+  const whereMatch = compound.match(/^:where\(([^)]*)\)$/);
+  if (whereMatch) {
+    return whereMatch[1].split(',').some((inner) => compoundMatches(inner.trim(), target));
+  }
+  const classes = (compound.match(/\.[-\w]+/g) || []).map((c) => c.slice(1));
+  const rest = compound.replace(/\.[-\w]+/g, '').trim();
+  const type = rest.length > 0 && /^[a-zA-Z][-\w]*$/.test(rest) ? rest : undefined;
+  if (type && type !== target.tag) return false;
+  return classes.every((c) => target.classes.includes(c));
+}
+
+// Verdadeiro se `selector` (o texto inteiro, com combinadores) se aplica ao
+// elemento alvo no HTML real: o compound mais a direita precisa casar com o
+// proprio elemento, E todo compound ancestral (os demais, da esquerda para
+// a direita) precisa aparecer na cadeia de ancestrais reais do alvo — sem
+// isso, qualquer regra "X a" bateria em QUALQUER <a> da pagina, ancestral
+// verdadeiro ou nao (era exatamente o bug: ".privacy a"/"footer a" venciam
+// a cascata simulada para o CTA, que nao esta dentro de nenhum dos dois).
+// Pseudo-elementos (::selection) sao excluidos aqui de proposito: eles so
+// se aplicam num estado de interacao (texto selecionado), nao no
+// renderizado base que os pares de contraste desta suite medem.
+function selectorMatchesTarget(selector: string, target: TargetEl): boolean {
+  const compounds = selector.trim().split(/\s+/);
+  const rightmost = compounds[compounds.length - 1];
+  if (rightmost.startsWith('::')) return false;
+  if (!compoundMatches(rightmost, target)) return false;
+  const ancestorCompounds = compounds.slice(0, -1);
+  return ancestorCompounds.every((ac) => target.ancestors.includes(ac));
+}
+
+// Resolve, entre TODAS as regras cujo seletor de fato atinge `target`
+// (compound final + ancestrais, ver selectorMatchesTarget), qual declaracao
+// de `prop` vence: maior especificidade primeiro, ordem de origem (a que
+// vem depois) como desempate — a mesma regra que um navegador aplica na
+// ausencia de !important/camadas/origens diferentes (nenhum destes ocorre
+// em landing.css).
+function resolveProperty(rules: CssRule[], target: TargetEl, prop: string): string | null {
+  let winner: { value: string; spec: [number, number, number]; order: number } | null = null;
+  for (const rule of rules) {
+    const raw = rule.decls[prop];
+    if (raw === undefined) continue;
+    for (const sel of rule.selectors) {
+      if (!selectorMatchesTarget(sel, target)) continue;
+      const spec = specificity(sel);
+      const beats =
+        !winner ||
+        compareSpecificity(spec, winner.spec) > 0 ||
+        (compareSpecificity(spec, winner.spec) === 0 && rule.order > winner.order);
+      if (beats) winner = { value: raw, spec, order: rule.order };
+    }
+  }
+  return winner ? winner.value : null;
+}
+
+// Resolve var(--nome) contra as declaracoes de `.landing` (unico lugar do
+// arquivo que declara os tokens --brand-*) e "inherit" contra o `color`
+// resolvido de `.landing` — os dois casos que os pares testados abaixo
+// precisam. Nao e um resolvedor de cascata de heranca generico (nao
+// precisa ser: so `.landing` define color/tokens no caminho ate a raiz das
+// duas ancoras que os testes abaixo checam).
+function resolveValue(rules: CssRule[], value: string): string {
+  const varMatch = value.match(/^var\((--[-\w]+)\)$/);
+  if (varMatch) {
+    const landingRule = rules.find((r) => r.selectors.includes('.landing'));
+    const tokenValue = landingRule?.decls[varMatch[1]];
+    if (!tokenValue) throw new Error(`token ${varMatch[1]} nao encontrado em .landing`);
+    return resolveValue(rules, tokenValue);
+  }
+  if (value === 'inherit') {
+    const landingRule = rules.find((r) => r.selectors.includes('.landing'));
+    const inheritedColor = landingRule?.decls.color;
+    if (!inheritedColor) throw new Error('`.landing` nao declara `color` para resolver `inherit`');
+    return resolveValue(rules, inheritedColor);
+  }
+  return value;
+}
+
+// Extrai so a cor de um valor de `border` shorthand (ex.: "1px solid
+// var(--brand-line-control)") — pega o ultimo token, que e sempre a cor
+// nas declaracoes deste arquivo (largura e estilo vem antes, sem funcao
+// com parenteses colidindo com var(...) porque so a cor usa var() aqui).
+function borderColorValue(shorthand: string): string {
+  const varMatch = shorthand.match(/var\(--[-\w]+\)/);
+  if (varMatch) return varMatch[0];
+  const parts = shorthand.trim().split(/\s+/);
+  return parts[parts.length - 1];
+}
+
+// Razao de contraste do valor de `prop` que REALMENTE vence a cascata para
+// `target`, contra um token de fundo (resolvido normalmente).
+function cascadeRatio(css: string, target: TargetEl, prop: string, bgTokenName: string): number {
+  const rules = parseRules(css);
+  const rawWinner = resolveProperty(rules, target, prop);
+  if (rawWinner === null) throw new Error(`nenhuma regra em landing.css define "${prop}" para ${JSON.stringify(target)}`);
+  const resolved = prop === 'border' ? resolveValue(rules, borderColorValue(rawWinner)) : resolveValue(rules, rawWinner);
+  const bg = parseColor(readToken(css, bgTokenName));
+  const fgRaw = parseColor(resolved);
+  const fg = fgRaw.a < 1 ? compositeOver(fgRaw, bg) : fgRaw;
+  return contrastRatio(fg, bg);
+}
+
 describe('paleta da landing passa nos pisos de contraste WCAG', () => {
   const css = fs.existsSync(LANDING_CSS) ? fs.readFileSync(LANDING_CSS, 'utf8') : null;
 
@@ -120,11 +360,55 @@ describe('paleta da landing passa nos pisos de contraste WCAG', () => {
     expect(ratioOf(content, '--brand-coral', '--brand-bg')).toBeGreaterThanOrEqual(4.5);
   });
 
-  it('texto do botao (--brand-on-coral) sobre --brand-coral de fundo >= 4.5:1', () => {
-    expect(ratioOf(content, '--brand-on-coral', '--brand-coral')).toBeGreaterThanOrEqual(4.5);
+  // --brand-line (decorativo: .topbar, .swimlanes, .features li, footer) NAO
+  // tem piso aqui de proposito: WCAG 1.4.11 (contraste nao-textual) cobre
+  // componentes de interface e objetos graficos necessarios a compreensao
+  // do conteudo, e isenta expressamente separadores decorativos — nenhum
+  // dos 4 usos de --brand-line delimita um controle ou carrega significado
+  // por si so (as bolinhas de estado das swimlanes carregam o significado
+  // via cor, nao a linha divisoria da secao). So --brand-line-control (o
+  // unico uso que delimita um controle de verdade, o botao .cta-secondary)
+  // precisa do piso — testado abaixo, contra o token de controle.
+  it('--brand-line-control sobre --brand-bg >= 3:1 (o unico uso que delimita um controle, WCAG 1.4.11)', () => {
+    expect(ratioOf(content, '--brand-line-control', '--brand-bg')).toBeGreaterThanOrEqual(3);
   });
 
-  it('--brand-line sobre --brand-bg >= 3:1 (contraste nao-textual, WCAG 1.4.11)', () => {
-    expect(ratioOf(content, '--brand-line', '--brand-bg')).toBeGreaterThanOrEqual(3);
+  // -----------------------------------------------------------------------
+  // Cascata real: resolve qual declaracao vence para elementos concretos da
+  // pagina (nao so compara tokens soltos) — e o que teria pegado o bug do
+  // fix round 1 (`.landing a { color: inherit }` vencendo `.cta { color:
+  // var(--brand-on-coral) }` por especificidade, apesar de vir antes no
+  // arquivo). Prova por mutacao registrada em task-1-report.md: revertendo
+  // o `:where()` de `.landing :where(a)` para `.landing a` em landing.css,
+  // rodar so este arquivo faz exatamente o teste do CTA abaixo falhar
+  // (2.90:1 medido, contra o piso de 4.5:1) — nenhum outro teste deste
+  // arquivo muda de resultado com essa mutacao.
+  // -----------------------------------------------------------------------
+  describe('cascata real (nao so tokens) para elementos concretos', () => {
+    // Cadeia real de ancestrais dos dois <a class="cta"[-secondary]> dentro
+    // de .hero-cta-row, em LandingLayout.astro: <a> < .hero-cta-row <
+    // .hero-copy < section.hero < main < body.landing. (O outro <a
+    // class="cta"> do topbar tem uma cadeia mais curta — .topbar < .landing
+    // — mas nenhuma regra do CSS distingue os dois, entao testar um so ja
+    // cobre ambos.)
+    const HERO_CTA_ANCESTORS = ['.hero-cta-row', '.hero-copy', '.hero', 'main', '.landing'];
+
+    it('a.cta: a cor de texto que REALMENTE vence a cascata sobre o fundo do botao >= 4.5:1', () => {
+      const target = { tag: 'a', classes: ['cta'], ancestors: HERO_CTA_ANCESTORS };
+      const ratio = cascadeRatio(content, target, 'color', '--brand-coral');
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it('a.cta-secondary: a cor de texto que REALMENTE vence a cascata sobre o fundo da pagina >= 4.5:1', () => {
+      const target = { tag: 'a', classes: ['cta-secondary'], ancestors: HERO_CTA_ANCESTORS };
+      const ratio = cascadeRatio(content, target, 'color', '--brand-bg');
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it('a.cta-secondary: a borda que REALMENTE vence a cascata sobre o fundo da pagina >= 3:1 (delimita o controle)', () => {
+      const target = { tag: 'a', classes: ['cta-secondary'], ancestors: HERO_CTA_ANCESTORS };
+      const ratio = cascadeRatio(content, target, 'border', '--brand-bg');
+      expect(ratio).toBeGreaterThanOrEqual(3);
+    });
   });
 });

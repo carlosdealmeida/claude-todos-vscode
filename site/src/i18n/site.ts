@@ -22,6 +22,20 @@ export interface SiteStrings {
   // sol quando o tema atual e escuro, lua quando e claro).
   themeToggleToLight: string;
   themeToggleToDark: string;
+  // Rotulos da landing (LandingLayout.astro) que nao vem de README nenhum —
+  // chrome de UI da pagina publica (topbar, swimlanes, secao de privacidade,
+  // rodape), nao conteudo editorial. A constraint global do plano mira copy
+  // editorial mantida a mao; rotulo curto de botao/aria-label e o mesmo tipo
+  // de string que featuresTitle/demoPlay/themeToggleTo* acima ja sao — por
+  // isso moram aqui, no unico catalogo de strings do site, em vez de um
+  // segundo dicionario local em LandingLayout.astro.
+  landingEyebrow: string;
+  landingCta: string;
+  landingCtaSecondary: string;
+  landingStatesLabel: string;
+  landingPrivacyTitle: string;
+  landingReadMore: string;
+  landingFooter: string;
 }
 
 const en: SiteStrings = {
@@ -44,6 +58,13 @@ const en: SiteStrings = {
   demoPause: 'Pause demo',
   themeToggleToLight: 'Switch to light theme',
   themeToggleToDark: 'Switch to dark theme',
+  landingEyebrow: 'VS Code · JetBrains',
+  landingCta: 'Install',
+  landingCtaSecondary: 'View on GitHub',
+  landingStatesLabel: 'Live task states',
+  landingPrivacyTitle: 'Privacy',
+  landingReadMore: 'Read the full policy',
+  landingFooter: 'MIT licensed, fully local. Built for Claude Code.',
 };
 
 const ptBr: SiteStrings = {
@@ -66,6 +87,13 @@ const ptBr: SiteStrings = {
   demoPause: 'Pausar demo',
   themeToggleToLight: 'Mudar para tema claro',
   themeToggleToDark: 'Mudar para tema escuro',
+  landingEyebrow: 'VS Code · JetBrains',
+  landingCta: 'Instalar',
+  landingCtaSecondary: 'Ver no GitHub',
+  landingStatesLabel: 'Estados da task ao vivo',
+  landingPrivacyTitle: 'Privacidade',
+  landingReadMore: 'Leia a política completa',
+  landingFooter: 'Licença MIT, totalmente local. Feito para o Claude Code.',
 };
 
 const es: SiteStrings = {
@@ -88,6 +116,13 @@ const es: SiteStrings = {
   demoPause: 'Pausar demo',
   themeToggleToLight: 'Cambiar a tema claro',
   themeToggleToDark: 'Cambiar a tema oscuro',
+  landingEyebrow: 'VS Code · JetBrains',
+  landingCta: 'Instalar',
+  landingCtaSecondary: 'Ver en GitHub',
+  landingStatesLabel: 'Estados de la tarea en vivo',
+  landingPrivacyTitle: 'Privacidad',
+  landingReadMore: 'Lee la política completa',
+  landingFooter: 'Licencia MIT, totalmente local. Hecho para Claude Code.',
 };
 
 // zh-cn/zh-tw: terminologia de docs/i18n/glossary-zh.md ("agent" -> 智能体/智慧體,
@@ -113,6 +148,13 @@ const zhCn: SiteStrings = {
   demoPause: '暂停演示',
   themeToggleToLight: '切换到浅色主题',
   themeToggleToDark: '切换到深色主题',
+  landingEyebrow: 'VS Code · JetBrains',
+  landingCta: '安装',
+  landingCtaSecondary: '查看 GitHub',
+  landingStatesLabel: '实时任务状态',
+  landingPrivacyTitle: '隐私',
+  landingReadMore: '阅读完整政策',
+  landingFooter: 'MIT 许可，完全本地运行。为 Claude Code 打造。',
 };
 
 const zhTw: SiteStrings = {
@@ -135,6 +177,13 @@ const zhTw: SiteStrings = {
   demoPause: '暫停示範',
   themeToggleToLight: '切換到淺色主題',
   themeToggleToDark: '切換到深色主題',
+  landingEyebrow: 'VS Code · JetBrains',
+  landingCta: '安裝',
+  landingCtaSecondary: '查看 GitHub',
+  landingStatesLabel: '即時任務狀態',
+  landingPrivacyTitle: '隱私',
+  landingReadMore: '閱讀完整政策',
+  landingFooter: 'MIT 授權，完全在本機執行。為 Claude Code 打造。',
 };
 
 export const SITE_STRINGS: Record<Locale, SiteStrings> = {

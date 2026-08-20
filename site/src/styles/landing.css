@@ -35,11 +35,22 @@
   --brand-coral-soft: #d97757;
   --brand-bone: #f2ede4;
   --brand-dim: #9a9086;
-  /* Alpha 0.4, nao o 0.11 do mockup original: em 0.11 a linha compunha para
-     ~1.35:1 contra --brand-bg, bem abaixo do piso de 3:1 (WCAG 1.4.11,
-     contraste nao-textual) que o teste exige — o valor mudou para o teste
-     passar; o teste nunca mudou para acomodar a cor. */
-  --brand-line: rgba(242, 237, 228, 0.4);
+  /* Decorativo: divisores de secao (.topbar, .swimlanes, .features li,
+     footer) nao sao "componentes de interface" nem "objetos graficos
+     necessarios a compreensao do conteudo" no sentido do WCAG 1.4.11 — o
+     conteudo continua legivel sem eles baterem piso nenhum de contraste
+     (1.4.11 isenta expressamente separadores decorativos). Alpha perto do
+     0.11 do mockup aprovado, sem piso — nao confundir com
+     --brand-line-control abaixo, que e o unico dos dois que precisa de 3:1. */
+  --brand-line: rgba(242, 237, 228, 0.11);
+  /* Unico uso onde a linha delimita um controle de verdade: a borda de
+     .cta-secondary e o unico limite visivel do botao (sem preenchimento,
+     mesma cor de texto do corpo) — sem ela o botao nao se distingue de
+     texto comum. Esse SIM e "componente de interface" no sentido do WCAG
+     1.4.11 e precisa do piso de 3:1 que tests/site/landingContrast.test.ts
+     trava contra este token (nao contra --brand-line). Alpha 0.4: em 0.11 a
+     linha compunha para ~1.35:1 contra --brand-bg, abaixo do piso. */
+  --brand-line-control: rgba(242, 237, 228, 0.4);
   /* Cor de texto sobre superficies --brand-coral (botoes). Nao e
      var(--brand-bg) por acidente de economia: texto escuro sobre laranja e
      o unico dos dois que passa 4.5:1 (branco sobre --brand-coral fica em
@@ -73,7 +84,18 @@
   font-family: var(--vscode-font-family);
 }
 
-.landing a {
+/* :where() zera a especificidade do reset (fica igual a de `.landing`
+   sozinho) em vez de somar o peso de um seletor de tipo (`a`) ao de
+   `.landing` — com `.landing a { color: inherit; }` (especificidade 0,1,1)
+   este reset vencia `.cta { color: var(--brand-on-coral); }` (0,1,0)
+   incondicionalmente, apesar de vir ANTES no arquivo: o CTA renderizava
+   --brand-bone sobre --brand-coral (~2.90:1, abaixo do piso de 4.5:1) em
+   vez do par --brand-on-coral/--brand-coral (~5.07:1) que os tokens
+   prometiam. tests/site/landingContrast.test.ts agora resolve a cascata
+   real (nao so os tokens) para pegar essa classe de bug — ver o teste
+   "prova por mutacao" la dentro, que reverte este :where() de proposito e
+   confirma que o teste acusa o par certo antes de reaplicar o fix. */
+.landing :where(a) {
   color: inherit;
 }
 
@@ -139,7 +161,7 @@
 }
 
 .cta-secondary {
-  border: 1px solid var(--brand-line);
+  border: 1px solid var(--brand-line-control);
   color: var(--brand-bone);
 }
 
