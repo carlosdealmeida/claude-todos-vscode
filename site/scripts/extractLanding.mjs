@@ -129,6 +129,20 @@ export function extractLanding(markdown) {
   const taglineLine = head.split('\n').find((l) => l.startsWith('**') && !l.includes('](')) ?? '';
   const tagline = taglineLine.replace(/\*\*/g, '').trim();
 
+  // `title` e o trecho em negrito no INICIO da linha (o "**...**" que a
+  // regex acima ja garantiu existir); `lede` e o resto da linha, sem o
+  // travessao (em dash "—", como os 5 READMEs usam, ou hifen simples) que
+  // normalmente separa os dois. Casa so o **negrito** que abre a linha (o
+  // `^`), nao qualquer outro que apareca depois — a tagline nunca tem um
+  // segundo "**" hoje, mas se tivesse, so o primeiro deveria virar title.
+  const titleMatch = taglineLine.match(/^\*\*([^*]+)\*\*\s*(.*)$/);
+  // Fallback (title = tagline inteira) so dispara se taglineLine nao bater
+  // com o padrao "**negrito** resto" - nao deveria acontecer com um README
+  // real (a linha e escolhida por comecar com "**"), mas evita um title
+  // vazio se a suposicao falhar num README futuro.
+  const title = (titleMatch ? titleMatch[1] : tagline).trim();
+  const lede = titleMatch ? titleMatch[2].replace(/^[—-]\s*/, '').trim() : '';
+
   const featureBody = sections[SECTION.FEATURES]?.body ?? '';
   const features = featureBody
     .split('\n')
@@ -142,6 +156,8 @@ export function extractLanding(markdown) {
   // tabela para HTML antes (ou trocar para um parser markdown de verdade).
   return {
     tagline,
+    title,
+    lede,
     features,
     install: toHtml(sections[SECTION.INSTALL]?.body ?? ''),
     privacy: toHtml(sections[SECTION.PRIVACY]?.body ?? ''),

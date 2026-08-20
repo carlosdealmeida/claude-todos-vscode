@@ -133,4 +133,71 @@ describe('extractLanding', () => {
     expect(out.features[0]).toBe('exclude <code>dist/**/*.ts</code> from the build');
     expect(out.features[0]).not.toContain('<strong>');
   });
+
+  describe('title/lede (Step 4 — H1 e o negrito da tagline, lede e o resto)', () => {
+    const LOCALE_FILES: Record<string, string> = {
+      en: 'README.en.md',
+      'pt-br': 'README.md',
+      es: 'README.es.md',
+      'zh-cn': 'README.zh-cn.md',
+      'zh-tw': 'README.zh-tw.md',
+    };
+
+    it.each(Object.entries(LOCALE_FILES))(
+      '%s: title e o trecho em negrito, lede e o resto sem o travessao, e tagline continua existindo',
+      (_locale, file) => {
+        const out = extractLanding(fs.readFileSync(file, 'utf8'));
+
+        expect(out.title.length).toBeGreaterThan(0);
+        expect(out.title).not.toContain('*');
+        // O title precisa ser um prefixo do tagline original (mesmo texto,
+        // so sem os marcadores "**") — garante que title nao e um trecho
+        // arbitrario, e sim exatamente o que estava em negrito no inicio.
+        expect(out.tagline.startsWith(out.title)).toBe(true);
+
+        expect(out.lede).not.toContain('*');
+        // O lede nao pode reabrir com o travessao que o separava do title -
+        // ele existe pra ser removido, nao preservado no inicio da string.
+        expect(out.lede.startsWith('—')).toBe(false);
+        expect(out.lede.startsWith('-')).toBe(false);
+        // tagline == title + (travessao) + lede, reconstruido: continua
+        // batendo com o campo legado, que nenhum consumidor deixou de usar.
+        expect(out.tagline).toContain(out.lede);
+      },
+    );
+
+    it('title nunca sai vazio nos 5 READMEs reais (a garantia que Step 4 pede)', () => {
+      // A garantia de "title nunca vazio" e sobre os READMEs reais, que
+      // sempre tem uma linha "**tagline**" antes da 1a secao (o it.each
+      // acima ja confere isso individualmente) — nao um invariante universal
+      // para markdown arbitrario. Sem uma linha em negrito no head, nao ha
+      // tagline nenhuma para extrair (comportamento existente, anterior a
+      // este Step): title cai no fallback (a propria tagline), que tambem
+      // fica vazio nesse caso.
+      const md = 'plain text without any bold line\n\n## Features\n\n- x\n';
+      const out = extractLanding(md);
+      expect(out.tagline).toBe('');
+      expect(out.title).toBe('');
+      expect(out.lede).toBe('');
+
+      for (const file of Object.values(LOCALE_FILES)) {
+        const real = extractLanding(fs.readFileSync(file, 'utf8'));
+        expect(real.title.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('separa title e lede de uma tagline sintetica com travessao em dash', () => {
+      const out = extractLanding(
+        '**Short pitch** — the rest of the sentence, kept verbatim.\n\n## Features\n\n- x\n',
+      );
+      expect(out.title).toBe('Short pitch');
+      expect(out.lede).toBe('the rest of the sentence, kept verbatim.');
+    });
+
+    it('remove tambem um hifen simples como separador (nao so o em dash "—")', () => {
+      const out = extractLanding('**Short pitch** - the rest.\n\n## Features\n\n- x\n');
+      expect(out.title).toBe('Short pitch');
+      expect(out.lede).toBe('the rest.');
+    });
+  });
 });

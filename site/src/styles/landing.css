@@ -1,0 +1,333 @@
+/* ==========================================================================
+   Identidade visual da landing (consumido por site/src/layouts/LandingLayout.astro).
+
+   Tokens sob `.landing` (a propria <body>), NUNCA :root: o layout tambem
+   embute o painel real da extensao (Explorer -> Demo -> src/webview/App),
+   que consome os tokens --vscode-* injetados por site/src/demo/theme.css a
+   partir de :root. Se os tokens --brand-* daqui fossem declarados em :root
+   colidiriam nesse mesmo espaco de nomes global — por isso ficam presos a
+   um seletor de classe, e nada aqui redefine nenhum --vscode-*.
+
+   Import: este arquivo carrega DEPOIS de app.css e de theme.css (ver o
+   comentario em LandingLayout.astro) e usa um seletor de classe (`.landing`,
+   aplicado em <body>), que tem mais especificidade que os `body { ... }` de
+   ambos os arquivos anteriores — o fundo/cor/tipografia da pagina vencem
+   sem depender de ordem de import. A regra "app.css antes de theme.css" que
+   tests/site/cssTokens.test.ts trava continua intacta e nao-relacionada a
+   este arquivo: so acrescenta um terceiro import depois dos dois.
+
+   Paleta: nao inventada para o site, vem do proprio produto.
+     --brand-bg    = package.json#galleryBanner.color (fundo da pagina da
+                      extensao no Marketplace)
+     --brand-coral = laranja do icone em media/icon.png
+     --brand-coral-soft = coral suave da familia visual Claude
+   Piso de contraste de cada par: tests/site/landingContrast.test.ts. Se um
+   valor abaixo precisar mudar, rode aquele teste antes de commitar — ele e
+   quem valida a paleta, o valor que cede, nunca o piso.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Inter:wght@400;500;600&family=Newsreader:ital,wght@0,300;1,300&display=swap');
+
+.landing {
+  --brand-bg: #1f1b16;
+  --brand-bg-2: #17140f;
+  --brand-coral: #e8622c;
+  --brand-coral-soft: #d97757;
+  --brand-bone: #f2ede4;
+  --brand-dim: #9a9086;
+  /* Alpha 0.4, nao o 0.11 do mockup original: em 0.11 a linha compunha para
+     ~1.35:1 contra --brand-bg, bem abaixo do piso de 3:1 (WCAG 1.4.11,
+     contraste nao-textual) que o teste exige — o valor mudou para o teste
+     passar; o teste nunca mudou para acomodar a cor. */
+  --brand-line: rgba(242, 237, 228, 0.4);
+  /* Cor de texto sobre superficies --brand-coral (botoes). Nao e
+     var(--brand-bg) por acidente de economia: texto escuro sobre laranja e
+     o unico dos dois que passa 4.5:1 (branco sobre --brand-coral fica em
+     ~3.4:1) — token proprio para nao depender implicitamente de --brand-bg
+     nunca mudar sozinho e quebrar esse par sem que o teste percebesse por
+     que os nomes coincidiam. */
+  --brand-on-coral: #1f1b16;
+
+  --font-display: 'Newsreader', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-body: 'Inter', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Cascadia Mono', Consolas, 'Courier New', monospace;
+
+  background: var(--brand-bg);
+  color: var(--brand-bone);
+  font-family: var(--font-body);
+  margin: 0;
+  min-height: 100vh;
+  padding: 0;
+}
+
+/* O painel embutido (Explorer -> FeatureList + Demo, dentro de `.stage`)
+   precisa continuar parecendo um editor: e o produto. Sem esta regra ele
+   herdaria --brand-bone/--font-body por cascata de `.landing` (a maioria
+   dos elementos do painel ja fixa cor explicitamente via --vscode-*, mas
+   nem todos — ex.: o botao play/pause de Demo.svelte nao declara `color`
+   proprio hoje). Resgata a subarvore inteira do painel de volta para os
+   tokens do VS Code que app.css/theme.css ja definem em :root, sem tocar em
+   nenhum arquivo de src/webview/ ou site/src/components/. */
+.landing .stage {
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-font-family);
+}
+
+.landing a {
+  color: inherit;
+}
+
+.landing ::selection {
+  background: var(--brand-coral-soft);
+  color: var(--brand-bg);
+}
+
+/* ---- Topbar -------------------------------------------------------- */
+.topbar {
+  align-items: center;
+  border-bottom: 1px solid var(--brand-line);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 20px clamp(20px, 5vw, 64px);
+}
+
+.brand {
+  align-items: center;
+  color: var(--brand-bone);
+  display: flex;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.brand svg {
+  color: var(--brand-coral);
+  flex: none;
+  height: 22px;
+  width: 22px;
+}
+
+.brand .wordmark {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.topbar-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.cta,
+.cta-secondary {
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 18px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.cta {
+  background: var(--brand-coral);
+  color: var(--brand-on-coral);
+}
+
+.cta-secondary {
+  border: 1px solid var(--brand-line);
+  color: var(--brand-bone);
+}
+
+/* ---- Hero ------------------------------------------------------------ */
+main {
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 0 clamp(20px, 5vw, 64px) 96px;
+}
+
+.hero {
+  align-items: start;
+  display: grid;
+  gap: 56px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  padding-top: clamp(48px, 8vw, 96px);
+}
+
+.eyebrow {
+  color: var(--brand-coral);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.19em;
+  margin: 0 0 16px;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 3.75rem);
+  font-style: italic;
+  font-weight: 300;
+  line-height: 1.08;
+  margin: 0 0 24px;
+}
+
+.lede {
+  color: var(--brand-dim);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin: 0 0 32px;
+  max-width: 52ch;
+}
+
+.hero-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* O painel mantem 340px sempre — encolher distorce o produto real que ele
+   demonstra. Abaixo de ~900px (ver media query no fim do arquivo) a coluna
+   do painel rola horizontalmente em vez de encolher. */
+.hero-panel {
+  min-width: 340px;
+  overflow-x: auto;
+}
+
+/* ---- Swimlanes ---------------------------------------------------------
+   Unico lugar da pagina onde verde/azul aparecem: sao os mesmos hex das
+   cores de estado do painel (task concluida / agente rodando), usados aqui
+   como estado literal (pending/in_progress/completed), nunca como
+   decoracao. Hardcoded (nao var(--vscode-charts-*)): esses tokens mudam de
+   valor quando ThemeToggle alterna o painel para o tema claro (o toggle
+   existe para demonstrar o painel nos dois temas do VS Code), mas o fundo
+   desta pagina e sempre --brand-bg — acoplar a essas vars faria as bolinhas
+   perderem contraste contra um fundo que nunca clareia. */
+.swimlanes {
+  border-bottom: 1px solid var(--brand-line);
+  border-top: 1px solid var(--brand-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding: 28px 0;
+}
+
+.lane {
+  align-items: center;
+  color: var(--brand-dim);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  gap: 8px;
+  letter-spacing: 0.04em;
+}
+
+.lane .dot {
+  border-radius: 50%;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+
+.lane-pending .dot {
+  background: var(--brand-dim);
+}
+
+.lane-in_progress .dot {
+  background: #4daafc;
+}
+
+.lane-completed .dot {
+  background: #89d185;
+}
+
+/* ---- Secoes genericas -------------------------------------------------- */
+.section-title {
+  color: var(--brand-coral);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.19em;
+  margin: 0 0 20px;
+  text-transform: uppercase;
+}
+
+.features {
+  padding: 64px 0;
+}
+
+.features ul {
+  display: grid;
+  gap: 20px 32px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.features li {
+  border-top: 1px solid var(--brand-line);
+  color: var(--brand-dim);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  padding-top: 16px;
+}
+
+.features li strong {
+  color: var(--brand-bone);
+  font-weight: 600;
+}
+
+.features li code {
+  background: var(--brand-bg-2);
+  border-radius: 4px;
+  color: var(--brand-coral-soft);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  padding: 1px 6px;
+}
+
+.privacy {
+  padding-bottom: 64px;
+}
+
+.privacy p {
+  color: var(--brand-dim);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0 0 12px;
+  max-width: 60ch;
+}
+
+.privacy a {
+  color: var(--brand-coral-soft);
+}
+
+footer {
+  border-top: 1px solid var(--brand-line);
+  color: var(--brand-dim);
+  font-size: 13px;
+  padding: 24px clamp(20px, 5vw, 64px) 40px;
+}
+
+footer a {
+  color: var(--brand-coral-soft);
+}
+
+/* ---- Responsivo ----------------------------------------------------------
+   Abaixo de ~900px o hero vira uma coluna e o painel desce (ver comentario
+   em .hero-panel sobre por que ele nunca encolhe abaixo de 340px). */
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-panel {
+    width: 100%;
+  }
+}
