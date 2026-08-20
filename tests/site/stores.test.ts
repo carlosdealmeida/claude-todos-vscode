@@ -93,18 +93,77 @@ describe('refreshStores — nucleo puro (sem rede), fetchers injetados', () => {
     },
   };
 
-  it('quando as tres respostas sao validas, atualiza as tres e nao emite aviso', async () => {
+  it('quando as tres respostas sao validas E diferentes do que ja estava salvo, atualiza as tres, avanca fetchedAt e marca changed:true', async () => {
     const fetchers = {
       vscode: async () => ({ version: '0.18.0', rating: 5, ratingCount: 2, url: 'https://a' }),
       openvsx: async () => ({ version: '0.18.0', url: 'https://b' }),
       jetbrains: async () => ({ version: '0.18.0', url: 'https://c' }),
     };
-    const { data, warnings } = await refreshStores({ previous, fetchers, now: () => '2026-08-20T00:00:00.000Z' });
+    const { data, warnings, changed } = await refreshStores({ previous, fetchers, now: () => '2026-08-20T00:00:00.000Z' });
     expect(warnings).toHaveLength(0);
+    expect(changed).toBe(true);
     expect(data.fetchedAt).toBe('2026-08-20T00:00:00.000Z');
     for (const key of STORE_KEYS) {
       expect(data.stores[key].version).toBe('0.18.0');
     }
+  });
+
+  // O cenario do dia a dia (fix round 1 do code review): as tres APIs estao
+  // de pe e respondem normalmente, mas devolvem EXATAMENTE o que ja estava
+  // salvo — a extensao nao e relancada todo dia, entao esse e o caso comum,
+  // nao o raro. Uma primeira versao deste script usava "algum fetch teve
+  // sucesso?" como proxy para "algo mudou?"; isso e falso aqui: as tres tem
+  // sucesso, mas fetchedAt NAO deveria avancar, porque nenhum VALOR mudou.
+  // Sem esta trava, o workflow de refresh diario (que so commita quando
+  // stores.json muda) commitaria e redeployaria o site TODO DIA so por
+  // causa do timestamp, mesmo sem nenhum dado novo — exatamente o "commit
+  // vazio diario" que o brief da task pede para nunca acontecer.
+  it('quando as tres respostas sao validas mas IDENTICAS as ja salvas, nao avanca fetchedAt e marca changed:false', async () => {
+    const fetchers = {
+      vscode: async () => ({ version: '0.17.0', rating: 5, ratingCount: 1, url: 'https://a' }),
+      openvsx: async () => ({ version: '0.17.0', url: 'https://b' }),
+      jetbrains: async () => ({ version: '0.17.0', url: 'https://c' }),
+    };
+    const { data, warnings, changed } = await refreshStores({ previous, fetchers, now: () => '2026-08-20T00:00:00.000Z' });
+    expect(warnings).toHaveLength(0);
+    expect(changed).toBe(false);
+    expect(data.fetchedAt).toBe(previous.fetchedAt);
+    expect(data).toEqual(previous);
+  });
+
+  // Mesmo cenario acima, mas o fetcher devolve as MESMAS chaves em ordem
+  // diferente do que esta salvo (`url` antes de `rating`/`ratingCount`,
+  // como uma API real pode fazer sem que isso signifique mudanca nenhuma de
+  // conteudo). A comparacao precisa ser por VALOR, nao por
+  // JSON.stringify ingenuo sensivel a ordem de insercao — do contrario esta
+  // reordenacao sozinha (sem nenhum dado novo) seria lida como "mudou" e
+  // reintroduziria o mesmo bug do teste acima por uma porta lateral.
+  it('reordenar as mesmas chaves/valores nao conta como mudanca (comparacao insensivel a ordem)', async () => {
+    const fetchers = {
+      vscode: async () => ({ url: 'https://a', ratingCount: 1, rating: 5, version: '0.17.0' }),
+      openvsx: async () => ({ url: 'https://b', version: '0.17.0' }),
+      jetbrains: async () => ({ url: 'https://c', version: '0.17.0' }),
+    };
+    const { data, warnings, changed } = await refreshStores({ previous, fetchers, now: () => '2026-08-20T00:00:00.000Z' });
+    expect(warnings).toHaveLength(0);
+    expect(changed).toBe(false);
+    expect(data.fetchedAt).toBe(previous.fetchedAt);
+    expect(data).toEqual(previous);
+  });
+
+  it('ao menos uma resposta com valor diferente e o bastante para changed:true e fetchedAt avancar, mesmo se as outras duas forem identicas', async () => {
+    const fetchers = {
+      vscode: async () => ({ version: '0.17.0', rating: 5, ratingCount: 1, url: 'https://a' }), // identico
+      openvsx: async () => ({ version: '0.18.0', url: 'https://b' }), // mudou
+      jetbrains: async () => ({ version: '0.17.0', url: 'https://c' }), // identico
+    };
+    const { data, warnings, changed } = await refreshStores({ previous, fetchers, now: () => '2026-08-20T00:00:00.000Z' });
+    expect(warnings).toHaveLength(0);
+    expect(changed).toBe(true);
+    expect(data.fetchedAt).toBe('2026-08-20T00:00:00.000Z');
+    expect(data.stores.vscode).toEqual(previous.stores.vscode);
+    expect(data.stores.openvsx.version).toBe('0.18.0');
+    expect(data.stores.jetbrains).toEqual(previous.stores.jetbrains);
   });
 
   // O caminho mais importante desta task: as tres lojas fora do ar (timeout
@@ -123,7 +182,8 @@ describe('refreshStores — nucleo puro (sem rede), fetchers injetados', () => {
         throw new Error('ECONNREFUSED 127.0.0.1:1');
       },
     };
-    const { data, warnings } = await refreshStores({ previous, fetchers, now: () => '2026-08-20T00:00:00.000Z' });
+    const { data, warnings, changed } = await refreshStores({ previous, fetchers, now: () => '2026-08-20T00:00:00.000Z' });
+    expect(changed).toBe(false);
     expect(data.stores).toEqual(previous.stores);
     expect(warnings).toHaveLength(3);
     expect(warnings.some((w) => w.includes('vscode'))).toBe(true);

@@ -56,6 +56,29 @@ export function isValidStore(store) {
   return true;
 }
 
+// Comparacao profunda, insensivel a ordem das chaves — usada para decidir se
+// uma loja MUDOU DE VALOR (nao so "o fetch teve sucesso"). Precisa ser
+// insensivel a ordem porque um fetcher pode devolver as mesmas chaves em
+// ordem diferente da que ja esta em disco (ex.: `{version,url}` vs
+// `{version,rating,ratingCount,url}` reordenado) sem que o CONTEUDO tenha
+// mudado; um `JSON.stringify` ingenuo (que respeita ordem de insercao)
+// acusaria uma mudanca que nao existe. So arrays/objetos simples (o formato
+// de uma entrada de loja), sem Date/Map/Set — nao e um deep-equal generico.
+function stableStringify(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(',')}]`;
+  }
+  if (value && typeof value === 'object') {
+    const keys = Object.keys(value).sort();
+    return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(value[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function deepEqualStore(a, b) {
+  return stableStringify(a) === stableStringify(b);
+}
+
 async function fetchJson(url, init) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -144,26 +167,40 @@ export async function refreshStores({ previous, fetchers, now = () => new Date()
     }),
   );
 
+  // `changedAny` mede se algum VALOR de loja de fato mudou — nao se algum
+  // fetch teve sucesso. Essas duas coisas parecem a mesma coisa mas nao sao:
+  // no dia a dia as tres APIs respondem normalmente e devolvem exatamente o
+  // que ja estava salvo (a extensao nao e relancada todo dia). Uma primeira
+  // versao deste script usava `settled.some(e => e.ok)` — isso da `true`
+  // nesse cenario comum, avanca `fetchedAt` mesmo sem nenhum dado novo, e
+  // faz o workflow de refresh diario (que so commita quando `stores.json`
+  // muda) commitar TODO DIA so por causa do timestamp, disparando um
+  // redeploy do site para atualizar um campo que a pagina nem renderiza.
+  // Corrigido para comparar o CONTEUDO (`deepEqualStore`, insensivel a
+  // ordem de chaves) contra o valor ja salvo — so entao uma loja conta como
+  // "mudou". Quando o fetch tem sucesso mas o valor e identico ao anterior,
+  // `stores[entry.key]` NAO e reatribuido: fica com a mesma referencia que
+  // `{ ...previous.stores }` ja copiou, preservando a ordem de chaves
+  // original — isso garante que, se nenhuma loja mudou de verdade, `stores`
+  // sai byte-identico ao anterior quando serializado (nao so
+  // "deep-equal"), o que por sua vez faz `fetchedAt` tambem ficar intacto
+  // logo abaixo.
+  let changedAny = false;
   for (const entry of settled) {
     if (entry.ok) {
-      stores[entry.key] = entry.store;
+      const prevStore = previous.stores[entry.key];
+      if (!deepEqualStore(entry.store, prevStore)) {
+        stores[entry.key] = entry.store;
+        changedAny = true;
+      }
     } else {
       warnings.push(`loja ${entry.key}: ${entry.reason} — mantendo versao anterior`);
     }
   }
 
-  // fetchedAt so avanca quando pelo menos uma loja foi de fato atualizada.
-  // Se as tres falharem o objeto `stores` acima e deep-equal ao anterior —
-  // manter fetchedAt tambem intacto faz o arquivo sair BYTE-A-BYTE igual ao
-  // que entrou, que e o que "mantem o arquivo inteiro" (task-2-brief.md)
-  // quer dizer. Sem isso, um dia com as tres APIs fora do ar ainda geraria
-  // um diff (so o timestamp), e o workflow de refresh diario (que so
-  // commita quando o arquivo muda) commitaria todo dia mesmo sem nenhum
-  // dado novo.
-  const changedAny = settled.some((entry) => entry.ok);
   const fetchedAt = changedAny ? now() : previous.fetchedAt;
 
-  return { data: { fetchedAt, stores }, warnings };
+  return { data: { fetchedAt, stores }, warnings, changed: changedAny };
 }
 
 // Executado como script (npm run prebuild). Comparacao via pathToFileURL
@@ -187,18 +224,32 @@ if (isMainModule) {
     process.exit(0);
   }
 
-  const { data, warnings } = await refreshStores({ previous, fetchers: DEFAULT_FETCHERS });
+  const { data, warnings, changed } = await refreshStores({ previous, fetchers: DEFAULT_FETCHERS });
 
   for (const warning of warnings) {
     console.warn(`[fetchStores] aviso: ${warning}`);
   }
 
-  fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
-  fs.writeFileSync(OUT_PATH, `${JSON.stringify(data, null, 2)}\n`);
-
   const okCount = Object.keys(data.stores).length - warnings.length;
-  console.log(
-    `[fetchStores] ${OUT_PATH} atualizado — ${okCount}/${Object.keys(data.stores).length} lojas ok` +
-      (warnings.length ? `, ${warnings.length} com aviso (valor anterior mantido).` : '.'),
-  );
+  const totalCount = Object.keys(data.stores).length;
+
+  // So regrava o arquivo quando algum valor de loja de fato mudou. Escrever
+  // de qualquer forma (mesmo com conteudo identico) seria inofensivo para o
+  // git (sem diff de bytes), mas nao escrever e mais direto de raciocinar
+  // sobre — nao ha nenhum caminho em que este processo toca o arquivo em
+  // disco sem uma razao real, o que e o que o workflow de refresh diario
+  // depende para nunca commitar a toa (ver .github/workflows/refresh-stores.yml).
+  if (changed) {
+    fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
+    fs.writeFileSync(OUT_PATH, `${JSON.stringify(data, null, 2)}\n`);
+    console.log(
+      `[fetchStores] ${OUT_PATH} atualizado — ${okCount}/${totalCount} lojas ok` +
+        (warnings.length ? `, ${warnings.length} com aviso (valor anterior mantido).` : '.'),
+    );
+  } else {
+    console.log(
+      `[fetchStores] ${OUT_PATH} sem mudanca — nao regravado (${okCount}/${totalCount} lojas ok` +
+        (warnings.length ? `, ${warnings.length} com aviso, valor anterior mantido).` : ').'),
+    );
+  }
 }
