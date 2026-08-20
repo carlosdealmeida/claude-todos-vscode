@@ -1,6 +1,7 @@
 ---
 import Explorer from '../components/Explorer.svelte';
 import LangSwitcher from '../components/LangSwitcher.svelte';
+import StoreRow from '../components/StoreRow.astro';
 import ThemeToggle from '../components/ThemeToggle.svelte';
 import script from '../demo/scripts/smoke-test.json';
 import landing from '../generated/landing.json';
@@ -134,6 +135,8 @@ const privacyIntro = content.privacy.split('\n\n')[0];
         <span class="lane lane-in_progress"><span class="dot" aria-hidden="true"></span>in_progress</span>
         <span class="lane lane-completed"><span class="dot" aria-hidden="true"></span>completed</span>
       </section>
+
+      <StoreRow locale={locale} />
 
       <section class="features">
         <ul>

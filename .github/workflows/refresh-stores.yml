@@ -1,0 +1,48 @@
+name: Refresh store data
+
+on:
+  schedule:
+    # 04:17 UTC — fora do pico de agendamentos do GitHub Actions: a maioria
+    # dos workflows de terceiros dispara em hora cheia ou meia-hora exatas,
+    # entao o minuto quebrado (17) e a hora de menor movimento (madrugada
+    # US/EU) evitam a fila de runners compartilhados nesse horario. Ver
+    # https://docs.github.com/actions/using-workflows/events-that-trigger-workflows#schedule.
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+# So precisa escrever no proprio repo, e so quando stores.json de fato mudar
+# (ver step "Commit se mudou" abaixo) — nada alem disso.
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # fetchStores.mjs so usa modulos nativos do Node (fs/path/url) + fetch
+      # global (Node 18+) — nao depende de nenhum node_modules, entao nao ha
+      # `npm ci` para rodar antes. Falha de rede/formato numa loja e
+      # nao-fatal por design do proprio script (ver site/scripts/fetchStores.mjs);
+      # este job sempre chega ao commit-check abaixo com codigo 0.
+      - run: node site/scripts/fetchStores.mjs
+
+      # Nao commita todo dia so porque o job rodou: um commit vazio diario
+      # polui o historico de master (e dispara o deploy do Pages a toa). So
+      # commita quando o conteudo de fato mudou.
+      - name: Commit stores.json se mudou
+        run: |
+          if git diff --quiet -- site/src/generated/stores.json; then
+            echo "stores.json sem mudanca — nada para commitar."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add site/src/generated/stores.json
+          git commit -m "chore(site): atualiza stores.json (refresh diario)"
+          git push

@@ -6,6 +6,13 @@ import type { FeatureId } from '../demo/types';
 // desta task) porque DemoScript.id e string generica, sem union literal.
 export type ScenarioId = 'smoke-test' | 'contexto-critico' | 'lista-defasada';
 
+// As tres lojas onde a extensao e publicada — mesma ordem de exibicao em
+// StoreRow.astro e mesmas chaves de site/src/generated/stores.json (task-2,
+// faixa de lojas). "vscode" cobre o VS Code Marketplace, "openvsx" cobre
+// Open VSX (Cursor, Windsurf, VSCodium), "jetbrains" cobre o JetBrains
+// Marketplace.
+export type StoreId = 'vscode' | 'openvsx' | 'jetbrains';
+
 export interface SiteStrings {
   featuresTitle: string;
   features: Record<FeatureId, string>;
@@ -36,6 +43,29 @@ export interface SiteStrings {
   landingPrivacyTitle: string;
   landingReadMore: string;
   landingFooter: string;
+  // Faixa de lojas (StoreRow.astro, task-2): versao e avaliacao lidas em
+  // build-time de site/src/generated/stores.json. Deliberadamente SEM
+  // contador de download — decisao do dono do projeto em 2026-08-11 (as tres
+  // lojas medem coisas incomparaveis; ver task-2-brief.md).
+  landingStoresLabel: string;
+  // Exibida so quando as tres versoes coincidem; quando divergem, cada card
+  // mostra sua propria versao e esta linha some — divergencia e informacao
+  // legitima, nao erro a esconder (ver StoreRow.astro).
+  landingStoresSameVersion: string;
+  // Unidade da contagem de avaliacoes, singular/plural — hoje so o VS Code
+  // Marketplace expoe rating na resposta verificada (ver task-2-brief.md);
+  // Open VSX e JetBrains ficam sem esses dois campos.
+  landingStoresRatingOne: string;
+  landingStoresRatingOther: string;
+  // Nome oficial de cada loja e os editores que ela atende. Os editores sao
+  // nomes proprios (VS Code, Cursor, Windsurf, VSCodium, IntelliJ IDEA...) —
+  // por isso o texto e o mesmo nos 5 idiomas, igual a tabela de instalacao
+  // dos READMEs (site/scripts/extractLanding.mjs le exatamente essa tabela
+  // hoje); ainda assim moram aqui, com uma entrada por locale, para
+  // continuarem no unico catalogo de strings do site em vez de um segundo
+  // dicionario local em StoreRow.astro.
+  storeNames: Record<StoreId, string>;
+  storeEditors: Record<StoreId, string>;
 }
 
 const en: SiteStrings = {
@@ -65,6 +95,20 @@ const en: SiteStrings = {
   landingPrivacyTitle: 'Privacy',
   landingReadMore: 'Read the full policy',
   landingFooter: 'MIT licensed, fully local. Built for Claude Code.',
+  landingStoresLabel: 'Available on',
+  landingStoresSameVersion: 'All three stores on the same version',
+  landingStoresRatingOne: 'review',
+  landingStoresRatingOther: 'reviews',
+  storeNames: {
+    vscode: 'VS Code Marketplace',
+    openvsx: 'Open VSX',
+    jetbrains: 'JetBrains Marketplace',
+  },
+  storeEditors: {
+    vscode: 'VS Code',
+    openvsx: 'Cursor · Windsurf · VSCodium',
+    jetbrains: 'IntelliJ IDEA · PyCharm · WebStorm · Rider · … (2024.2+)',
+  },
 };
 
 const ptBr: SiteStrings = {
@@ -94,6 +138,20 @@ const ptBr: SiteStrings = {
   landingPrivacyTitle: 'Privacidade',
   landingReadMore: 'Leia a política completa',
   landingFooter: 'Licença MIT, totalmente local. Feito para o Claude Code.',
+  landingStoresLabel: 'Disponível em',
+  landingStoresSameVersion: 'As três lojas na mesma versão',
+  landingStoresRatingOne: 'avaliação',
+  landingStoresRatingOther: 'avaliações',
+  storeNames: {
+    vscode: 'VS Code Marketplace',
+    openvsx: 'Open VSX',
+    jetbrains: 'JetBrains Marketplace',
+  },
+  storeEditors: {
+    vscode: 'VS Code',
+    openvsx: 'Cursor · Windsurf · VSCodium',
+    jetbrains: 'IntelliJ IDEA · PyCharm · WebStorm · Rider · … (2024.2+)',
+  },
 };
 
 const es: SiteStrings = {
@@ -123,6 +181,20 @@ const es: SiteStrings = {
   landingPrivacyTitle: 'Privacidad',
   landingReadMore: 'Lee la política completa',
   landingFooter: 'Licencia MIT, totalmente local. Hecho para Claude Code.',
+  landingStoresLabel: 'Disponible en',
+  landingStoresSameVersion: 'Las tres tiendas en la misma versión',
+  landingStoresRatingOne: 'reseña',
+  landingStoresRatingOther: 'reseñas',
+  storeNames: {
+    vscode: 'VS Code Marketplace',
+    openvsx: 'Open VSX',
+    jetbrains: 'JetBrains Marketplace',
+  },
+  storeEditors: {
+    vscode: 'VS Code',
+    openvsx: 'Cursor · Windsurf · VSCodium',
+    jetbrains: 'IntelliJ IDEA · PyCharm · WebStorm · Rider · … (2024.2+)',
+  },
 };
 
 // zh-cn/zh-tw: terminologia de docs/i18n/glossary-zh.md ("agent" -> 智能体/智慧體,
@@ -155,6 +227,20 @@ const zhCn: SiteStrings = {
   landingPrivacyTitle: '隐私',
   landingReadMore: '阅读完整政策',
   landingFooter: 'MIT 许可，完全本地运行。为 Claude Code 打造。',
+  landingStoresLabel: '可在以下平台获取',
+  landingStoresSameVersion: '三个商店版本一致',
+  landingStoresRatingOne: '评分',
+  landingStoresRatingOther: '评分',
+  storeNames: {
+    vscode: 'VS Code Marketplace',
+    openvsx: 'Open VSX',
+    jetbrains: 'JetBrains Marketplace',
+  },
+  storeEditors: {
+    vscode: 'VS Code',
+    openvsx: 'Cursor · Windsurf · VSCodium',
+    jetbrains: 'IntelliJ IDEA · PyCharm · WebStorm · Rider · …（2024.2+）',
+  },
 };
 
 const zhTw: SiteStrings = {
@@ -184,6 +270,20 @@ const zhTw: SiteStrings = {
   landingPrivacyTitle: '隱私',
   landingReadMore: '閱讀完整政策',
   landingFooter: 'MIT 授權，完全在本機執行。為 Claude Code 打造。',
+  landingStoresLabel: '可在以下平台取得',
+  landingStoresSameVersion: '三個商店版本一致',
+  landingStoresRatingOne: '評分',
+  landingStoresRatingOther: '評分',
+  storeNames: {
+    vscode: 'VS Code Marketplace',
+    openvsx: 'Open VSX',
+    jetbrains: 'JetBrains Marketplace',
+  },
+  storeEditors: {
+    vscode: 'VS Code',
+    openvsx: 'Cursor · Windsurf · VSCodium',
+    jetbrains: 'IntelliJ IDEA · PyCharm · WebStorm · Rider · …（2024.2+）',
+  },
 };
 
 export const SITE_STRINGS: Record<Locale, SiteStrings> = {

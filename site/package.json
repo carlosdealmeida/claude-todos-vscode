@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prebuild": "node scripts/extractLanding.mjs && node -e \"require('fs').cpSync('../screenshots','public/screenshots',{recursive:true})\"",
+    "prebuild": "node scripts/fetchStores.mjs && node scripts/extractLanding.mjs && node -e \"require('fs').cpSync('../screenshots','public/screenshots',{recursive:true})\"",
     "dev": "npm run prebuild && astro dev",
     "build": "astro build",
     "preview": "astro preview"

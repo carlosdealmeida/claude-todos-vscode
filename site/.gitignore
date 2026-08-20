@@ -1,5 +1,13 @@
 dist/
 node_modules/
 .astro/
-src/generated/
+# src/generated/ e regenerado a cada prebuild (extractLanding.mjs, fetchStores.mjs)
+# e por isso fica fora do controle de versao — EXCETO stores.json: e o
+# fallback versionado que garante que o build funcione com as tres APIs de
+# loja fora do ar (ver site/scripts/fetchStores.mjs). `src/generated/*` (nao
+# `src/generated/`) e obrigatorio aqui: ignorar o DIRETORIO inteiro faz o git
+# nunca descer nele, e a excecao abaixo (`!arquivo`) e ignorada nesse caso —
+# ignorar so os arquivos dentro permite a excecao funcionar.
+src/generated/*
+!src/generated/stores.json
 public/screenshots/
