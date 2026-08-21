@@ -365,10 +365,6 @@ footer {
   padding: 24px clamp(20px, 5vw, 64px) 40px;
 }
 
-footer a {
-  color: var(--brand-coral-soft);
-}
-
 /* ---- Responsivo ----------------------------------------------------------
    Abaixo de ~900px o hero vira uma coluna e o painel desce (ver comentario
    em .hero-panel sobre por que ele nunca encolhe abaixo de 340px). */
