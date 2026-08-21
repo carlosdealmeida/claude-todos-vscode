@@ -126,6 +126,13 @@ const allSameVersion = versions.every((v) => v === versions[0]);
     display: flex;
     flex-direction: column;
     gap: 8px;
+    /* .stores-grid ja iguala a altura das BORDAS via align-items: stretch
+       (default de grid) no <li class="store-card">, mas o <a> interno nao
+       herda altura de flex/grid — sem isto ele encolhe ao conteudo e sobra
+       uma faixa nao-clicavel no pe dos cartoes mais curtos (hoje, so o
+       VS Code tem avaliacao, entao os outros dois cartoes ficam mais
+       curtos e com essa faixa morta). */
+    height: 100%;
     padding: 16px;
     position: relative;
     text-decoration: none;

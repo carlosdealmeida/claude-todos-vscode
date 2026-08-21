@@ -14,6 +14,11 @@ on:
       - 'src/i18n/**'
       - 'src/types.ts'
       - 'README*.md'
+      # LandingLayout.astro importa media/icon.svg?raw (a marca inline no
+      # topbar) — sem este path, trocar o icone nao redeploya o site. Mesmo
+      # defeito que o comentario acima ja descreve ter corrigido para
+      # src/i18n/**, faltando esta entrada.
+      - 'media/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
