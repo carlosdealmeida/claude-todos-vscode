@@ -1,9 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import * as fs from 'node:fs';
+import * as http from 'node:http';
 import * as path from 'node:path';
+import { spawn } from 'node:child_process';
 import { isValidStore, refreshStores } from '../../site/scripts/fetchStores.mjs';
 
-const STORES_JSON = path.join(__dirname, '..', '..', 'site', 'src', 'generated', 'stores.json');
+const REPO_ROOT = path.join(__dirname, '..', '..');
+const SITE_DIR = path.join(REPO_ROOT, 'site');
+const STORES_JSON = path.join(SITE_DIR, 'src', 'generated', 'stores.json');
 const STORE_KEYS = ['vscode', 'openvsx', 'jetbrains'] as const;
 
 describe('site/src/generated/stores.json (fallback versionado)', () => {
@@ -213,4 +217,137 @@ describe('refreshStores — nucleo puro (sem rede), fetchers injetados', () => {
     expect(warnings).toHaveLength(2);
     expect(warnings.some((w) => w.includes('vscode') && w.includes('formato'))).toBe(true);
   });
+});
+
+// ---------------------------------------------------------------------
+// isMainModule / CLI: o caminho que .github/workflows/refresh-stores.yml
+// de fato exercita (`node site/scripts/fetchStores.mjs` a partir da RAIZ do
+// repo) — e que os testes de refreshStores() acima nunca tocam, porque eles
+// so exercitam o nucleo puro injetando fetchers, sem nenhum I/O de arquivo
+// real. O bug: OUT_PATH era relativo ao CWD; rodando da raiz ele resolvia
+// para <raiz>/src/generated/stores.json (a arvore DA EXTENSAO, que nao
+// existe) em vez de site/src/generated/stores.json — ENOENT, exit 0,
+// nenhum fetch, nenhuma escrita, e o workflow diario ficava verde para
+// sempre sem nunca atualizar nada (Critical C2 do review final da branch).
+// Fix: OUT_PATH agora e ancorado em import.meta.url (ver fetchStores.mjs).
+// Os dois testes abaixo rodam o script como PROCESSO real a partir dos dois
+// CWDs relevantes e prova que os dois escrevem no mesmo arquivo real — nao
+// em <raiz>/src/generated/, que nunca deve ser criado.
+// ---------------------------------------------------------------------
+describe('fetchStores.mjs como processo (isMainModule) — o caminho que o workflow diario roda', () => {
+  const SCRIPT_PATH = path.join(SITE_DIR, 'scripts', 'fetchStores.mjs');
+  // Caminho que o bug de CWD lia/escrevia quando o script rodava da raiz —
+  // nunca deve existir depois do fix.
+  const WRONG_ROOT_DIR = path.join(REPO_ROOT, 'src', 'generated');
+
+  let backup: string | null = null;
+
+  afterEach(() => {
+    if (backup !== null) {
+      fs.writeFileSync(STORES_JSON, backup);
+      backup = null;
+    }
+    // Limpeza defensiva: se uma regressao futura recriar o bug, nao deixa
+    // lixo dentro da arvore da extensao.
+    fs.rmSync(WRONG_ROOT_DIR, { recursive: true, force: true });
+  });
+
+  function startJsonServer(body: unknown): Promise<{ url: string; close: () => Promise<void> }> {
+    return new Promise((resolve) => {
+      const server = http.createServer((_req, res) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(body));
+      });
+      server.listen(0, '127.0.0.1', () => {
+        const address = server.address();
+        if (address === null || typeof address === 'string') {
+          throw new Error('endereco de servidor de teste invalido');
+        }
+        resolve({
+          url: `http://127.0.0.1:${address.port}/`,
+          close: () => new Promise<void>((r) => server.close(() => r())),
+        });
+      });
+    });
+  }
+
+  // Roda fetchStores.mjs como subprocesso real, apontando as tres lojas
+  // para servidores HTTP locais (sem depender de rede externa nem de
+  // fetchers injetados) — e exatamente isso que este bloco precisa provar:
+  // que o PROCESSO, chamado como o workflow chama, acha o arquivo certo.
+  //
+  // spawn ASSINCRONO de proposito, nao spawnSync: os servidores HTTP acima
+  // rodam neste mesmo processo Node, e spawnSync bloqueia a thread/event
+  // loop inteira ate o subprocesso terminar — os `http.createServer`
+  // ficariam com o socket escutando no SO mas incapazes de processar
+  // nenhuma conexao (o callback de accept() nunca roda), e as tres
+  // requisicoes do subprocesso dariam timeout de 8s cada. Confirmado
+  // empiricamente ao escrever este teste: com spawnSync as tres lojas
+  // "falhavam" por timeout e nada era escrito; trocando para spawn (que
+  // deixa o event loop livre enquanto o filho roda) os fetches completam
+  // normalmente.
+  function runScript(cwd: string, version: string): Promise<{ status: number | null; stdout: string; stderr: string }> {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        startJsonServer({ results: [{ extensions: [{ versions: [{ version }], statistics: [] }] }] }),
+        startJsonServer({ version }),
+        startJsonServer([{ version }]),
+      ]).then(([vscode, openvsx, jetbrains]) => {
+        const child = spawn(process.execPath, [SCRIPT_PATH], {
+          cwd,
+          env: {
+            ...process.env,
+            STORES_VSCODE_URL: vscode.url,
+            STORES_OPENVSX_URL: openvsx.url,
+            STORES_JETBRAINS_URL: jetbrains.url,
+          },
+        });
+        let stdout = '';
+        let stderr = '';
+        child.stdout.on('data', (chunk) => { stdout += chunk; });
+        child.stderr.on('data', (chunk) => { stderr += chunk; });
+        child.on('error', reject);
+        child.on('close', (status) => {
+          Promise.all([vscode.close(), openvsx.close(), jetbrains.close()]).then(() =>
+            resolve({ status, stdout, stderr }),
+          );
+        });
+      });
+    });
+  }
+
+  it('rodando a partir da RAIZ do repo, escreve em site/src/generated/stores.json (nao em <raiz>/src/generated/)', async () => {
+    backup = fs.readFileSync(STORES_JSON, 'utf8');
+    const version = '9.9.1';
+    const result = await runScript(REPO_ROOT, version);
+
+    expect(result.status).toBe(0);
+    // Antes do fix, isto era exatamente o aviso de ENOENT que provava o bug
+    // (Critical C2): a leitura falhava porque OUT_PATH resolvia para o
+    // lugar errado.
+    expect(result.stdout).not.toMatch(/nao foi possivel ler/);
+
+    const written = JSON.parse(fs.readFileSync(STORES_JSON, 'utf8'));
+    expect(written.stores.vscode.version).toBe(version);
+    expect(written.stores.openvsx.version).toBe(version);
+    expect(written.stores.jetbrains.version).toBe(version);
+
+    // Prova negativa: o bug de CWD lia/escrevia dentro da arvore da
+    // extensao. Isso nunca deve existir.
+    expect(fs.existsSync(WRONG_ROOT_DIR)).toBe(false);
+  }, 20000);
+
+  it('rodando a partir de site/, tambem escreve no mesmo arquivo (comportamento que ja funcionava, nao pode regredir)', async () => {
+    backup = fs.readFileSync(STORES_JSON, 'utf8');
+    const version = '9.9.2';
+    const result = await runScript(SITE_DIR, version);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toMatch(/nao foi possivel ler/);
+
+    const written = JSON.parse(fs.readFileSync(STORES_JSON, 'utf8'));
+    expect(written.stores.vscode.version).toBe(version);
+    expect(written.stores.openvsx.version).toBe(version);
+    expect(written.stores.jetbrains.version).toBe(version);
+  }, 20000);
 });

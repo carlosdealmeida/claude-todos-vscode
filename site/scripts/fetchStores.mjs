@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 // Le versao + avaliacao das tres lojas onde a extensao e publicada, em
 // paralelo, e grava site/src/generated/stores.json. Chamado no `prebuild`
@@ -15,7 +15,18 @@ import { pathToFileURL } from 'node:url';
 // de ser gravada — tratada como falha, nunca como dado.
 
 const TIMEOUT_MS = 8000;
-const OUT_PATH = path.join('src', 'generated', 'stores.json');
+// Ancorado no proprio arquivo (import.meta.url), NUNCA no CWD de quem
+// chama. `npm run prebuild` roda com CWD = site/, onde 'src/generated/...'
+// relativo ja acertava por coincidencia — mas .github/workflows/refresh-stores.yml
+// chama `node site/scripts/fetchStores.mjs` a partir da RAIZ do repo, e la
+// o mesmo caminho relativo resolvia para <raiz>/src/generated/stores.json
+// (a arvore da extensao, que nao existe): ENOENT, exit 0, nenhum fetch
+// acontecia, e o workflow diario nunca escrevia nada nem falhava — ver
+// tests/site/stores.test.ts, describe "isMainModule / CLI", que roda este
+// script como subprocesso a partir dos dois CWDs e prova que os dois
+// escrevem no mesmo arquivo real.
+const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const OUT_PATH = path.join(SCRIPT_DIR, '..', 'src', 'generated', 'stores.json');
 
 // URLs sao overridaveis por variavel de ambiente de proposito: e o mecanismo
 // que permite exercitar o caminho de falha (as tres APIs fora do ar) sem
