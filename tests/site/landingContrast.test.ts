@@ -20,6 +20,50 @@ import * as path from 'node:path';
 // resolve qual DECLARACAO vence (especificidade + ordem de origem, como um
 // navegador faria) para os elementos onde existe mais de uma regra
 // competindo pela mesma propriedade, em vez de comparar tokens soltos.
+//
+// O QUE ESTE RESOLVEDOR NAO COBRE (leia antes de confiar nele para provar
+// que a pagina renderiza um contraste correto — ele e UMA das protecoes,
+// nao a garantia). A prova de que a lista abaixo importa e a Critical do
+// review final da branch feat/site-visual-identity: uma falha real de
+// 1.53:1 causada pela interacao entre theme.css e landing.css, num par que
+// este arquivo nunca tentou medir porque nao esta na lista fixa abaixo — o
+// resolvedor passou 8/8 o tempo todo.
+//
+//   1. `!important`. `resolveProperty()` so compara especificidade + ordem
+//      de origem; uma regra perdedora com `!important` venceria no
+//      navegador e perderia aqui. Nenhuma regra de landing.css usa
+//      `!important` hoje.
+//   2. Uma folha so. `parseRules`/`cascadeRatio` leem exclusivamente
+//      site/src/styles/landing.css. LandingLayout.astro carrega mais tres
+//      (app.css, theme.css) e o Astro ainda concatena os `<style>`
+//      escopados de StoreRow.astro/LangSwitcher.svelte/ThemeToggle.svelte/
+//      FeatureList.svelte/Demo.svelte — nenhuma declaracao nessas folhas
+//      entra nesta simulacao.
+//   3. So os elementos na lista fixa abaixo (hoje: a.cta e a.cta-secondary,
+//      via HERO_CTA_ANCESTORS). Qualquer outro elemento da pagina — a
+//      topbar inteira, o painel embutido, os cartoes de loja — nao e
+//      medido por este arquivo nunca, so pelos testes de par-de-token
+//      acima (que provam a paleta, nao o que a pagina pinta).
+//   4. `@media`. `stripAtBlocks` descarta o bloco `@media` inteiro antes de
+//      `parseRules` rodar — uma declaracao de cor dentro de uma media query
+//      fica invisivel para este resolvedor.
+//   5. `:not()`/`:is()`. `specificity()` conta os dois como uma
+//      pseudo-classe generica (b += 1); pela spec, ambos deveriam assumir a
+//      especificidade do argumento mais especifico da lista dentro dos
+//      parenteses.
+//   6. `inherit` so resolve contra `.landing`. `resolveValue()` ancora
+//      TODO `inherit` incondicionalmente em `.landing` — correto por
+//      coincidencia de estrutura para os dois alvos testados hoje (o
+//      ancestral mais proximo que declara `color` no caminho deles ate a
+//      raiz e mesmo `.landing`), errado em geral: um `<a>` dentro de
+//      `footer` (que declara seu proprio `color: var(--brand-dim)`)
+//      herdaria de `footer`, nao de `.landing`, e este resolvedor mediria
+//      o par errado sem avisar.
+//
+// (Combinadores `>`/`+`/`~` tambem nao sao tratados — `selector.split(/\s+/)`
+// trata qualquer um deles como parte de um compound — mas nenhuma regra de
+// landing.css usa combinador algum hoje, entao fica fora da lista acima por
+// nao ser um blind spot ainda exercitado por este arquivo.)
 
 const LANDING_CSS = path.join(__dirname, '..', '..', 'site', 'src', 'styles', 'landing.css');
 
