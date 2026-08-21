@@ -33,8 +33,21 @@ jobs:
       - run: node site/scripts/fetchStores.mjs
 
       # Nao commita todo dia so porque o job rodou: um commit vazio diario
-      # polui o historico de master (e dispara o deploy do Pages a toa). So
-      # commita quando o conteudo de fato mudou.
+      # polui o historico de master a toa. So commita quando o conteudo de
+      # fato mudou.
+      #
+      # Este commit NAO dispara pages.yml. `git push` autenticado com o
+      # GITHUB_TOKEN padrao do runner nao aciona outros workflows — e a
+      # protecao anti-loop do GitHub Actions, sem excecao para `push`
+      # (https://docs.github.com/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow).
+      # Dano pratico pequeno: pages.yml roda `npm run build` em site/, e o
+      # npm executa `prebuild` (que chama este mesmo fetchStores.mjs)
+      # automaticamente antes de `build` — entao TODO deploy ja busca as
+      # tres lojas ao vivo, independente deste workflow. O unico efeito real
+      # deste job diario e registrar o dado em stores.json no repositorio
+      # (fallback para quando as lojas estiverem fora do ar num deploy
+      # futuro); ele nao forca um redeploy num dia sem push humano — isso so
+      # acontece no proximo push que toque um path de pages.yml.
       - name: Commit stores.json se mudou
         run: |
           if git diff --quiet -- site/src/generated/stores.json; then
