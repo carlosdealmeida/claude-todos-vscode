@@ -46,11 +46,15 @@
 </button>
 
 <style>
+  /* Chrome da pagina (topbar), nao do painel: usa tokens --brand-*, nunca
+     --vscode-* — mesmo motivo documentado em LangSwitcher.svelte. Este botao
+     media ~1.53:1 no tema claro antes desta troca (texto em
+     --vscode-foreground contra um fundo --brand-bg que nunca clareia). */
   button {
     background: none;
-    border: 1px solid var(--vscode-panel-border);
+    border: 1px solid var(--brand-line-control);
     border-radius: 4px;
-    color: var(--vscode-foreground);
+    color: var(--brand-bone);
     cursor: pointer;
     font: inherit;
     padding: 4px 10px;

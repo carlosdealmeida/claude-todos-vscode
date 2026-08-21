@@ -78,10 +78,25 @@
    nem todos — ex.: o botao play/pause de Demo.svelte nao declara `color`
    proprio hoje). Resgata a subarvore inteira do painel de volta para os
    tokens do VS Code que app.css/theme.css ja definem em :root, sem tocar em
-   nenhum arquivo de src/webview/ ou site/src/components/. */
+   nenhum arquivo de src/webview/ ou site/src/components/.
+
+   `background: var(--demo-editor-background)` (nova nesta rodada) nao e so
+   estetico: sem fundo proprio, `.stage` sentava direto sobre --brand-bg, que
+   NUNCA clareia com o tema (e a mesma logica ja documentada abaixo, em
+   .swimlanes, aplicada aqui). --vscode-foreground/--vscode-descriptionForeground
+   escurecem quando ThemeToggle alterna para claro (FeatureList.svelte usa os
+   dois) — contra um fundo que continuava escuro, isso media ~1.53:1/~3.17:1
+   (ver tests/site/landingContrast.test.ts e o relatorio de fix).
+   --demo-editor-background existe nos dois temas em site/src/demo/theme.css
+   e clareia junto com --vscode-foreground, entao o par volta a fazer
+   sentido nos dois temas — sem essa var, so o token de texto mudava e o de
+   fundo continuava fixo. */
 .landing .stage {
+  background: var(--demo-editor-background);
+  border-radius: 6px;
   color: var(--vscode-foreground);
   font-family: var(--vscode-font-family);
+  padding: 16px;
 }
 
 /* :where() zera a especificidade do reset (fica igual a de `.landing`
