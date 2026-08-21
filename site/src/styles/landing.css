@@ -99,18 +99,31 @@
   padding: 16px;
 }
 
-/* :where() zera a especificidade do reset (fica igual a de `.landing`
-   sozinho) em vez de somar o peso de um seletor de tipo (`a`) ao de
-   `.landing` — com `.landing a { color: inherit; }` (especificidade 0,1,1)
-   este reset vencia `.cta { color: var(--brand-on-coral); }` (0,1,0)
-   incondicionalmente, apesar de vir ANTES no arquivo: o CTA renderizava
-   --brand-bone sobre --brand-coral (~2.90:1, abaixo do piso de 4.5:1) em
-   vez do par --brand-on-coral/--brand-coral (~5.07:1) que os tokens
-   prometiam. tests/site/landingContrast.test.ts agora resolve a cascata
-   real (nao so os tokens) para pegar essa classe de bug — ver o teste
-   "prova por mutacao" la dentro, que reverte este :where() de proposito e
-   confirma que o teste acusa o par certo antes de reaplicar o fix. */
-.landing :where(a) {
+/* :where(.landing a) — TODO o seletor dentro de :where(), nao so o `a` —
+   zera a especificidade da regra inteira para (0,0,0), nao so para a de
+   `.landing` sozinho. Isso importa porque `.landing :where(a)` (fix
+   anterior, so o `a` dentro do :where()) ainda carregava a especificidade
+   de `.landing` = (0,1,0): empatava com `.brand`, `.cta` e `.cta-secondary`
+   (tambem (0,1,0)) e so vencia por ordem de origem — mover este bloco para
+   o fim do arquivo (refactor cosmetico que qualquer pessoa faria sem
+   pensar) reintroduziria exatamente o bug de 2.90:1 corrigido abaixo, so
+   que para tres regras em vez de uma. Com (0,0,0) o reset perde para
+   QUALQUER regra que declare `color` num seletor com classe/tipo, em
+   qualquer ordem, para sempre — a classe inteira de bug fica impossivel por
+   construcao, sem depender de teste ou de disciplina de quem editar o
+   arquivo depois.
+
+   Historico do bug original: com `.landing a { color: inherit; }`
+   (especificidade 0,1,1) este reset vencia `.cta { color:
+   var(--brand-on-coral); }` (0,1,0) incondicionalmente, apesar de vir ANTES
+   no arquivo — o CTA renderizava --brand-bone sobre --brand-coral (~2.90:1,
+   abaixo do piso de 4.5:1) em vez do par --brand-on-coral/--brand-coral
+   (~5.07:1) que os tokens prometiam. tests/site/landingContrast.test.ts
+   resolve a cascata real (nao so os tokens) para pegar essa classe de bug —
+   ver o teste "prova por mutacao" la dentro, que reverte este :where() de
+   proposito e confirma que o teste acusa o par certo antes de reaplicar o
+   fix. */
+:where(.landing a) {
   color: inherit;
 }
 
