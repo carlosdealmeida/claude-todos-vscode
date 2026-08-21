@@ -1,6 +1,7 @@
 ---
 import Explorer from '../components/Explorer.svelte';
 import LangSwitcher from '../components/LangSwitcher.svelte';
+import StoreRow from '../components/StoreRow.astro';
 import ThemeToggle from '../components/ThemeToggle.svelte';
 import script from '../demo/scripts/smoke-test.json';
 import landing from '../generated/landing.json';
@@ -13,7 +14,27 @@ import landing from '../generated/landing.json';
 // destaques "ao vivo" e o respeito a prefers-reduced-motion.
 import '../../../src/webview/app.css';
 import '../demo/theme.css';
+// landing.css carrega por ultimo e usa o seletor de classe `.landing`
+// (aplicado abaixo em <body>), que tem mais especificidade que os
+// `body { ... }` de app.css/theme.css acima — o fundo/cor/tipografia da
+// pagina vencem sem depender de ordem, entao isto nao interfere na regra
+// "app.css antes de theme.css" (ver comentario acima e
+// tests/site/cssTokens.test.ts). Os tokens --brand-* que ele define ficam
+// presos a essa classe, nunca em :root — no espaco de nomes que os
+// --vscode-* do painel embutido usam.
+import '../styles/landing.css';
 import type { Locale } from '../../../src/i18n/locale';
+// Catalogo unico de strings de UI do site (painel embutido E landing): os
+// rotulos landing* (topbar, CTA, swimlanes, privacidade, rodape) moraram
+// antes num dicionario local so deste arquivo — revisao apontou que isso
+// criava um segundo mecanismo de catalogo em paralelo a site.ts sem
+// necessidade (zh-cn/zh-tw ja conferidos aqui contra o glossario).
+import { SITE_STRINGS } from '../i18n/site';
+
+// media/icon.svg usa stroke="currentColor": precisa ser inlinado no HTML (e
+// nao referenciado via <img src>) para herdar a cor coral por CSS — um
+// <img> nao da acesso ao `color` da pagina para dentro do SVG.
+import brandIcon from '../../../media/icon.svg?raw';
 
 interface Props {
   locale: Locale;
@@ -21,6 +42,30 @@ interface Props {
 
 const { locale } = Astro.props;
 const content = landing[locale];
+const strings = SITE_STRINGS[locale];
+
+// Mesmo README por locale que site/scripts/extractLanding.mjs le (LOCALE_FILES
+// la dentro nao e exportado) — usado aqui so para montar o link "leia a
+// politica completa", que aponta pro README real no GitHub em vez de tentar
+// re-renderizar a tabela de privacy (extractLanding converte so inline
+// bold/code/link; a tabela markdown fica como texto cru, ver comentario em
+// extractLanding.mjs — fora do escopo desta task).
+const README_FILES: Record<Locale, string> = {
+  en: 'README.en.md',
+  'pt-br': 'README.md',
+  es: 'README.es.md',
+  'zh-cn': 'README.zh-cn.md',
+  'zh-tw': 'README.zh-tw.md',
+};
+const REPO = 'https://github.com/carlosdealmeida/claude-todos-vscode';
+const MARKETPLACE_URL =
+  'https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos';
+const readMoreHref = `${REPO}/blob/master/${README_FILES[locale]}`;
+
+// content.privacy comeca com um paragrafo intro limpo (ja convertido para
+// HTML por toHtml) antes da tabela markdown crua — so o paragrafo entra na
+// pagina; a tabela fica para uma iteracao futura que a converta de verdade.
+const privacyIntro = content.privacy.split('\n\n')[0];
 ---
 <!doctype html>
 <html lang={locale}>
@@ -57,27 +102,56 @@ const content = landing[locale];
       })();
     </script>
   </head>
-  <body>
+  <body class="landing">
     <div class="topbar">
-      <LangSwitcher client:load current={locale} />
-      <ThemeToggle client:load {locale} />
+      <a class="brand" href={import.meta.env.BASE_URL}>
+        <Fragment set:html={brandIcon} />
+        <span class="wordmark">Claude Todos</span>
+      </a>
+      <div class="topbar-actions">
+        <LangSwitcher client:load current={locale} />
+        <ThemeToggle client:load {locale} />
+        <a class="cta" href={MARKETPLACE_URL}>{strings.landingCta}</a>
+      </div>
     </div>
     <main>
-      <h1>Claude Todos</h1>
-      <p class="tagline">{content.tagline}</p>
-      <Explorer client:only="svelte" script={script} locale={locale} />
-      <ul class="features">
-        {content.features.map((f: string) => <li set:html={f} />)}
-      </ul>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">{strings.landingEyebrow}</p>
+          <h1>{content.title}</h1>
+          <p class="lede">{content.lede}</p>
+          <div class="hero-cta-row">
+            <a class="cta" href={MARKETPLACE_URL}>{strings.landingCta}</a>
+            <a class="cta-secondary" href={REPO}>{strings.landingCtaSecondary}</a>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <Explorer client:only="svelte" script={script} locale={locale} />
+        </div>
+      </section>
+
+      <section class="swimlanes" aria-label={strings.landingStatesLabel}>
+        <span class="lane lane-pending"><span class="dot" aria-hidden="true"></span>pending</span>
+        <span class="lane lane-in_progress"><span class="dot" aria-hidden="true"></span>in_progress</span>
+        <span class="lane lane-completed"><span class="dot" aria-hidden="true"></span>completed</span>
+      </section>
+
+      <StoreRow locale={locale} />
+
+      <section class="features">
+        <ul>
+          {content.features.map((f: string) => <li set:html={f} />)}
+        </ul>
+      </section>
+
+      <section class="privacy">
+        <h2 class="section-title">{strings.landingPrivacyTitle}</h2>
+        <p set:html={privacyIntro} />
+        <p><a href={readMoreHref}>{strings.landingReadMore}</a></p>
+      </section>
     </main>
+    <footer>
+      <p>{strings.landingFooter}</p>
+    </footer>
   </body>
 </html>
-
-<style>
-  .topbar {
-    align-items: center;
-    display: flex;
-    gap: 12px;
-    justify-content: space-between;
-  }
-</style>

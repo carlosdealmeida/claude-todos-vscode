@@ -39,7 +39,14 @@
 </nav>
 
 <style>
+  /* Chrome da pagina (topbar), nao do painel: usa tokens --brand-*, nunca
+     --vscode-* — o fundo da landing e sempre --brand-bg (nao clareia com o
+     tema), mas --vscode-foreground/--vscode-descriptionForeground escurecem
+     quando ThemeToggle alterna para claro. Isso fazia este seletor de idioma
+     cair para ~1.53:1 (ativo) / ~3.17:1 (inativo) contra --brand-bg no tema
+     claro. --brand-dim/--brand-bone contra --brand-bg tem piso >= 4.5:1
+     travado em tests/site/landingContrast.test.ts. */
   .langs { display: flex; gap: 12px; }
-  a { color: var(--vscode-descriptionForeground); text-decoration: none; }
-  a[aria-current='page'] { color: var(--vscode-foreground); font-weight: 600; }
+  a { color: var(--brand-dim); text-decoration: none; }
+  a[aria-current='page'] { color: var(--brand-bone); font-weight: 600; }
 </style>

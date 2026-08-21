@@ -1,0 +1,182 @@
+---
+// Faixa com as tres lojas onde a extensao e publicada (VS Code Marketplace,
+// Open VSX, JetBrains Marketplace), mostrando versao e avaliacao lidas em
+// build-time por site/scripts/fetchStores.mjs. Deliberadamente SEM contador
+// de download em lugar nenhum — decisao do dono do projeto em 2026-08-11:
+// as tres lojas medem coisas incomparaveis (instalacao unica vs download
+// bruto, este ultimo inflado por CI/mirrors) e os numeros atuais
+// trabalhariam contra a pagina (ver task-2-brief.md).
+import storesData from '../generated/stores.json';
+import { SITE_STRINGS, type StoreId } from '../i18n/site';
+import type { Locale } from '../../../src/i18n/locale';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const strings = SITE_STRINGS[locale];
+const { stores } = storesData;
+
+// Ordem fixa de exibicao — mesma ordem em que as lojas aparecem na tabela de
+// instalacao dos READMEs (VS Code -> Open VSX -> JetBrains).
+const STORE_ORDER: StoreId[] = ['vscode', 'openvsx', 'jetbrains'];
+
+const versions = STORE_ORDER.map((key) => stores[key].version);
+// Divergencia entre lojas e informacao legitima (uma pode estar atras por
+// tempo de revisao da propria loja) — por isso so escondemos a linha "as
+// tres na mesma versao" quando ISSO NAO E VERDADE, nunca escondemos a
+// versao de uma loja divergente (cada card sempre mostra a sua).
+const allSameVersion = versions.every((v) => v === versions[0]);
+---
+
+<section class="stores" aria-label={strings.landingStoresLabel}>
+  <p class="stores-eyebrow">{strings.landingStoresLabel}</p>
+  {
+    allSameVersion && (
+      <p class="stores-same-version">
+        {strings.landingStoresSameVersion} <span class="stores-same-version-tag">v{versions[0]}</span>
+      </p>
+    )
+  }
+  <ul class="stores-grid">
+    {
+      STORE_ORDER.map((key) => {
+        const store = stores[key];
+        const ratingLabel =
+          store.ratingCount === 1 ? strings.landingStoresRatingOne : strings.landingStoresRatingOther;
+        return (
+          <li class="store-card">
+            <a class="store-link" href={store.url}>
+              <span class="store-editors">{strings.storeEditors[key]}</span>
+              <span class="store-name">{strings.storeNames[key]}</span>
+              <span class="store-meta">
+                <span class="store-version-pill">v{store.version}</span>
+                {store.rating !== undefined && (
+                  <span class="store-rating">
+                    {store.rating.toFixed(1)}★
+                    {store.ratingCount !== undefined && ` (${store.ratingCount} ${ratingLabel})`}
+                  </span>
+                )}
+              </span>
+              <span class="store-arrow" aria-hidden="true">
+                →
+              </span>
+            </a>
+          </li>
+        );
+      })
+    }
+  </ul>
+</section>
+
+<style>
+  /* Tokens vem de site/src/styles/landing.css, sob `.landing` (a <body> do
+     layout que embute este componente) — nao redeclarados aqui. */
+
+  .stores {
+    border-bottom: 1px solid var(--brand-line);
+    border-top: 1px solid var(--brand-line);
+    padding: 28px 0;
+  }
+
+  .stores-eyebrow {
+    color: var(--brand-coral);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.19em;
+    margin: 0 0 16px;
+    text-transform: uppercase;
+  }
+
+  .stores-same-version {
+    color: var(--brand-dim);
+    font-size: 0.9rem;
+    margin: 0 0 20px;
+  }
+
+  .stores-same-version-tag {
+    color: var(--brand-bone);
+    font-family: var(--font-mono);
+  }
+
+  .stores-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .store-card {
+    /* --brand-line-control (nao --brand-line): o card inteiro e um <a>, e a
+       borda e o unico limite visivel do controle clicavel — mesmo papel que
+       --brand-line-control ja cumpre para .cta-secondary em landing.css
+       (WCAG 1.4.11, >= 3:1 contra o fundo). --brand-line fica reservado para
+       divisores puramente decorativos (o topo/base desta secao, acima). */
+    border: 1px solid var(--brand-line-control);
+    border-radius: 10px;
+  }
+
+  .store-link {
+    align-items: flex-start;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    /* .stores-grid ja iguala a altura das BORDAS via align-items: stretch
+       (default de grid) no <li class="store-card">, mas o <a> interno nao
+       herda altura de flex/grid — sem isto ele encolhe ao conteudo e sobra
+       uma faixa nao-clicavel no pe dos cartoes mais curtos (hoje, so o
+       VS Code tem avaliacao, entao os outros dois cartoes ficam mais
+       curtos e com essa faixa morta). */
+    height: 100%;
+    padding: 16px;
+    position: relative;
+    text-decoration: none;
+  }
+
+  .store-editors {
+    color: var(--brand-dim);
+    font-size: 0.8rem;
+  }
+
+  .store-name {
+    color: var(--brand-bone);
+    font-weight: 600;
+  }
+
+  .store-meta {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* --brand-coral/--brand-on-coral: mesmo par ja usado em .cta (landing.css),
+     medido em ~5.07:1 (>= 4.5:1 exigido para texto) — nao redeclarados aqui,
+     so reaproveitados. */
+  .store-version-pill {
+    background: var(--brand-coral);
+    border-radius: 999px;
+    color: var(--brand-on-coral);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 2px 10px;
+  }
+
+  .store-rating {
+    color: var(--brand-dim);
+    font-size: 0.8rem;
+  }
+
+  .store-arrow {
+    color: var(--brand-coral-soft);
+    position: absolute;
+    right: 16px;
+    top: 16px;
+  }
+</style>
