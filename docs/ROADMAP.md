@@ -162,10 +162,10 @@ de tokens do 0.3.0).
   sessão morta pinada segue mostrando `in_progress` até o usuário voltar para "Auto". É UX
   intencional; endurecer só se houver pedido.
 
-### 5. Seletor de sessão melhor: vivas/ativas, atalhos, sem corte — (a)+(b)+(c)+(d) ✅ ENTREGUE (0.13.0 · (a)+(c) sem versão ainda, 2026-07-27)
+### 5. Seletor de sessão melhor: vivas/ativas, atalhos, sem corte — (a)+(b)+(c)+(d) ✅ ENTREGUE (0.13.0 · (a)+(c) 0.18.0, 2026-07-27)
 - **Issues:** [#28147](https://github.com/anthropics/claude-code/issues/28147) (`NOT_PLANNED`, `keybindings`) indicadores de atividade + atalhos · [#24435](https://github.com/anthropics/claude-code/issues/24435) (`NOT_PLANNED`) picker corta em ~8 sessões mais recentes · [#23275](https://github.com/anthropics/claude-code/issues/23275) (`NOT_PLANNED`) nomear sessões
 - **Status:** fatias (d)+(b) ✅ entregues na 0.13.0; (a) sessões vivas e (c) nomes reais ✅
-  entregues em 2026-07-27 (ainda sem número de release). Spec:
+  entregues em 2026-07-27, publicados na **0.18.0** (2026-09-05). Spec:
   [docs/specs/2026-07-27-sessoes-vivas-e-nomes-design.md](specs/2026-07-27-sessoes-vivas-e-nomes-design.md)
   · plano: [docs/plans/2026-07-27-perguntas-pendentes-e-sessoes-vivas.md](plans/2026-07-27-perguntas-pendentes-e-sessoes-vivas.md).
 - **Achados:**
@@ -388,6 +388,10 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 > confirmada pelo mantenedor). R2 vira 🔥 **prioridade máxima**, acima do que sobrava na fila:
 > estado vazio que explica e corrige (flag via `settings.json`), onboarding, e a decisão de
 > posicionamento que os itens 8 e 23 já esperavam — agora com gatilho externo. Ver R2.
+>
+> **0.18.0 publicada em 2026-09-05** com 22-ext, 5(a)+(c), R5 e os READMEs da 2.1.233 — VS Code
+> Marketplace e Open VSX já listam; JetBrains em revisão leve. Passo 0 do R2 ✅ verificado no
+> mesmo dia (ver R2); próximo: passo 1 (estado vazio inteligente).
 >
 > Filas anteriores, para histórico: 2026-07-25 → 1º 17 · 2º 5(a)+(c) · 3º 23. Manhã de
 > 2026-07-27 → 1º 17 · 2º 22-ext · 3º 5(a)+(c) (17 caiu na verificação de disco da mesma tarde).
@@ -672,7 +676,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   faixa "aguardando sua resposta" com o texto da pergunta e clique levando à linha do
   transcript (reusa `openTodoSource` do item 1). Custo baixo, tudo já parseado.
   📐 **1º da fila** (decidido 2026-07-27) — daqui em diante chamado de **item 22-ext**.
-- **✅ item 22-ext entregue (2026-07-27, ainda sem número de release):** faixa
+- **✅ item 22-ext entregue (2026-07-27, publicado na 0.18.0 em 2026-09-05):** faixa
   `PendingQuestions.svelte` no topo do painel (após o header, antes da `UsageTable`), no VS
   Code **e** no JetBrains (webview e `SessionCore` compartilhados desde a 0.16.0, sem código
   específico de host). Novo campo `pendingQuestions?: PendingQuestion[]` no snapshot —
@@ -836,17 +840,29 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 - **Mitigação disponível hoje:** `~/.claude/settings.json` aceita a chave `env`, que o harness
   aplica às sessões (o CHANGELOG cita o `env` do settings.json em várias entradas; este ambiente
   já usa `"env": {"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"}`). Basta acrescentar
-  `"CLAUDE_CODE_ENABLE_TODO_TOOLS": "1"`. É o caminho que o mantenedor aponta — mas ainda
-  **não foi verificado na extensão VS Code** (passo 0, abaixo).
-- **Passo 0 — verificar a mitigação na extensão VS Code (antes do próximo release) 🔍:** os 5
-  READMEs já afirmam que o `env` do `settings.json` vale na extensão oficial; a afirmação segue o
-  mantenedor, não um teste nosso. Protocolo: (1) `"env": {"CLAUDE_CODE_ENABLE_TODO_TOOLS": "1"}`
-  no `~/.claude/settings.json`; (2) sessão **nova** no painel nativo do VS Code (a extensão grava
-  com 2.1.261 — o CLI local 2.1.219 é pré-corte e não serve) com Opus 5 / Fable 5.1; (3) pedir
-  "liste suas ferramentas com Task ou Todo no nome" e uma tarefa de 3 passos; (4) confirmar
-  `"name":"TodoWrite"` (ou `TaskCreate`) no `.jsonl` da sessão e a lista aparecendo no painel;
-  (5) repetir sem a flag para ver o estado vazio. Se falhar na extensão, corrigir o texto dos
-  READMEs (dizer só "terminal") **antes** de publicar.
+  `"CLAUDE_CODE_ENABLE_TODO_TOOLS": "1"`. É o caminho que o mantenedor aponta e foi
+  **verificado aqui** (passo 0, abaixo).
+- **Passo 0 — ✅ verificado em 2026-09-05** (binário 2.1.261 embutido na extensão oficial, modelo
+  Fable 5.1, `-p` em cwd de rascunho, ambiente da sessão limpo):
+
+  | Teste | Flag | Resposta | `tool_use` no `.jsonl` |
+  |---|---|---|---|
+  | A | nenhuma | `NO_TASK_TOOLS TaskOutput TaskStop` | nenhum |
+  | B | `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` no ambiente do processo | `DONE` | `ToolSearch` → `TaskCreate` ×2 |
+  | C | só `env` do `~/.claude/settings.json` | `DONE` | `ToolSearch` → `TaskCreate` ×2 |
+  | D | `env` do settings.json **+** `CLAUDE_CODE_ENABLE_TASKS=0` (o que a extensão injeta) | `DONE` | `ToolSearch` → `TodoWrite` ×1 |
+
+  Prova final: a sessão desta análise, rodando **dentro da extensão oficial**
+  (`CLAUDE_CODE_ENTRYPOINT=claude-vscode`), recebeu `TodoWrite` no roster de ferramentas assim
+  que a chave entrou no settings.json, sem reiniciar. Três achados para o passo 1: (1) o `env`
+  do settings.json vale na extensão, como os READMEs afirmam; (2) as ferramentas voltam como
+  **deferred** — o modelo as carrega via `ToolSearch` quando decide criar tasks — então mesmo
+  com a flag ligada a lista só aparece quando o agente a cria, e o estado vazio precisa
+  continuar dizendo "aguardando"; (3) o **esquema depende do ambiente**: com
+  `CLAUDE_CODE_ENABLE_TASKS=0` (extensão) vem `TodoWrite`, sem ela vem `TaskCreate` — o
+  `todosParser` já trata os dois (`detectSchema`). A flag ficou **ligada** neste ambiente
+  (backup do settings.json no scratchpad da sessão). Script reproduzível: `run_ptest.sh` no
+  scratchpad — não versionado; portar para `scripts/` se o teste virar rotina de release.
 - **Plano (📐 a especificar — passa na frente de qualquer feature):**
   1. **Estado vazio inteligente:** distinguir "sessão sem tasks" de "ferramentas de task
      desligadas nesta sessão". Sinal disponível no transcript: `version` ≥ 2.1.233 + `model`
@@ -865,7 +881,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
        `walkthrough.enableTaskTools.title/description` nos 5 `package.nls*.json` e o mesmo
        esquema de mídia dos passos atuais. É o primeiro lugar que o usuário novo vê — hoje o
        guia leva até "Explore a árvore" sem nunca citar a flag.
-     - [ ] **Descrição do plugin JetBrains** (`jetbrains/src/main/resources/META-INF/plugin.xml`,
+     - [x] **Descrição do plugin JetBrains** ✅ 0.18.0 (`jetbrains/src/main/resources/META-INF/plugin.xml`,
        `<description>` em EN + zh-cn): uma frase "On Claude Code 2.1.233+ set
        `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` in `~/.claude/settings.json` to get the task list" com
        link para a seção do README. A página do JetBrains Marketplace **não** mostra o README;
@@ -973,7 +989,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   Control falha em transcript grande.
 - **Conecta com:** a R-perf do item 2, ✅ entregue no R5 (2026-08-11): o transcript principal é lido uma vez por refresh. Se este item evoluir, o próximo alvo é leitura incremental/streaming, não a passada dupla (que já morreu).
 
-### R5. Contabilidade de tokens — soma linha-a-linha infla ~2×; formato novo `usage.iterations` ✅ ENTREGUE (achados 1 e 2 · 2026-08-11)
+### R5. Contabilidade de tokens — soma linha-a-linha infla ~2×; formato novo `usage.iterations` ✅ ENTREGUE (achados 1 e 2 · 2026-08-11 · publicado na 0.18.0)
 - **Origem:** varredura 2026-08-10 ([#84223](https://github.com/anthropics/claude-code/issues/84223),
   [#81620](https://github.com/anthropics/claude-code/issues/81620),
   [#84738](https://github.com/anthropics/claude-code/issues/84738)) + **medição local**. É o
