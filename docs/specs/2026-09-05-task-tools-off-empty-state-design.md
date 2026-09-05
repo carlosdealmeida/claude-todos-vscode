@@ -88,8 +88,9 @@ negócio no Svelte e a flag do settings.json teria de viajar até lá) e detecta
 `env.CLAUDE_CODE_ENABLE_TODO_TOOLS = "1"` em `<claudeDir>/settings.json` (respeita
 `claudeTodos.claudeDir`, como o hook). Idempotente: se já está `"1"`, devolve
 `changed: false` sem escrever. Preserva todas as outras chaves e a indentação de 2 espaços que
-a extensão já usa. Ao gravar, invalida o memo da flag e dispara `onChange`; o próximo snapshot
-não satisfaz a condição 4 e a dica some sozinha.
+a extensão já usa. Ao gravar, invalida o memo da flag; o host pede o snapshot seguinte na hora
+(`pushSnapshot` no VS Code, `getSnapshot` no JetBrains), que já não satisfaz a condição 4 — a dica
+some sozinha.
 
 Sempre atrás de confirmação explícita do usuário (decisão 5). Só a fonte do usuário é escrita;
 as fontes de projeto são apenas lidas.
