@@ -14,6 +14,8 @@
 
 ![Claude Todos 面板：主智能体和子智能体的任务实时从 pending → in_progress → completed 推进，并显示每个任务的耗时](screenshots/claude-todos-demo.gif)
 
+> ⚠️ **正在使用 Claude Code 2.1.233 或更新版本？** 在新模型上，任务工具（`TodoWrite`、`TaskCreate`）**默认关闭**，本面板的任务列表会一直为空，直到你重新开启它们 — 见[安装](#安装)。
+
 ## 你能获得什么
 
 - **实时智能体树（“任务指挥中心”）** — 主智能体 → 子智能体 → 嵌套智能体，附带智能体类型徽章（Explore、Plan、general-purpose…）、状态和每个智能体的令牌数。
@@ -34,6 +36,8 @@
 
 `claude` 在**哪里**运行并不重要：可以是 VSCode 的集成终端、任何外部终端（Windows Terminal、iTerm、gnome-terminal），或者在单独窗口中运行的 Claude Code CLI。只要会话的工作目录与 VSCode 中打开的工作区一致，面板就会反映出来。
 
+任务来自智能体写入对话记录的 `TodoWrite` 和 `TaskCreate` 调用。智能体树、令牌、上下文、通知和待回答的问题来自对话记录的其余部分，不依赖这些调用。
+
 ## 安装
 
 | 编辑器 | 安装位置 |
@@ -53,6 +57,22 @@
 3. 打开一个文件夹，在任意终端中运行 `claude`。一旦会话有活动，**Claude Todos** 视图（活动栏）就会开始填充。
 
 **安装钩子时已经在运行的会话** 会在你向它们发送下一条消息时被识别（这正是 `UserPromptSubmit` 的作用）。新会话会被立即跟踪。
+
+### 重新开启任务工具（Claude Code 2.1.233 或更新版本）
+
+从 **2.1.233** 版（2026-08-14）起，当模型为 Opus 4.8、Sonnet 5、Fable 5、Mythos 5 或更新版本时，Claude Code 默认关闭任务列表工具 — `TodoWrite`、`TaskCreate`、`TaskUpdate`、`TaskList` 和 `TaskGet`。这是 Anthropic 的决定：记录在 [CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) 中，并在 [#86929](https://github.com/anthropics/claude-code/issues/86929) 中被确认为有意为之；跟踪此事的 issue 是 [#80015](https://github.com/anthropics/claude-code/issues/80015)。没有这些工具，智能体不会在对话记录中记录任务，本面板的任务列表会保持为空。智能体树、令牌、上下文、缓存、通知和待回答的问题仍然正常工作。
+
+要重新开启它们，请在 `~/.claude/settings.json` 中添加 `CLAUDE_CODE_ENABLE_TODO_TOOLS` 变量。如果 `env` 键已经存在，把这一行加到它里面：
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TODO_TOOLS": "1"
+  }
+}
+```
+
+`settings.json` 中的 `env` 键适用于所有 Claude Code 会话，不限模型和界面（终端、官方 VS Code 扩展）。请重启已打开的会话：工具集在会话开始时就已确定。如果 Claude 回答说“没有 TaskCreate 或 TodoWrite 工具”，原因就在这里。本扩展不会替你修改这项设置。
 
 ## 命令
 
@@ -89,7 +109,7 @@
 ## 环境要求
 
 - VSCode 1.85 或更新版本
-- Claude Code 2.x（任何会将对话记录写入 `~/.claude/projects/` 的版本）
+- Claude Code 2.x（任何会将对话记录写入 `~/.claude/projects/` 的版本）。从 **2.1.233** 起，在新模型上任务列表需要 `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` — 见[安装](#安装)。
 - Node.js 20+ 且在 `PATH` 中（钩子脚本是一个小型 Node 程序）
 
 ## 从源码构建
@@ -108,6 +128,7 @@ npx vsce package # produces claude-todos-<version>.vsix
 ## 已知限制
 
 - 钩子脚本必须始终可以通过 `~/.claude/settings.json` 中存储的路径访问。如果你手动删除扩展而没有卸载它，那些钩子命令会变成空操作（no-op）— 需要手动移除它们，或者重新安装并再次运行 `Claude Todos: Install Session Hook`。
+- 如果 Claude Code 的任务工具处于关闭状态（自 2.1.233 起在新模型上为默认），列表会为空，即使智能体正在工作，面板也只显示“会话进行中 — 等待任务”。面板的其余部分不依赖这些工具。如何开启：见[安装](#安装)。
 
 ## 贡献
 

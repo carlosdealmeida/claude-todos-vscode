@@ -12,6 +12,8 @@
 
 ![Panel Claude Todos: agente principal y sub-agentes con las tareas avanzando de pending → in_progress → completed en vivo, con tiempos por tarea](screenshots/claude-todos-demo.gif)
 
+> ⚠️ **¿Usas Claude Code 2.1.233 o más reciente?** En los modelos nuevos, las herramientas de tareas (`TodoWrite`, `TaskCreate`) vienen **desactivadas por defecto** y la lista de este panel queda vacía hasta que las reactives — mira [Instalación](#instalación).
+
 ## Qué obtienes
 
 - **Árbol de agentes en vivo ("mission control")** — main → subagentes → agentes anidados, con badge de tipo (Explore, Plan, general-purpose…), estado y tokens por agente.
@@ -31,6 +33,8 @@
 El panel **Claude Todos** (en la Barra de Actividad, a la izquierda) lee los transcripts que el propio Claude Code ya escribe en disco — sin proxy, sin API — y refleja todo en tiempo real conforme el agente trabaja.
 
 No importa **dónde** se esté ejecutando `claude`: puede ser el terminal integrado de VSCode, cualquier terminal externo (Windows Terminal, iTerm, gnome-terminal) o la CLI de Claude Code en otra ventana. Mientras el directorio de trabajo de la sesión coincida con el workspace abierto en VSCode, el panel lo refleja.
+
+Las tareas vienen de las llamadas `TodoWrite` y `TaskCreate` que el agente escribe en el transcript. El árbol de agentes, los tokens, el contexto, las notificaciones y las preguntas pendientes vienen del resto del transcript y no dependen de ellas.
 
 ## Instalación
 
@@ -52,6 +56,22 @@ No importa **dónde** se esté ejecutando `claude`: puede ser el terminal integr
 3. Abre una carpeta y ejecuta `claude` en cualquier terminal. La vista **Claude Todos** (Barra de Actividad) se llena en cuanto la sesión tiene actividad.
 
 **Las sesiones que ya estaban en ejecución** cuando instalaste los hooks se detectan en el siguiente mensaje que les envíes (para eso sirve `UserPromptSubmit`). Las sesiones nuevas se rastrean de inmediato.
+
+### Reactiva las herramientas de tareas (Claude Code 2.1.233 o más reciente)
+
+Desde la versión **2.1.233** (14/08/2026), Claude Code desactiva por defecto las herramientas de lista de tareas — `TodoWrite`, `TaskCreate`, `TaskUpdate`, `TaskList` y `TaskGet` — cuando el modelo es Opus 4.8, Sonnet 5, Fable 5, Mythos 5 o más nuevo. Es una decisión de Anthropic: está en el [CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) y fue confirmada como intencional en [#86929](https://github.com/anthropics/claude-code/issues/86929); la issue que sigue el tema es [#80015](https://github.com/anthropics/claude-code/issues/80015). Sin esas herramientas el agente no registra tareas en el transcript y la lista de este panel queda vacía. El árbol de agentes, los tokens, el contexto, la caché, las notificaciones y las preguntas pendientes siguen funcionando.
+
+Para reactivarlas, agrega la variable `CLAUDE_CODE_ENABLE_TODO_TOOLS` a `~/.claude/settings.json`. Si la clave `env` ya existe, agrega la línea dentro de ella:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TODO_TOOLS": "1"
+  }
+}
+```
+
+La clave `env` de `settings.json` se aplica a toda sesión de Claude Code, en cualquier modelo y superficie (terminal, extensión oficial de VS Code). Reinicia las sesiones abiertas: el conjunto de herramientas se define cuando la sesión empieza. Si Claude responde que "no tiene TaskCreate ni TodoWrite", este es el motivo. La extensión no cambia esta configuración por ti.
 
 ## Comandos
 
@@ -88,7 +108,7 @@ La extensión nunca modifica tus transcripts y nunca borra nada.
 ## Requisitos
 
 - VSCode 1.85 o más reciente
-- Claude Code 2.x (cualquier versión que escriba transcripts en `~/.claude/projects/`)
+- Claude Code 2.x (cualquier versión que escriba transcripts en `~/.claude/projects/`). A partir de la **2.1.233**, con modelos nuevos, la lista de tareas exige `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` — mira [Instalación](#instalación).
 - Node.js 20+ en el `PATH` (el script de hook es un pequeño programa Node)
 
 ## Compilar desde el código fuente
@@ -107,6 +127,7 @@ Para ejecutar la extensión en un host de desarrollo: abre la carpeta en VSCode 
 ## Limitaciones conocidas
 
 - El script de hook debe ser alcanzable desde la ruta guardada en `~/.claude/settings.json`. Si borras la extensión manualmente sin desinstalarla, esos comandos de hook quedan como no-ops — elimínalos a mano o reinstala y usa `Claude Todos: Install Session Hook` de nuevo.
+- Si las herramientas de tareas de Claude Code están desactivadas (lo predeterminado desde la 2.1.233 en los modelos nuevos), la lista queda vacía y el panel muestra "Sesión activa — esperando tareas" aunque el agente esté trabajando. El resto del panel no depende de ellas. Cómo reactivarlas: [Instalación](#instalación).
 
 ## Contribuir
 

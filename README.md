@@ -12,6 +12,8 @@
 
 ![Painel Claude Todos: agente principal e sub-agents com as tasks avançando de pending → in_progress → completed ao vivo, com tempos por task](screenshots/claude-todos-demo.gif)
 
+> ⚠️ **Claude Code 2.1.233 ou mais recente?** Nos modelos novos, as ferramentas de tasks (`TodoWrite`, `TaskCreate`) vêm **desligadas por padrão** e a lista deste painel fica vazia até você reativá-las — veja [Instalação](#instalação).
+
 ## O que você vê
 
 - **Árvore de agentes ao vivo ("mission control")** — main → sub-agents → agentes aninhados, com badge de tipo (Explore, Plan, general-purpose…), status e tokens por agente.
@@ -32,6 +34,8 @@ O painel **Claude Todos** (na Barra de Atividades, à esquerda) lê os transcrip
 
 Não importa **onde** o `claude` esteja rodando: pode ser o terminal integrado do VSCode, qualquer terminal externo (Windows Terminal, iTerm, gnome-terminal) ou até a CLI do Claude Code em outra janela. Desde que o diretório de trabalho da sessão bata com o workspace aberto no VSCode, o painel reflete.
 
+As tasks vêm das chamadas `TodoWrite` e `TaskCreate` que o agente grava no transcript. Árvore de agentes, tokens, contexto, notificações e perguntas pendentes vêm do restante do transcript e não dependem delas.
+
 ## Instalação
 
 | Editor | Onde instalar |
@@ -51,6 +55,22 @@ Não importa **onde** o `claude` esteja rodando: pode ser o terminal integrado d
 3. Abra uma pasta e execute `claude` em qualquer terminal. A visão **Claude Todos** (Barra de Atividades) é populada assim que a sessão tem atividade.
 
 **Sessões que já estavam em execução** quando você instalou os hooks são detectadas na próxima mensagem que você enviar a elas (é para isso que serve o `UserPromptSubmit`). Sessões novas são rastreadas imediatamente.
+
+### Ative as ferramentas de tasks (Claude Code 2.1.233 ou mais recente)
+
+Desde a versão **2.1.233** (14/08/2026), o Claude Code desliga por padrão as ferramentas de lista de tasks — `TodoWrite`, `TaskCreate`, `TaskUpdate`, `TaskList` e `TaskGet` — quando o modelo é Opus 4.8, Sonnet 5, Fable 5, Mythos 5 ou mais novo. A decisão é da Anthropic: está no [CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) e foi confirmada como intencional em [#86929](https://github.com/anthropics/claude-code/issues/86929); a issue que acompanha o assunto é [#80015](https://github.com/anthropics/claude-code/issues/80015). Sem essas ferramentas o agente não registra tasks no transcript e a lista deste painel fica vazia. A árvore de agentes, os tokens, o contexto, o cache, as notificações e as perguntas pendentes continuam funcionando.
+
+Para reativá-las, adicione a variável `CLAUDE_CODE_ENABLE_TODO_TOOLS` ao `~/.claude/settings.json`. Se a chave `env` já existir, acrescente a linha dentro dela:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TODO_TOOLS": "1"
+  }
+}
+```
+
+A chave `env` do `settings.json` vale para toda sessão do Claude Code, em qualquer modelo e superfície (terminal, extensão oficial do VS Code). Reinicie as sessões abertas: o conjunto de ferramentas é definido quando a sessão começa. Se o Claude responder que "não tem TaskCreate ou TodoWrite", é este o motivo. A extensão não altera essa configuração por você.
 
 ## Comandos
 
@@ -87,7 +107,7 @@ A extensão nunca modifica seus transcripts e nunca apaga nada.
 ## Requisitos
 
 - VSCode 1.85 ou mais recente
-- Claude Code 2.x (qualquer versão que escreva transcripts em `~/.claude/projects/`)
+- Claude Code 2.x (qualquer versão que escreva transcripts em `~/.claude/projects/`). A partir da **2.1.233**, com modelos novos, a lista de tasks exige `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` — veja [Instalação](#instalação).
 - Node.js 20+ no `PATH` (o script de hook é um pequeno programa Node)
 
 ## Compilando a partir do código-fonte
@@ -106,6 +126,7 @@ Para rodar a extensão em um host de desenvolvimento: abra a pasta no VSCode e p
 ## Limitações conhecidas
 
 - O script de hook precisa estar acessível pelo caminho armazenado em `~/.claude/settings.json`. Se você apagar a extensão manualmente sem desinstalá-la, esses comandos de hook permanecem como no-ops — remova-os à mão ou reinstale e use `Claude Todos: Install Session Hook` novamente.
+- Se as ferramentas de tasks do Claude Code estiverem desligadas (padrão a partir da 2.1.233 nos modelos novos), a lista fica vazia e o painel mostra "Sessão ativa — aguardando tasks" mesmo com o agente trabalhando. O resto do painel não depende delas. Como reativar: [Instalação](#instalação).
 
 ## Contribuindo
 

@@ -12,6 +12,8 @@
 
 ![Claude Todos panel: main agent and sub-agents with tasks advancing from pending → in_progress → completed live, with per-task timings](screenshots/claude-todos-demo.gif)
 
+> ⚠️ **On Claude Code 2.1.233 or newer?** On the new models, the task tools (`TodoWrite`, `TaskCreate`) ship **turned off by default**, and this panel's task list stays empty until you turn them back on — see [Install](#install).
+
 ## What you get
 
 - **Live agent tree ("mission control")** — main → sub-agents → nested agents, with an agent-type badge (Explore, Plan, general-purpose…), status and per-agent tokens.
@@ -32,6 +34,8 @@ The **Claude Todos** panel (Activity Bar, on the left) reads the transcripts Cla
 
 It does not matter **where** `claude` is running: VSCode's integrated terminal, any external terminal (Windows Terminal, iTerm, gnome-terminal), or the Claude Code CLI in a separate window. As long as the session's working directory matches the workspace open in VSCode, the panel reflects it.
 
+Tasks come from the `TodoWrite` and `TaskCreate` calls the agent writes to the transcript. The agent tree, tokens, context, notifications and pending questions come from the rest of the transcript and do not depend on them.
+
 ## Install
 
 | Editor | Where |
@@ -51,6 +55,22 @@ It does not matter **where** `claude` is running: VSCode's integrated terminal, 
 3. Open a folder and run `claude` in any terminal. The **Claude Todos** view (Activity Bar) populates as soon as the session has activity.
 
 **Sessions that were already running** when you installed the hooks are picked up on the next message you send to them (that's what `UserPromptSubmit` is for). New sessions are tracked immediately.
+
+### Turn the task tools back on (Claude Code 2.1.233 or newer)
+
+Since version **2.1.233** (August 14, 2026), Claude Code turns off the task-list tools — `TodoWrite`, `TaskCreate`, `TaskUpdate`, `TaskList` and `TaskGet` — by default when the model is Opus 4.8, Sonnet 5, Fable 5, Mythos 5 or newer. This is Anthropic's decision: it is in the [CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) and was confirmed as intentional in [#86929](https://github.com/anthropics/claude-code/issues/86929); the issue tracking it is [#80015](https://github.com/anthropics/claude-code/issues/80015). Without these tools the agent records no tasks in the transcript, and this panel's task list stays empty. The agent tree, tokens, context, cache, notifications and pending questions keep working.
+
+To turn them back on, add the `CLAUDE_CODE_ENABLE_TODO_TOOLS` variable to `~/.claude/settings.json`. If an `env` key already exists, add the line inside it:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TODO_TOOLS": "1"
+  }
+}
+```
+
+The `env` key in `settings.json` applies to every Claude Code session, on any model and surface (terminal, official VS Code extension). Restart open sessions: the tool set is fixed when a session starts. If Claude tells you it "has no TaskCreate or TodoWrite tool", this is why. The extension does not change this setting for you.
 
 ## Commands
 
@@ -87,7 +107,7 @@ The extension never modifies your transcripts and never deletes anything.
 ## Requirements
 
 - VSCode 1.85 or newer
-- Claude Code 2.x (any version that writes transcripts to `~/.claude/projects/`)
+- Claude Code 2.x (any version that writes transcripts to `~/.claude/projects/`). From **2.1.233** on, with the new models, the task list requires `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` — see [Install](#install).
 - Node.js 20+ on `PATH` (the hook script is a small Node program)
 
 ## Building from source
@@ -106,6 +126,7 @@ To run the extension in a development host: open the folder in VSCode and press 
 ## Known limitations
 
 - The hook script must stay reachable at the path stored in `~/.claude/settings.json`. If you delete the extension manually without uninstalling it, those hook commands remain as no-ops — remove them by hand or reinstall and run `Claude Todos: Install Session Hook` again.
+- If Claude Code's task tools are off (the default since 2.1.233 on the new models), the list stays empty and the panel shows "Active session — waiting for tasks" even while the agent works. The rest of the panel does not depend on them. How to turn them on: [Install](#install).
 
 ## Contributing
 
