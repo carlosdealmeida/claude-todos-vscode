@@ -8,6 +8,14 @@ Requer o `gh` CLI autenticado (`gh auth status`): o search autenticado permite 3
 contra 10/min anônimo. Cada query pega os top-N por reações (abertas E fechadas).
 Saída: `sweep_results.json` + tabela no stdout, deduplicada contra o que já está no ROADMAP.
 
+Limites de método (aprendidos na varredura 2026-09-05):
+  - cada consulta traz só os top-40 por reações; em janela incremental maior que ~2 semanas
+    a cauda se perde — rodar em duas janelas (ex.: `>2026-08-10` e `>2026-08-20`) e unir.
+  - `todo in:title` NÃO casa `TodoWrite` (tokenização do GitHub); por isso existem as
+    consultas explícitas por nome de ferramenta abaixo.
+  - a lista KNOWN não acusa mudança de ESTADO: issues já comentadas podem ser fechadas pela
+    Anthropic sem aparecer aqui — conferir à mão as que têm comentário nosso.
+
 Nota de método: desde o lançamento do Fable 5 (jul/2026) o repositório é dominado por um
 cluster de billing ("usage credits required") com as maiores contagens de reação do período e
 zero relação com a extensão. O filtro NOISE abaixo remove esse cluster antes do ranqueamento —
@@ -73,6 +81,18 @@ KNOWN = {
     82141, 82581, 85160,                        # item 21 (fontes de sessão)
     82641, 84040, 84540, 84556,                 # item 8 (grouping)
     81549,                                      # item 1 (viewer: timestamps)
+    # varredura 2026-09-05 (duas janelas: >08-10 e >08-20)
+    86929, 88649, 86668, 86269, 92178, 80305,   # R2 materializado (2.1.233)
+    90731, 90709, 88346, 88129, 89049,          # R2 / item 21 (task store, registry)
+    87081, 90708, 91075, 91232, 88211, 90018,   # validação: escopo por cwd, contexto no desktop
+    86834, 87605, 89133, 90246,                 # item 20 (7º-10º casos de modelo errado)
+    87053, 86082, 88503, 91996, 88830,          # itens 14/22 (foco, needs-input, hooks)
+    88621, 88622, 90256,                        # item 23 (reforço)
+    87716, 88510,                               # itens 6a / 3 (statusline)
+    88199, 88224, 87840, 85726, 86259, 90030,   # itens 4/5/7/8 (pins, ordenação, deep link, cwd)
+    87900, 89871, 85892, 90002, 88274, 87303,   # R3 (riscos nossos: mtime, stubs, metadados) + R5
+    87748, 85743, 86730, 87423, 87710,          # R3 (retenção / índice perdido)
+    91017, 91433, 89740,                        # R3 (índice perdido, inclusive na extensão VS Code)
 }
 
 # (rótulo, query) — todas com repo: e is:issue implícitos
@@ -105,6 +125,9 @@ QUERIES = [
     ("panel (título)",      'panel in:title'),
     ("modelo no vscode",    'model in:title label:platform:vscode'),
     ("extension (vscode)",  'extension in:title label:platform:vscode'),
+    ("TodoWrite",           'TodoWrite'),
+    ("Task* tools",         'TaskCreate OR TaskList OR TaskUpdate'),
+    ("todo tools / store",  '"todo tools" OR ENABLE_TODO_TOOLS OR "task store"'),
 ]
 
 # Cluster de billing do lançamento do Fable 5: alto volume, zero relação com a extensão.
