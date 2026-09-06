@@ -27,6 +27,11 @@ interface RouterHost {
     fun onNotification(kinds: List<String>, awaitingInput: String?, title: String?)
     fun activatePanel()
     fun warn(messageKey: String)
+
+    /** Diálogo modal Sim/Não; chama [onOk] só se o usuário confirmar. O host preenche `{path}`. */
+    fun confirm(messageKey: String, onOk: () -> Unit)
+    fun info(messageKey: String, args: Map<String, String> = emptyMap())
+    fun error(messageKey: String, args: Map<String, String> = emptyMap())
 }
 
 data class SessionItem(val sessionId: String, val title: String, val updatedAt: Long, val alive: Boolean = false)
@@ -99,6 +104,22 @@ class MessageRouter(
                     }
                 }
                 sendToSidecar(buildJsonObject { put("cmd", "listSessions"); put("id", id) }.toString())
+            }
+            "enableTaskTools" -> host.confirm("taskTools.confirm") {
+                val id = "tt-${nextId.getAndIncrement()}"
+                pending[id] = { ev ->
+                    if (ev["ev"]?.jsonPrimitive?.content == "taskToolsEnabled") {
+                        val changed = ev["changed"]?.jsonPrimitive?.booleanOrNull ?: false
+                        val path = ev["path"]?.jsonPrimitive?.contentOrNull ?: ""
+                        host.info(if (changed) "taskTools.enabled" else "taskTools.alreadyEnabled", mapOf("path" to path))
+                    } else {
+                        host.error("taskTools.failed", mapOf(
+                            "error" to (ev["message"]?.jsonPrimitive?.contentOrNull ?: "unknown error"),
+                        ))
+                    }
+                    sendToSidecar("""{"cmd":"getSnapshot"}""")
+                }
+                sendToSidecar(buildJsonObject { put("cmd", "enableTaskTools"); put("id", id) }.toString())
             }
             "openPanel" -> host.activatePanel()
             else -> Unit

@@ -99,7 +99,7 @@
 
 | 檔案 | 存取方式 | 原因 |
 |---|---|---|
-| `~/.claude/settings.json` | 讀取 + 寫入（僅一次，需授權） | 在 `hooks.SessionStart` 和 `hooks.UserPromptSubmit` 下新增兩個掛鉤命令。其他掛鉤和設定會被保留。 |
+| `~/.claude/settings.json` | 讀取 + 寫入（僅在你授權時） | 在 `hooks.SessionStart` 和 `hooks.UserPromptSubmit` 下新增兩個掛鉤命令；當你點擊**開啟任務工具**時，還會寫入 `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`。其他掛鉤和設定會被保留；無效的檔案絕不會被覆寫。 |
 | `~/.claude/.vscode-todos-bridge/sessions.json` | 由內建的掛鉤指令碼寫入 | 記錄 `{cwd, sessionId, terminalPid, startedAt}`，讓擴充功能知道哪個 Claude 工作階段屬於哪個 VSCode 視窗。最多保留 200 筆記錄。 |
 | `~/.claude/projects/{cwd-encoded}/…` | 唯讀 | 由 Claude Code 自身寫入的工作階段和子智慧體對話記錄（`.jsonl` + `.meta.json`）— 任務、樹狀結構、耗時和權杖資料的來源。 |
 | `~/.claude/todos/` | 不會被存取 | Claude Code 1.x 的舊版位置，已被忽略。 |

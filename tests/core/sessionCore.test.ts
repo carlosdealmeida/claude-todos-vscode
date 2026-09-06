@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -14,14 +14,31 @@ function assistant(model: string): object {
 
 describe('SessionCore', () => {
   let claudeDir: string;
-  beforeEach(() => { claudeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'core-')); });
-  afterEach(() => { fs.rmSync(claudeDir, { recursive: true, force: true }); });
+  beforeEach(() => {
+    claudeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'core-'));
+    vi.stubEnv('CLAUDE_CODE_ENABLE_TODO_TOOLS', '');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    fs.rmSync(claudeDir, { recursive: true, force: true });
+  });
 
   function writeSession(): void {
     const projDir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
     fs.mkdirSync(projDir, { recursive: true });
     fs.writeFileSync(path.join(projDir, `${SID}.jsonl`), JSON.stringify(assistant('claude-opus-4-8')));
     // registro do bridge para o resolver enxergar a sessão
+    const bridgeDir = path.join(claudeDir, '.vscode-todos-bridge');
+    fs.mkdirSync(bridgeDir, { recursive: true });
+    fs.writeFileSync(path.join(bridgeDir, 'sessions.json'), JSON.stringify([
+      { cwd: CWD, sessionId: SID, terminalPid: null, startedAt: 1 },
+    ]));
+  }
+
+  function writeSessionOn(version: string, model: string): void {
+    const projDir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
+    fs.mkdirSync(projDir, { recursive: true });
+    fs.writeFileSync(path.join(projDir, `${SID}.jsonl`), JSON.stringify({ ...assistant(model), version }));
     const bridgeDir = path.join(claudeDir, '.vscode-todos-bridge');
     fs.mkdirSync(bridgeDir, { recursive: true });
     fs.writeFileSync(path.join(bridgeDir, 'sessions.json'), JSON.stringify([
@@ -76,5 +93,42 @@ describe('SessionCore', () => {
     expect(settings.hooks.SessionStart).toHaveLength(1);
     expect(settings.hooks.UserPromptSubmit).toHaveLength(1);
     expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(`node "${script}"`);
+  });
+
+  it('enableTaskTools writes the env flag to <claudeDir>/settings.json and is idempotent', () => {
+    const core = make();
+    const first = core.enableTaskTools();
+    expect(first).toEqual({ changed: true, path: path.join(claudeDir, 'settings.json') });
+    expect(JSON.parse(fs.readFileSync(first.path, 'utf-8')))
+      .toEqual({ env: { CLAUDE_CODE_ENABLE_TODO_TOOLS: '1' } });
+    expect(core.enableTaskTools().changed).toBe(false);
+  });
+
+  it('enableTaskTools preserves the hooks already in settings.json', () => {
+    fs.writeFileSync(path.join(claudeDir, 'settings.json'), JSON.stringify({ hooks: { SessionStart: [] }, model: 'opus' }));
+    make().enableTaskTools();
+    expect(JSON.parse(fs.readFileSync(path.join(claudeDir, 'settings.json'), 'utf-8')))
+      .toEqual({ hooks: { SessionStart: [] }, model: 'opus', env: { CLAUDE_CODE_ENABLE_TODO_TOOLS: '1' } });
+  });
+
+  it('enableTaskTools throws on an invalid settings.json and leaves it untouched', () => {
+    fs.writeFileSync(path.join(claudeDir, 'settings.json'), '{ broken');
+    expect(() => make().enableTaskTools()).toThrow(/not valid JSON/);
+    expect(fs.readFileSync(path.join(claudeDir, 'settings.json'), 'utf-8')).toBe('{ broken');
+  });
+
+  it('snapshot marks taskToolsOff for a 2.1.233+ session on a new model, and clears it after enabling', () => {
+    writeSessionOn('2.1.261', 'claude-fable-5-1');
+    const core = make();
+    expect(core.buildSnapshot()?.taskToolsOff).toBe(true);
+    core.enableTaskTools();
+    expect(core.buildSnapshot()?.taskToolsOff).toBeUndefined();
+  });
+
+  it('snapshot does not mark taskToolsOff before the cut or on a legacy model', () => {
+    writeSessionOn('2.1.232', 'claude-fable-5-1');
+    expect(make().buildSnapshot()?.taskToolsOff).toBeUndefined();
+    writeSessionOn('2.1.261', 'claude-opus-4-7');
+    expect(make().buildSnapshot()?.taskToolsOff).toBeUndefined();
   });
 });

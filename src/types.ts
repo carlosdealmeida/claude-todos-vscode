@@ -49,6 +49,7 @@ export interface AgentUsage {
   isMain: boolean;
   models: ModelUsage[];
   currentModel?: string;  // modelo da ÚLTIMA entrada com usage do transcript
+  currentVersion?: string; // versão do Claude Code que gravou essa mesma entrada (record.version)
 }
 
 export interface ContextUsage {
@@ -92,6 +93,9 @@ export interface SessionSnapshot {
   usage?: SessionUsage;
   awaitingInput?: AwaitingInput;
   pendingQuestions?: PendingQuestion[];
+  // R2: true quando o Claude Code (>= 2.1.233) está com TodoWrite/TaskCreate
+  // desligados para o modelo da sessão e a flag não foi ligada em nenhuma fonte.
+  taskToolsOff?: true;
 }
 
 export interface SessionSummary {
@@ -121,5 +125,6 @@ export type WebviewMessage =
   | { type: 'refresh' }
   | { type: 'openPanel' }
   | { type: 'pickSession' }
+  | { type: 'enableTaskTools' }
   | { type: 'projectUsage' }
   | { type: 'openTodoSource'; sessionId: string; agentId: string; line: number };

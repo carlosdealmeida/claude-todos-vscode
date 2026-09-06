@@ -13,6 +13,7 @@ function fakeCore(over: Partial<Record<string, any>> = {}) {
     observeForNotifications: () => ({ kinds: [], awaitingInput: null, title: 'T' }),
     hookStatus: (_p: string) => false,
     installHook: (_p: string) => {},
+    enableTaskTools: () => ({ changed: true, path: '/c/settings.json' }),
     shouldPollNotifications: () => false,
     ...over,
   } as any;
@@ -188,5 +189,23 @@ describe('observe / hookStatus / installHook', () => {
     const bad = fakeCore({ installHook: () => { throw new Error('boom'); } });
     expect(run([init, { cmd: 'installHook', hookScriptPath: '/h.js', id: 'i2' }], bad).at(-1))
       .toEqual({ ev: 'error', message: 'Error: boom', id: 'i2' });
+  });
+
+  it('enableTaskTools echoes the result with the id, and maps a throw to error', () => {
+    const base = [{ cmd: 'init', claudeDir: '/c', cwds: ['/p'] }];
+    expect(run([...base, { cmd: 'enableTaskTools', id: 'tt-1' }]).at(-1))
+      .toEqual({ ev: 'taskToolsEnabled', changed: true, path: '/c/settings.json', id: 'tt-1' });
+    const broken = fakeCore({ enableTaskTools: () => { throw new Error('bad json'); } });
+    expect(run([...base, { cmd: 'enableTaskTools', id: 'tt-2' }], broken).at(-1))
+      .toEqual({ ev: 'error', message: 'Error: bad json', id: 'tt-2' });
+  });
+
+  it('hookStatus maps a throw (invalid settings.json) to error instead of crashing the sidecar', () => {
+    const broken = fakeCore({ hookStatus: () => { throw new Error('bad json'); } });
+    const events = run(
+      [{ cmd: 'init', claudeDir: '/c', cwds: ['/p'] }, { cmd: 'hookStatus', hookScriptPath: '/h.js', id: 'hs-1' }],
+      broken,
+    );
+    expect(events.at(-1)).toEqual({ ev: 'error', message: 'Error: bad json', id: 'hs-1' });
   });
 });

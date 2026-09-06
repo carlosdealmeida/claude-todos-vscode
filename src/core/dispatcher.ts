@@ -13,6 +13,7 @@ export type CoreCommand = (
   | { cmd: 'observe' }
   | { cmd: 'hookStatus'; hookScriptPath: string }
   | { cmd: 'installHook'; hookScriptPath: string }
+  | { cmd: 'enableTaskTools' }
 ) & { id?: string };
 
 export type CoreEvent = (
@@ -25,6 +26,7 @@ export type CoreEvent = (
   | { ev: 'notification'; kinds: NotificationKind[]; awaitingInput: AwaitingInput | null; title: string | null }
   | { ev: 'hookStatus'; installed: boolean }
   | { ev: 'hookInstalled' }
+  | { ev: 'taskToolsEnabled'; changed: boolean; path: string }
 ) & { id?: string };
 
 type MakeCore = (deps: SessionCoreDeps) => SessionCore;
@@ -94,12 +96,26 @@ export function createDispatcher(
         break;
       }
       case 'hookStatus':
-        emit(withId({ ev: 'hookStatus', installed: core.hookStatus(cmd.hookScriptPath) }, cmd.id));
+        // settings.json inválido lança (leitura estrita): responder erro com o id
+        // em vez de derrubar o sidecar — o host mostra o toast de falha do hook.
+        try {
+          emit(withId({ ev: 'hookStatus', installed: core.hookStatus(cmd.hookScriptPath) }, cmd.id));
+        } catch (err) {
+          emit(withId({ ev: 'error', message: String(err) }, cmd.id));
+        }
         break;
       case 'installHook':
         try {
           core.installHook(cmd.hookScriptPath);
           emit(withId({ ev: 'hookInstalled' }, cmd.id));
+        } catch (err) {
+          emit(withId({ ev: 'error', message: String(err) }, cmd.id));
+        }
+        break;
+      case 'enableTaskTools':
+        try {
+          const r = core.enableTaskTools();
+          emit(withId({ ev: 'taskToolsEnabled', changed: r.changed, path: r.path }, cmd.id));
         } catch (err) {
           emit(withId({ ev: 'error', message: String(err) }, cmd.id));
         }

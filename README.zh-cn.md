@@ -99,7 +99,7 @@
 
 | 文件 | 访问方式 | 原因 |
 |---|---|---|
-| `~/.claude/settings.json` | 读取 + 写入（仅一次，需授权） | 在 `hooks.SessionStart` 和 `hooks.UserPromptSubmit` 下添加两个钩子命令。其他钩子和设置会被保留。 |
+| `~/.claude/settings.json` | 读取 + 写入（仅在你授权时） | 在 `hooks.SessionStart` 和 `hooks.UserPromptSubmit` 下添加两个钩子命令；当你点击**开启任务工具**时，还会写入 `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`。其他钩子和设置会被保留；无效的文件绝不会被覆盖。 |
 | `~/.claude/.vscode-todos-bridge/sessions.json` | 由内置的钩子脚本写入 | 记录 `{cwd, sessionId, terminalPid, startedAt}`，让扩展知道哪个 Claude 会话属于哪个 VSCode 窗口。最多保留 200 条记录。 |
 | `~/.claude/projects/{cwd-encoded}/…` | 只读 | 由 Claude Code 自身写入的会话和子智能体对话记录（`.jsonl` + `.meta.json`）— 任务、树状结构、耗时和令牌数据的来源。 |
 | `~/.claude/todos/` | 不会被访问 | Claude Code 1.x 的旧版位置，已被忽略。 |

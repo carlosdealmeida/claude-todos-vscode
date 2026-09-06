@@ -41,6 +41,7 @@ interface TranscriptEntry {
   type?: string;
   isSidechain?: boolean;
   requestId?: unknown;
+  version?: unknown;
   message?: {
     id?: unknown;
     model?: unknown;
@@ -76,7 +77,7 @@ function contextTokens(u: RawUsage): number {
 // de maior output. No transcript principal, entradas isSidechain são puladas
 // (os turnos de sub-agents vêm dos próprios agent-*.jsonl). Compartilhada entre
 // o uso por sessão (UsageParser) e o agregado do projeto (ProjectUsageService).
-export function readFileUsage(filePath: string, skipSidechain: boolean): { models: ModelUsage[]; cache: CacheStats; lastModel?: string; context?: ContextUsage } {
+export function readFileUsage(filePath: string, skipSidechain: boolean): { models: ModelUsage[]; cache: CacheStats; lastModel?: string; lastVersion?: string; context?: ContextUsage } {
   let lines: string[];
   try {
     lines = fs.readFileSync(filePath, 'utf-8').split('\n');
@@ -88,6 +89,7 @@ export function readFileUsage(filePath: string, skipSidechain: boolean): { model
   const winners = new Map<string, Winner>();
   let lineKey = 0;
   let lastModel: string | undefined;
+  let lastVersion: string | undefined;
   let lastUsage: RawUsage | undefined;
   for (const line of lines) {
     if (!line) continue;
@@ -99,6 +101,7 @@ export function readFileUsage(filePath: string, skipSidechain: boolean): { model
     // Entradas sintéticas de erro de API não são uso real do modelo.
     if (msg.model === '<synthetic>') continue;
     lastModel = msg.model;
+    if (typeof entry.version === 'string') lastVersion = entry.version;
     lastUsage = msg.usage;
     const u = msg.usage;
     const key = typeof entry.requestId === 'string' ? entry.requestId
@@ -132,7 +135,7 @@ export function readFileUsage(filePath: string, skipSidechain: boolean): { model
     const tokens = contextTokens(lastUsage);
     context = { tokens, limit: contextLimitFor(lastModel, tokens) };
   }
-  return { models: [...byModel.values()], cache, lastModel, context };
+  return { models: [...byModel.values()], cache, lastModel, lastVersion, context };
 }
 
 export class UsageParser {
@@ -153,7 +156,7 @@ export class UsageParser {
         : this.subAgentFile(sessionId, cwd, agent.agentId);
       if (!filePath) continue;
 
-      const { models, cache, lastModel, context: fileContext } = readFileUsage(filePath, agent.isMain);
+      const { models, cache, lastModel, lastVersion, context: fileContext } = readFileUsage(filePath, agent.isMain);
       if (agent.isMain) context = fileContext;
       if (models.length === 0) continue;
 
@@ -163,6 +166,7 @@ export class UsageParser {
         isMain: agent.isMain,
         models,
         ...(lastModel !== undefined ? { currentModel: lastModel } : {}),
+        ...(lastVersion !== undefined ? { currentVersion: lastVersion } : {}),
       });
       sessionCache.input += cache.input;
       sessionCache.read += cache.read;

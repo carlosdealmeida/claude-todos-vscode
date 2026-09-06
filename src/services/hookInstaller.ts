@@ -1,6 +1,4 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { atomicWriteFileSync } from './atomicWrite';
+import { ClaudeSettingsFile, type ClaudeSettings } from './claudeSettings';
 
 interface HookEntry {
   type: 'command';
@@ -12,9 +10,8 @@ interface HookMatcher {
   hooks: HookEntry[];
 }
 
-interface Settings {
+interface Settings extends ClaudeSettings {
   hooks?: Record<string, HookMatcher[] | undefined>;
-  [key: string]: unknown;
 }
 
 export type HookEvent = 'SessionStart' | 'UserPromptSubmit' | 'PreToolUse' | 'PostToolUse' | 'SessionEnd' | string;
@@ -24,7 +21,11 @@ export type HookEvent = 'SessionStart' | 'UserPromptSubmit' | 'PreToolUse' | 'Po
 export const DEFAULT_HOOK_EVENTS: HookEvent[] = ['SessionStart', 'UserPromptSubmit'];
 
 export class HookInstaller {
-  constructor(private readonly settingsPath: string) {}
+  private readonly file: ClaudeSettingsFile;
+
+  constructor(settingsPath: string) {
+    this.file = new ClaudeSettingsFile(settingsPath);
+  }
 
   install(event: HookEvent, command: string): void {
     const settings = this.read();
@@ -111,17 +112,13 @@ export class HookInstaller {
       .find(h => h.command === command);
   }
 
+  // Leitura estrita (ClaudeSettingsFile): settings.json inválido lança em vez de
+  // virar `{}` e ser sobrescrito só com os hooks.
   private read(): Settings {
-    if (!fs.existsSync(this.settingsPath)) return {};
-    try {
-      return JSON.parse(fs.readFileSync(this.settingsPath, 'utf-8'));
-    } catch {
-      return {};
-    }
+    return this.file.read() as Settings;
   }
 
   private write(settings: Settings): void {
-    fs.mkdirSync(path.dirname(this.settingsPath), { recursive: true });
-    atomicWriteFileSync(this.settingsPath, JSON.stringify(settings, null, 2));
+    this.file.write(settings);
   }
 }

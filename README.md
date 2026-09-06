@@ -97,7 +97,7 @@ Esta extensão é **totalmente local**. Nada é enviado para nenhum servidor.
 
 | Arquivo | Como é acessado | Por quê |
 |---|---|---|
-| `~/.claude/settings.json` | Lido + escrito (uma vez, com permissão) | Adiciona dois comandos de hook em `hooks.SessionStart` e `hooks.UserPromptSubmit`. Outros hooks e configurações são preservados. |
+| `~/.claude/settings.json` | Lido + escrito (só com sua permissão) | Adiciona dois comandos de hook em `hooks.SessionStart` e `hooks.UserPromptSubmit` e, quando você clica em **Ativar ferramentas de tasks**, a chave `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`. Outros hooks e configurações são preservados; um arquivo inválido nunca é sobrescrito. |
 | `~/.claude/.vscode-todos-bridge/sessions.json` | Escrito pelo script de hook embarcado | Registra `{cwd, sessionId, terminalPid, startedAt}` para a extensão saber qual sessão do Claude pertence a qual janela do VSCode. Limitado a 200 entradas. |
 | `~/.claude/projects/{cwd-encoded}/…` | Apenas leitura | Transcripts da sessão e dos sub-agents (`.jsonl` + `.meta.json`), gravados pelo próprio Claude Code — fonte das tasks, árvore, tempos e tokens. |
 | `~/.claude/todos/` | Não é tocado | Localização legada do Claude Code 1.x. Ignorada. |

@@ -12,6 +12,8 @@ import { transcriptPath, subAgentsDir, SAFE_SESSION_ID } from '../services/trans
 import { HookInstaller, DEFAULT_HOOK_EVENTS } from '../services/hookInstaller';
 import { readLiveSessions } from '../services/liveSessions';
 import { SessionNames } from '../services/sessionNames';
+import { ClaudeSettingsFile } from '../services/claudeSettings';
+import { TaskToolsFlagReader, TASK_TOOLS_ENV } from '../services/taskToolsGate';
 import type { SessionSnapshot, SessionSummary, ProjectUsage, AwaitingInput } from '../types';
 
 const SEVEN_DAYS_MS = 7 * 24 * 3600 * 1000;
@@ -32,6 +34,8 @@ export class SessionCore {
   private readonly projectUsageService: ProjectUsageService;
   private readonly sessionNames: SessionNames;
   private readonly snapshotService: SnapshotService;
+  private readonly settingsFile: ClaudeSettingsFile;
+  private readonly taskToolsFlags: TaskToolsFlagReader;
   private readonly notifier = new SessionNotifier();
   private readonly watcher: TodosWatcher;
 
@@ -46,12 +50,15 @@ export class SessionCore {
     this.sessionNames = new SessionNames(
       path.join(this.claudeDir, '.vscode-todos-bridge', 'session-names.json'),
     );
+    this.settingsFile = new ClaudeSettingsFile(path.join(this.claudeDir, 'settings.json'));
+    this.taskToolsFlags = new TaskToolsFlagReader(this.settingsFile.path);
     const resolver = new SessionResolver(this.bridge, this.workspaceCwds);
     this.snapshotService = new SnapshotService(
       resolver, this.parser, this.usageParser,
       () => readLiveSessions(this.claudeDir),
       this.sessionNames,
       this.now,
+      this.taskToolsFlags,
     );
     this.watcher = new TodosWatcher(this.claudeDir);
   }
@@ -80,6 +87,16 @@ export class SessionCore {
   installHook(scriptPath: string): void {
     new HookInstaller(path.join(this.claudeDir, 'settings.json'))
       .installAll(DEFAULT_HOOK_EVENTS, `node "${scriptPath}"`);
+  }
+
+  // R2: religa TodoWrite/TaskCreate nos modelos novos (Claude Code >= 2.1.233)
+  // gravando a env var no settings.json do USUÁRIO — as fontes de projeto são só
+  // leitura. Lança SettingsParseError se o arquivo existir e não parsear (nada é
+  // escrito). Invalida o memo do leitor para o próximo snapshot já refletir.
+  enableTaskTools(): { changed: boolean; path: string } {
+    const changed = this.settingsFile.setEnv(TASK_TOOLS_ENV, '1');
+    this.taskToolsFlags.invalidate();
+    return { changed, path: this.settingsFile.path };
   }
 
   resolveTodoSource(sessionId: string, agentId: string, line: number): { filePath: string; line: number } | null {

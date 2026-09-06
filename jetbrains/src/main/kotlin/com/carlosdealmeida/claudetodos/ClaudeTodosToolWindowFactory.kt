@@ -1,6 +1,7 @@
 package com.carlosdealmeida.claudetodos
 
 import com.intellij.ide.ui.LafManagerListener
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.DumbAware
@@ -89,6 +90,30 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
             }
             override fun activatePanel() { SwingUtilities.invokeLater { toolWindow.activate(null) } }
             override fun warn(messageKey: String) { SwingUtilities.invokeLater { bridge.warn(messageKey) } }
+
+            private val settingsPath = HookSetup.settingsPath()
+            private fun withPath(args: Map<String, String>) =
+                if (args["path"].isNullOrEmpty()) args + ("path" to settingsPath) else args
+
+            override fun confirm(messageKey: String, onOk: () -> Unit) {
+                SwingUtilities.invokeLater {
+                    val answer = com.intellij.openapi.ui.Messages.showYesNoDialog(
+                        project,
+                        NotifyMessages.get(locale, messageKey, "path" to settingsPath),
+                        "Claude Todos",
+                        NotifyMessages.get(locale, "taskTools.enable"),
+                        NotifyMessages.get(locale, "taskTools.cancel"),
+                        com.intellij.openapi.ui.Messages.getQuestionIcon(),
+                    )
+                    if (answer == com.intellij.openapi.ui.Messages.YES) onOk()
+                }
+            }
+            override fun info(messageKey: String, args: Map<String, String>) {
+                SwingUtilities.invokeLater { bridge.notify(messageKey, withPath(args), NotificationType.INFORMATION) }
+            }
+            override fun error(messageKey: String, args: Map<String, String>) {
+                SwingUtilities.invokeLater { bridge.notify(messageKey, withPath(args), NotificationType.ERROR) }
+            }
         }
         router = MessageRouter(
             sendToSidecar = sidecar::send,

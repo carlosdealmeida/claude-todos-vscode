@@ -5,9 +5,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ThemeShimTest {
-    @Test fun `emits all 20 vars with concrete values`() {
+    @Test fun `emits all 23 vars with concrete values`() {
         val css = ThemeShim.cssVariables()
-        assertEquals(20, ThemeShim.VAR_NAMES.size)
+        assertEquals(23, ThemeShim.VAR_NAMES.size)
         for (name in ThemeShim.VAR_NAMES) {
             assertTrue(css.contains("--vscode-$name:"), "faltou --vscode-$name")
         }
@@ -20,7 +20,7 @@ class ThemeShimTest {
         assertTrue(Regex("--vscode-foreground:\\s*#[0-9a-fA-F]{6}").containsMatchIn(css))
     }
 
-    @Test fun `variables map has the 20 names with non-empty values`() {
+    @Test fun `variables map has the 23 names with non-empty values`() {
         val vars = ThemeShim.variables()
         assertEquals(ThemeShim.VAR_NAMES, vars.keys.toList())
         assertTrue(vars.values.all { it.isNotBlank() })
