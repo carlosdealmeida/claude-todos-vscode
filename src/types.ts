@@ -93,6 +93,9 @@ export interface SessionSnapshot {
   usage?: SessionUsage;
   awaitingInput?: AwaitingInput;
   pendingQuestions?: PendingQuestion[];
+  // R2: true quando o Claude Code (>= 2.1.233) está com TodoWrite/TaskCreate
+  // desligados para o modelo da sessão e a flag não foi ligada em nenhuma fonte.
+  taskToolsOff?: true;
 }
 
 export interface SessionSummary {

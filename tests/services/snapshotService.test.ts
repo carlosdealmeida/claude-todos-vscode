@@ -27,6 +27,24 @@ function makeParser(opts: {
   };
 }
 
+// Parser sem agentes com tasks (sessão que ainda não chamou TodoWrite/TaskCreate).
+function makeParserNoAgents(mtimes: Record<string, number | null>) {
+  return {
+    transcriptMtime: (sessionId: string, _cwd: string) => mtimes[sessionId] ?? null,
+    readSessionTitle: (_sessionId: string, _cwd: string) => null,
+    listForSession: (_sessionId: string) => [],
+    listSessionDetail: (_sessionId: string) => ({ agents: [], awaitingInput: null, pendingQuestions: [] }),
+  };
+}
+
+const newModelUsage = {
+  usageForSession: () => ({
+    byModel: [],
+    byAgent: [{ agentId: 'a', name: 'Main agent', isMain: true, models: [], currentModel: 'claude-fable-5-1', currentVersion: '2.1.261' }],
+  }),
+};
+const resolverA = { resolveCandidates: () => [{ cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 }] };
+
 describe('SnapshotService', () => {
   it('returns null when no session has a transcript', () => {
     const resolver = {
@@ -373,5 +391,36 @@ describe('SnapshotService', () => {
     const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
     expect(svc.listSessions()[0].title).toBe('titulo derivado');
     expect(svc.build()?.sessionId).toBe('s');
+  });
+
+  it('marks taskToolsOff when there are no task agents, the harness is >= 2.1.233, the model is new and the flag is absent', () => {
+    const svc = new SnapshotService(
+      resolverA as any, makeParserNoAgents({ a: 100 }) as any, newModelUsage as any,
+      () => new Map(), undefined, () => 0, { read: () => 'absent' as const },
+    );
+    expect(svc.build()?.taskToolsOff).toBe(true);
+  });
+
+  it('does not mark taskToolsOff when the flag is on or explicitly off', () => {
+    for (const state of ['on', 'off'] as const) {
+      const svc = new SnapshotService(
+        resolverA as any, makeParserNoAgents({ a: 100 }) as any, newModelUsage as any,
+        () => new Map(), undefined, () => 0, { read: () => state },
+      );
+      expect(svc.build()?.taskToolsOff).toBeUndefined();
+    }
+  });
+
+  it('does not mark taskToolsOff once the session has task agents', () => {
+    const svc = new SnapshotService(
+      resolverA as any, makeParser({ mtimes: { a: 100 } }) as any, newModelUsage as any,
+      () => new Map(), undefined, () => 0, { read: () => 'absent' as const },
+    );
+    expect(svc.build()?.taskToolsOff).toBeUndefined();
+  });
+
+  it('does not mark taskToolsOff without a flag reader (hosts that do not inject one)', () => {
+    const svc = new SnapshotService(resolverA as any, makeParserNoAgents({ a: 100 }) as any, newModelUsage as any);
+    expect(svc.build()?.taskToolsOff).toBeUndefined();
   });
 });

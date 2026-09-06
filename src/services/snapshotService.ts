@@ -4,6 +4,7 @@ import type { UsageParser } from './usageParser';
 import type { LiveSession } from './liveSessions';
 import type { SessionNames } from './sessionNames';
 import type { AgentTodos, SessionSnapshot, SessionSummary } from '../types';
+import { evaluateTaskTools, type FlagState } from './taskToolsGate';
 
 export class SnapshotService {
   private pinnedSessionId: string | null = null;
@@ -17,6 +18,9 @@ export class SnapshotService {
     // Injetavel pra testar o updatedAt gravado por resolveTitle() sem depender
     // do relogio real — mesmo padrao do `now` que o SessionCore ja usa pra poda.
     private readonly now: () => number = () => Date.now(),
+    // R2: leitor da flag CLAUDE_CODE_ENABLE_TODO_TOOLS. Opcional: sem ele, o
+    // snapshot nunca marca taskToolsOff (compatível com quem constrói só o básico).
+    private readonly taskToolsFlags?: { read(cwd: string | null): FlagState },
   ) {}
 
   setPinnedSession(sessionId: string | null): void {
@@ -64,15 +68,26 @@ export class SnapshotService {
       todos: [],
       updatedAt: 0,
     }];
+    const usage = this.usageParser.usageForSession(chosen.sessionId, chosen.cwd, usageAgents);
+    // R2: só no ramo sem agentes com tasks. Versão e modelo vêm da última entrada
+    // com usage do main; a flag, das quatro fontes (memo por mtime no leitor).
+    const main = usage.byAgent.find(a => a.isMain);
+    const taskToolsOff = agents.length === 0 && this.taskToolsFlags !== undefined
+      && evaluateTaskTools({
+        version: main?.currentVersion,
+        model: main?.currentModel,
+        flag: this.taskToolsFlags.read(chosen.cwd),
+      });
     return {
       sessionId: chosen.sessionId,
       cwd: chosen.cwd,
       title: chosen.title,
       pinned: chosen.sessionId === this.pinnedSessionId,
       agents,
-      usage: this.usageParser.usageForSession(chosen.sessionId, chosen.cwd, usageAgents),
+      usage,
       ...(detail.awaitingInput !== null ? { awaitingInput: detail.awaitingInput } : {}),
       ...(detail.pendingQuestions.length > 0 ? { pendingQuestions: detail.pendingQuestions } : {}),
+      ...(taskToolsOff ? { taskToolsOff: true as const } : {}),
     };
   }
 
