@@ -490,13 +490,16 @@ describe('TaskToolsFlagReader', () => {
   });
 
   it('memoizes by mtime and invalidate() forces a re-read', () => {
+    // mtime fixado com precisao de ms ANTES da primeira leitura: mtimeMs real tem
+    // precisao sub-ms e nao sobreviveria a um restore via Date.
+    const fixed = new Date('2026-09-05T12:00:00Z');
     writeJson(userSettings, { env: { [TASK_TOOLS_ENV]: '1' } });
+    fs.utimesSync(userSettings, fixed, fixed);
     const reader = new TaskToolsFlagReader(userSettings, {});
     expect(reader.read(cwd)).toBe('on');
-    // Reescreve sem a flag mas restaura o mtime antigo: o memo ainda responde 'on'.
-    const { atime, mtime } = fs.statSync(userSettings);
+    // Reescreve sem a flag mas mantem o mesmo mtime: o memo ainda responde 'on'.
     writeJson(userSettings, { env: {} });
-    fs.utimesSync(userSettings, atime, mtime);
+    fs.utimesSync(userSettings, fixed, fixed);
     expect(reader.read(cwd)).toBe('on');
     reader.invalidate();
     expect(reader.read(cwd)).toBe('absent');
