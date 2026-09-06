@@ -5,7 +5,7 @@ import java.awt.Font
 import javax.swing.UIManager
 
 /**
- * Mapeia as 20 vars --vscode-* que a webview usa para cores do LaF corrente.
+ * Mapeia as 23 vars --vscode-* que a webview usa para cores do LaF corrente.
  * Todo valor tem fallback concreto: nenhuma var sai vazia, mesmo headless.
  */
 object ThemeShim {
@@ -16,6 +16,7 @@ object ThemeShim {
         "textBlockQuote-background", "progressBar-background", "editor-font-family",
         "testing-iconPassed", "charts-blue", "charts-green", "charts-orange",
         "charts-red", "charts-yellow",
+        "button-background", "button-foreground", "button-hoverBackground",
     )
 
     /** Nome (sem prefixo `--vscode-`) → valor, na mesma ordem de [VAR_NAMES]. Fonte de verdade única — [cssVariables] e o JS de live-update (WebviewPanel) derivam daqui. */
@@ -49,6 +50,9 @@ object ThemeShim {
             "charts-blue" to "#4b8bf5", "charts-green" to "#57965c",
             "charts-orange" to "#e08855", "charts-red" to "#e55765",
             "charts-yellow" to "#d6a243",
+            "button-background" to hex(accent),
+            "button-foreground" to "#ffffff",
+            "button-hoverBackground" to hex(accent),
         )
         return VAR_NAMES.associateWith { values.getValue(it) }
     }

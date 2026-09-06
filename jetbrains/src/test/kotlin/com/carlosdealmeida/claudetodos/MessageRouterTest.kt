@@ -28,6 +28,13 @@ class MessageRouterTest {
         }
         override fun activatePanel() { activated++ }
         override fun warn(messageKey: String) { warns += messageKey }
+        val confirms = mutableListOf<String>()
+        val infos = mutableListOf<Pair<String, Map<String, String>>>()
+        val errors = mutableListOf<Pair<String, Map<String, String>>>()
+        var autoConfirm = true
+        override fun confirm(messageKey: String, onOk: () -> Unit) { confirms += messageKey; if (autoConfirm) onOk() }
+        override fun info(messageKey: String, args: Map<String, String>) { infos += messageKey to args }
+        override fun error(messageKey: String, args: Map<String, String>) { errors += messageKey to args }
     }
     private val host = FakeHost()
     private val router = MessageRouter(toSidecar::add, toWebview::add, locale = "pt-br", host = host)
@@ -166,5 +173,38 @@ class MessageRouterTest {
         val id2 = parse(toSidecar[1])["id"]!!.jsonPrimitive.content
         router.onSidecarEvent("""{"ev":"hookInstalled","id":"$id2"}""")
         assertEquals(true, ok)
+    }
+
+    @Test fun `enableTaskTools asks for confirmation, calls the sidecar and toasts the result`() {
+        router.onWebviewMessage("""{"type":"enableTaskTools"}""")
+        assertEquals(listOf("taskTools.confirm"), host.confirms)
+        val cmd = parse(toSidecar.single())
+        assertEquals("enableTaskTools", cmd["cmd"]!!.jsonPrimitive.content)
+        val id = cmd["id"]!!.jsonPrimitive.content
+        router.onSidecarEvent("""{"ev":"taskToolsEnabled","changed":true,"path":"/c/settings.json","id":"$id"}""")
+        assertEquals("taskTools.enabled" to mapOf("path" to "/c/settings.json"), host.infos.single())
+        assertEquals("getSnapshot", parse(toSidecar.last())["cmd"]!!.jsonPrimitive.content)
+    }
+
+    @Test fun `enableTaskTools already enabled toasts alreadyEnabled`() {
+        router.onWebviewMessage("""{"type":"enableTaskTools"}""")
+        val id = parse(toSidecar.single())["id"]!!.jsonPrimitive.content
+        router.onSidecarEvent("""{"ev":"taskToolsEnabled","changed":false,"path":"/c/settings.json","id":"$id"}""")
+        assertEquals("taskTools.alreadyEnabled", host.infos.single().first)
+    }
+
+    @Test fun `enableTaskTools error event becomes an error toast`() {
+        router.onWebviewMessage("""{"type":"enableTaskTools"}""")
+        val id = parse(toSidecar.single())["id"]!!.jsonPrimitive.content
+        router.onSidecarEvent("""{"ev":"error","message":"boom","id":"$id"}""")
+        assertEquals("taskTools.failed", host.errors.single().first)
+        assertEquals("boom", host.errors.single().second["error"])
+    }
+
+    @Test fun `enableTaskTools declined sends nothing to the sidecar`() {
+        host.autoConfirm = false
+        router.onWebviewMessage("""{"type":"enableTaskTools"}""")
+        assertEquals(listOf("taskTools.confirm"), host.confirms)
+        assertTrue(toSidecar.isEmpty())
     }
 }

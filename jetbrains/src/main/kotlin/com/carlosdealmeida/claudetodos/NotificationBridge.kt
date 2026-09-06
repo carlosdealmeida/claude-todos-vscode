@@ -36,6 +36,13 @@ class NotificationBridge(
             .notify(project)
     }
 
+    fun notify(messageKey: String, args: Map<String, String>, type: NotificationType) {
+        val text = NotifyMessages.get(locale, messageKey, *args.map { it.key to it.value }.toTypedArray())
+        NotificationGroupManager.getInstance().getNotificationGroup("claude-todos")
+            .createNotification(text, type)
+            .notify(project)
+    }
+
     fun promptHookInstall(onInstall: () -> Unit) {
         if (props.getBoolean("claudeTodos.hookPromptDismissed", false)) return
         NotificationGroupManager.getInstance().getNotificationGroup("claude-todos-sticky")
