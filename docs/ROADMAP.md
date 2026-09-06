@@ -906,7 +906,20 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
      Avaliar reposicionar o pitch (não necessariamente o nome) para "observability" com a lista
      de tasks como recurso opt-in. É a decisão que os itens 8 e 23 esperavam.
   4. **Comentar em #80015** com disclosure — a extensão mostra a lista com a flag ligada e o
-     estado vazio explica o porquê — **só depois** do passo 1 entregue.
+     estado vazio explica o porquê — **só depois** do passo 1 entregue. **Decisão 2026-09-06:**
+     publicar **depois da 0.19.0** (a release que leva o botão), citando a versão; rascunho
+     aprovado em teor, aprovação final do texto na hora de postar:
+     > Disclosure: I maintain Claude Todos, an open-source VS Code/JetBrains panel that reads the
+     > task list from the transcripts Claude Code writes, so this change hit us directly. Data
+     > points: (1) verified on 2.1.261 — no flag → a fresh session on Opus 5 / Fable 5 has only
+     > `TaskOutput`/`TaskStop`; `"env": { "CLAUDE_CODE_ENABLE_TODO_TOOLS": "1" }` in
+     > `~/.claude/settings.json` brings the tools back on any model, including sessions started
+     > by the VS Code extension (a running session picked them up without restart); (2) they come
+     > back as deferred tools (loaded via `ToolSearch`) and the schema depends on the env:
+     > `CLAUDE_CODE_ENABLE_TASKS=0` (set by the VS Code extension) → `TodoWrite`, otherwise
+     > `TaskCreate`/`TaskUpdate`; (3) +1 on documenting the env var outside the changelog. Until
+     > then our panel detects the state and offers a one-click switch that writes that key after
+     > a confirmation (README section "Turn the task tools back on", v0.19.0).
   5. **Monitorar** se a Anthropic entrega o que prometeu ("have Claude explain that the task
      list is off for this model", documentar a var) ou reverte sob pressão.
 
