@@ -873,6 +873,13 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
      Mensagem com a correção a um clique: botão que grava `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`
      no `settings.json` do usuário (opt-in explícito, mostrando o que vai mudar) ou instrução
      copiável. Sem isso, o item 10 ("Sessão ativa — aguardando tasks") vira mentira.
+     **Lacunas conhecidas (revisão final do branch, 2026-09-05):** (a) a dica **não aparece em
+     sessões que já dispararam sub-agents** — o parser lista todo `agent-*.jsonl` mesmo sem
+     tasks, então `agents.length > 0` e o ramo do estado vazio não roda; o painel mostra a
+     árvore com listas vazias e sem explicação. (b) A flag lida do **ambiente do processo do
+     IDE** pode divergir do shell do usuário (VS Code aberto pela GUI sem o `export` do rc):
+     falso positivo que o próprio botão corrige. Candidatas à próxima iteração do estado vazio
+     ou ao passo 3 (posicionamento).
   2. **Onboarding/README/walkthrough (item 18):** ✅ **README feito em 2026-09-05** nos 5 idiomas —
      callout no topo, subseção "Ative as ferramentas de tasks" em Instalação (JSON do
      `settings.json` + links para CHANGELOG/#86929/#80015), bullet em Requisitos e em Limitações
