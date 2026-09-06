@@ -25,6 +25,14 @@ describe('HookInstaller', () => {
     expect(parsed.hooks.SessionStart[0].hooks[0].command).toBe(HOOK_COMMAND);
   });
 
+  it('throws on invalid settings.json instead of overwriting it', () => {
+    fs.writeFileSync(settingsPath, '{ not json');
+    const installer = new HookInstaller(settingsPath);
+    expect(() => installer.install('SessionStart', HOOK_COMMAND)).toThrow(/not valid JSON/);
+    expect(() => installer.isInstalled('SessionStart', HOOK_COMMAND)).toThrow(/not valid JSON/);
+    expect(fs.readFileSync(settingsPath, 'utf-8')).toBe('{ not json');
+  });
+
   it('preserves existing settings when adding hook', () => {
     fs.writeFileSync(settingsPath, JSON.stringify({ env: { FOO: 'bar' } }));
     const installer = new HookInstaller(settingsPath);
