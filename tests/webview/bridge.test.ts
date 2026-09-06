@@ -18,6 +18,13 @@ describe('createVscodeBridge', () => {
     captured!({ data: { type: 'snapshot', snapshot: null } });
     expect(seen).toEqual([{ type: 'snapshot', snapshot: null }]);
   });
+
+  it('post accepts the enableTaskTools message', () => {
+    const postMessage = vi.fn();
+    const bridge = createVscodeBridge({ addEventListener: vi.fn() } as any, () => ({ postMessage }));
+    bridge.post({ type: 'enableTaskTools' });
+    expect(postMessage).toHaveBeenCalledWith({ type: 'enableTaskTools' });
+  });
 });
 
 describe('createJcefBridge', () => {

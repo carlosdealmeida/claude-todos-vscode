@@ -69,6 +69,12 @@ class TodosStore {
   pickSession(): void {
     this.post({ type: 'pickSession' });
   }
+
+  // R2: botão do estado vazio "ferramentas de tasks desligadas". O host confirma
+  // e grava; o snapshot seguinte já vem sem taskToolsOff.
+  enableTaskTools(): void {
+    this.post({ type: 'enableTaskTools' });
+  }
 }
 
 export const todosStore = new TodosStore();

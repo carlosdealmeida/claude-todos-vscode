@@ -125,5 +125,6 @@ export type WebviewMessage =
   | { type: 'refresh' }
   | { type: 'openPanel' }
   | { type: 'pickSession' }
+  | { type: 'enableTaskTools' }
   | { type: 'projectUsage' }
   | { type: 'openTodoSource'; sessionId: string; agentId: string; line: number };

@@ -50,6 +50,13 @@
           <AgentTree node={root} usage={snapshot.usage} history={isHistory(root.agent)} {hasRunningSubAgent} {mainModel} />
         {/each}
       </div>
+    {:else if snapshot.taskToolsOff}
+      <div class="awaiting task-tools-off">
+        <p class="awaiting-title">{todosStore.t('app.taskToolsOff.title')}</p>
+        <p class="awaiting-sub">{todosStore.t('app.taskToolsOff.body')}</p>
+        <button class="primary" onclick={() => todosStore.enableTaskTools()}>{todosStore.t('app.taskToolsOff.button')}</button>
+        <p class="awaiting-hint">{todosStore.t('app.taskToolsOff.hint')}</p>
+      </div>
     {:else}
       <div class="awaiting">
         <p class="awaiting-title">{todosStore.t('app.awaitingTitle')}</p>
@@ -113,6 +120,21 @@
     border-radius: 3px;
     font-family: var(--vscode-editor-font-family);
   }
+  .primary {
+    margin-top: 0.6rem;
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: 1px solid transparent;
+    border-radius: 5px;
+    padding: 0.35rem 0.8rem;
+    font: inherit;
+    cursor: pointer;
+  }
+  .primary:hover {
+    background: var(--vscode-button-hoverBackground, var(--vscode-button-background));
+    filter: brightness(1.08);
+  }
+  .awaiting-hint { font-size: 0.72rem; opacity: 0.7; margin-top: 0.45rem; }
   .ghost {
     display: inline-flex;
     align-items: center;
