@@ -864,7 +864,10 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   (backup do settings.json no scratchpad da sessão). Script reproduzível: `run_ptest.sh` no
   scratchpad — não versionado; portar para `scripts/` se o teste virar rotina de release.
 - **Plano (📐 a especificar — passa na frente de qualquer feature):**
-  1. **Estado vazio inteligente:** distinguir "sessão sem tasks" de "ferramentas de task
+  1. **Estado vazio inteligente:** ✅ implementado em 2026-09-05 (release pendente) — spec
+     [docs/specs/2026-09-05-task-tools-off-empty-state-design.md](specs/2026-09-05-task-tools-off-empty-state-design.md),
+     plano [docs/plans/2026-09-05-task-tools-off-empty-state.md](plans/2026-09-05-task-tools-off-empty-state.md).
+     Distinguir "sessão sem tasks" de "ferramentas de task
      desligadas nesta sessão". Sinal disponível no transcript: `version` ≥ 2.1.233 + `model`
      da última mensagem em família nova + ausência de qualquer `TodoWrite`/`TaskCreate`.
      Mensagem com a correção a um clique: botão que grava `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`
