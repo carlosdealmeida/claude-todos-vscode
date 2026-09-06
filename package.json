@@ -82,6 +82,10 @@
       {
         "command": "claudeTodos.pickSession",
         "title": "%command.pickSession.title%"
+      },
+      {
+        "command": "claudeTodos.enableTaskTools",
+        "title": "%command.enableTaskTools.title%"
       }
     ],
     "keybindings": [

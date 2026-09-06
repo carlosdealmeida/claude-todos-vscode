@@ -5,6 +5,7 @@
   "command.installHook.title": "Claude Todos: Install Session Hook",
   "command.refresh.title": "Claude Todos: Refresh",
   "command.pickSession.title": "Claude Todos: Choose Session",
+  "command.enableTaskTools.title": "Claude Todos: Enable Claude Code task tools",
   "config.claudeDir.description": "覆寫 ~/.claude 路徑（留空 = 自動偵測）",
   "config.autoInstallHook.description": "首次啟動時提示安裝工作階段掛鉤",
   "config.language.description": "Claude Todos 面板的介面語言。'auto' 跟隨 VS Code 的顯示語言。注意：命令面板中的命令標題一律跟隨 VS Code 的顯示語言。",
