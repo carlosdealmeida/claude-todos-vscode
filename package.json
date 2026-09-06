@@ -119,6 +119,18 @@
             ]
           },
           {
+            "id": "enableTaskTools",
+            "title": "%walkthrough.enableTaskTools.title%",
+            "description": "%walkthrough.enableTaskTools.description%",
+            "media": {
+              "svg": "media/icon.svg",
+              "altText": "Claude Todos"
+            },
+            "completionEvents": [
+              "onCommand:claudeTodos.enableTaskTools"
+            ]
+          },
+          {
             "id": "startSession",
             "title": "%walkthrough.startSession.title%",
             "description": "%walkthrough.startSession.description%",

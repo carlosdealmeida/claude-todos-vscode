@@ -21,6 +21,8 @@
   "walkthrough.description": "即時觀測你的 Claude Code 智慧體 — 設定工作階段掛鉤並探索面板。",
   "walkthrough.installHook.title": "安裝工作階段掛鉤",
   "walkthrough.installHook.description": "掛鉤會告訴面板哪個 Claude Code 工作階段屬於此工作區。它會在 ~/.claude/settings.json 中新增兩個項目；現有的掛鉤和設定都會保留。\n[安裝掛鉤](command:claudeTodos.installHook)",
+  "walkthrough.enableTaskTools.title": "開啟任務工具（Claude Code 2.1.233+）",
+  "walkthrough.enableTaskTools.description": "自 2.1.233 起，Claude Code 在新模型上預設關閉任務工具（``TodoWrite``/``TaskCreate``），任務清單會一直是空的。此按鈕會在確認後向 ~/.claude/settings.json 寫入 ``env.CLAUDE_CODE_ENABLE_TODO_TOOLS = \"1\"``，其他設定會被保留。面板偵測到工具關閉時也會提供此按鈕。\n[開啟任務工具](command:claudeTodos.enableTaskTools)",
   "walkthrough.startSession.title": "啟動一個 Claude Code 工作階段",
   "walkthrough.startSession.description": "在此工作區資料夾內的任一終端機（內建或外部）中執行 ``claude``。已經在執行的工作階段會在你向它傳送下一則訊息時被偵測到。",
   "walkthrough.openPanel.title": "開啟面板",

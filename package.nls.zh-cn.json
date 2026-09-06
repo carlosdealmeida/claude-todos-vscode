@@ -21,6 +21,8 @@
   "walkthrough.description": "实时观测你的 Claude Code 智能体 — 设置会话钩子并探索面板。",
   "walkthrough.installHook.title": "安装会话钩子",
   "walkthrough.installHook.description": "钩子会告诉面板哪个 Claude Code 会话属于此工作区。它会在 ~/.claude/settings.json 中添加两个条目；现有的钩子和设置都会保留。\n[安装钩子](command:claudeTodos.installHook)",
+  "walkthrough.enableTaskTools.title": "开启任务工具（Claude Code 2.1.233+）",
+  "walkthrough.enableTaskTools.description": "自 2.1.233 起，Claude Code 在新模型上默认关闭任务工具（``TodoWrite``/``TaskCreate``），任务列表会一直为空。此按钮会在确认后向 ~/.claude/settings.json 写入 ``env.CLAUDE_CODE_ENABLE_TODO_TOOLS = \"1\"``，其他设置会被保留。面板检测到工具关闭时也会提供此按钮。\n[开启任务工具](command:claudeTodos.enableTaskTools)",
   "walkthrough.startSession.title": "启动一个 Claude Code 会话",
   "walkthrough.startSession.description": "在此工作区文件夹内的任意终端（内置或外部）中运行 ``claude``。已经在运行的会话会在你向它发送下一条消息时被检测到。",
   "walkthrough.openPanel.title": "打开面板",

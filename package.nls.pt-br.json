@@ -21,6 +21,8 @@
   "walkthrough.description": "Observability ao vivo dos seus agentes Claude Code — configure o hook de sessão e explore o painel.",
   "walkthrough.installHook.title": "Instale o hook de sessão",
   "walkthrough.installHook.description": "O hook informa ao painel qual sessão do Claude Code pertence a este workspace. Ele adiciona duas entradas em ~/.claude/settings.json; hooks e configurações existentes são preservados.\n[Instalar Hook](command:claudeTodos.installHook)",
+  "walkthrough.enableTaskTools.title": "Ative as ferramentas de tasks (Claude Code 2.1.233+)",
+  "walkthrough.enableTaskTools.description": "Desde a 2.1.233 o Claude Code desliga ``TodoWrite``/``TaskCreate`` por padrão nos modelos novos, e a lista de tasks fica vazia. Este botão grava ``env.CLAUDE_CODE_ENABLE_TODO_TOOLS = \"1\"`` em ~/.claude/settings.json após confirmação; as outras configurações são preservadas. O painel também oferece o botão quando detecta as ferramentas desligadas.\n[Ativar ferramentas de tasks](command:claudeTodos.enableTaskTools)",
   "walkthrough.startSession.title": "Inicie uma sessão do Claude Code",
   "walkthrough.startSession.description": "Execute ``claude`` em qualquer terminal — integrado ou externo — na pasta deste workspace. Sessões que já estavam rodando são detectadas na próxima mensagem que você enviar a elas.",
   "walkthrough.openPanel.title": "Abra o painel",

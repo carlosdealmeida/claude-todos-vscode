@@ -885,7 +885,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
      `settings.json` + links para CHANGELOG/#86929/#80015), bullet em Requisitos e em Limitações
      conhecidas; paridade de 11 seções preservada (a landing extrai por índice — `tests/site`
      verde). Pendências, em ordem de impacto:
-     - [ ] **Walkthrough** (`package.json` → `contributes.walkthroughs[0].steps`): passo novo
+     - [x] **Walkthrough** ✅ 2026-09-06 (`package.json` → `contributes.walkthroughs[0].steps`): passo novo
        `enableTaskTools` entre `installHook` e `startSession`, com o JSON do `settings.json` e
        um botão que abre o arquivo (`vscode.open` em `~/.claude/settings.json`); chaves
        `walkthrough.enableTaskTools.title/description` nos 5 `package.nls*.json` e o mesmo
