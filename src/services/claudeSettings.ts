@@ -55,9 +55,13 @@ export class ClaudeSettingsFile {
   // true quando o arquivo mudou (chave ausente ou com outro valor).
   setEnv(key: string, value: string): boolean {
     const settings = this.read();
-    const env = settings.env && typeof settings.env === 'object' && !Array.isArray(settings.env)
-      ? settings.env
-      : {};
+    // `env` presente mas que não é um objeto plano (array, string, número, null) é
+    // arquivo inválido pela mesma regra do topo: lançar em vez de substituir em silêncio.
+    if (settings.env !== undefined
+      && (settings.env === null || typeof settings.env !== 'object' || Array.isArray(settings.env))) {
+      throw new SettingsParseError(this.path, 'env is not an object');
+    }
+    const env: Record<string, unknown> = settings.env ?? {};
     if (env[key] === value) return false;
     settings.env = { ...env, [key]: value };
     this.write(settings);

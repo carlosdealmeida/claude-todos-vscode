@@ -70,4 +70,14 @@ describe('ClaudeSettingsFile', () => {
     fs.writeFileSync(settingsPath, '[1, 2]');
     expect(() => new ClaudeSettingsFile(settingsPath).read()).toThrow(SettingsParseError);
   });
+
+  it('throws SettingsParseError when env exists but is not an object, leaving the file untouched', () => {
+    for (const bad of [['x'], 'abc', 7, null]) {
+      const raw = JSON.stringify({ model: 'opus', env: bad });
+      fs.writeFileSync(settingsPath, raw);
+      const file = new ClaudeSettingsFile(settingsPath);
+      expect(() => file.setEnv('K', '1')).toThrow(SettingsParseError);
+      expect(fs.readFileSync(settingsPath, 'utf-8')).toBe(raw);
+    }
+  });
 });
