@@ -51,6 +51,22 @@ describe('UsageParser', () => {
 
   const mainRef: AgentRef = { agentId: SID, name: 'Main agent', isMain: true };
 
+  it('exposes the harness version of the last usage entry as currentVersion', () => {
+    writeMain([
+      { ...assistant('claude-fable-5-1', { input: 10, output: 1 }), version: '2.1.240' },
+      { ...assistant('claude-fable-5-1', { input: 12, output: 2 }), version: '2.1.261' },
+    ]);
+    const usage = parser.usageForSession(SID, CWD, [{ agentId: SID, name: 'Main agent', isMain: true }]);
+    expect(usage.byAgent[0].currentVersion).toBe('2.1.261');
+    expect(usage.byAgent[0].currentModel).toBe('claude-fable-5-1');
+  });
+
+  it('leaves currentVersion undefined when no usage entry carries a version', () => {
+    writeMain([assistant('claude-fable-5-1', { input: 10, output: 1 })]);
+    const usage = parser.usageForSession(SID, CWD, [{ agentId: SID, name: 'Main agent', isMain: true }]);
+    expect(usage.byAgent[0].currentVersion).toBeUndefined();
+  });
+
   it('returns empty usage when nothing exists', () => {
     const usage = parser.usageForSession(SID, CWD, []);
     expect(usage.byModel).toEqual([]);

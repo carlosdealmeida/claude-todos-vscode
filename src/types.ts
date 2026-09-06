@@ -49,6 +49,7 @@ export interface AgentUsage {
   isMain: boolean;
   models: ModelUsage[];
   currentModel?: string;  // modelo da ÚLTIMA entrada com usage do transcript
+  currentVersion?: string; // versão do Claude Code que gravou essa mesma entrada (record.version)
 }
 
 export interface ContextUsage {
