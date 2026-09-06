@@ -44,7 +44,12 @@ export function activate(context: vscode.ExtensionContext): void {
   const hookCommand = `node "${hookScriptPath}"`;
 
   const hookInstaller = new HookInstaller(settingsPath);
-  const removedLegacy = hookInstaller.cleanupLegacyHooks(HOOK_EVENTS, LEGACY_HOOK_PATTERN, hookCommand);
+  // Leitura estrita: settings.json inválido lança. A ativação não pode morrer por
+  // isso — o usuário vê o erro real ao tentar instalar o hook ou ativar as task tools.
+  let removedLegacy = 0;
+  try {
+    removedLegacy = hookInstaller.cleanupLegacyHooks(HOOK_EVENTS, LEGACY_HOOK_PATTERN, hookCommand);
+  } catch { /* settings.json inválido: pula a limpeza */ }
   if (removedLegacy > 0) {
     // The user had previously consented to hooks for an older versioned path
     // (now deleted by VSCode's update). Re-install transparently at the stable
@@ -130,6 +135,29 @@ export function activate(context: vscode.ExtensionContext): void {
     observeSession();
   };
 
+  // R2: grava env.CLAUDE_CODE_ENABLE_TODO_TOOLS="1" no settings.json do usuário,
+  // sempre atrás de confirmação modal (o Cancelar é o botão implícito do diálogo).
+  // Usado pelo botão do estado vazio e pelo comando da paleta.
+  const enableTaskTools = async (): Promise<void> => {
+    const t = createT(resolveLocale());
+    const choice = await vscode.window.showInformationMessage(
+      t('taskTools.confirm', { path: settingsPath }),
+      { modal: true },
+      t('taskTools.enable'),
+    );
+    if (choice !== t('taskTools.enable')) return;
+    try {
+      const result = core.enableTaskTools();
+      vscode.window.showInformationMessage(
+        result.changed ? t('taskTools.enabled') : t('taskTools.alreadyEnabled', { path: result.path }),
+      );
+    } catch (err) {
+      vscode.window.showErrorMessage(t('taskTools.failed', { path: settingsPath, error: String(err) }));
+    }
+    viewProvider.pushSnapshot();
+    panelProvider.pushSnapshot();
+  };
+
   const handleMessage = (msg: WebviewMessage): void => {
     if (msg.type === 'openPanel') {
       vscode.commands.executeCommand('claudeTodos.openPanel');
@@ -144,6 +172,8 @@ export function activate(context: vscode.ExtensionContext): void {
     } else if (msg.type === 'openTodoSource') {
       const target = core.resolveTodoSource(msg.sessionId, msg.agentId, msg.line);
       void openTodoSource(target);
+    } else if (msg.type === 'enableTaskTools') {
+      void enableTaskTools();
     } else if (msg.type === 'pickSession') {
       void showSessionPicker();
     }
@@ -195,6 +225,9 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand('claudeTodos.pickSession', () => {
       void showSessionPicker();
+    }),
+    vscode.commands.registerCommand('claudeTodos.enableTaskTools', () => {
+      void enableTaskTools();
     }),
   );
 
@@ -254,7 +287,11 @@ async function maybePromptInstallHook(
 ): Promise<void> {
   const autoPrompt = vscode.workspace.getConfiguration('claudeTodos').get<boolean>('autoInstallHook', true);
   if (!autoPrompt) return;
-  if (installer.areAllInstalled(HOOK_EVENTS, command)) return;
+  try {
+    if (installer.areAllInstalled(HOOK_EVENTS, command)) return;
+  } catch {
+    return; // settings.json inválido: não dá para saber; o comando manual mostra o erro
+  }
   if (context.globalState.get<boolean>('hookPromptDismissed')) return;
 
   const t = createT(resolveLocale());
