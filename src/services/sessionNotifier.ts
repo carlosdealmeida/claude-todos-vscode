@@ -9,7 +9,7 @@ export type NotificationKind = 'idle' | 'allComplete' | 'awaitingInput';
 
 export interface NotifierInput {
   sessionId: string;    // sessão exibida no painel
-  mtime: number;        // transcriptMtime da sessão (0 se indisponível)
+  mtime: number;        // marcador de atividade: timestamp da última mensagem de conversa (0 se indisponível)
   allComplete: boolean; // main agent: todos.length > 0 && todas completed
   awaitingInput?: AwaitingInput | null;  // pergunta/plano pendente no transcript
   now: number;          // epoch ms, injetado

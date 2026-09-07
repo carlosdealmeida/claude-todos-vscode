@@ -100,6 +100,20 @@ describe('ProjectUsageService', () => {
     expect(usage.byModel).toEqual([{ model: 'claude-opus-4-8', input: 10, output: 1, cache: 0 }]);
   });
 
+  it('excludes a session whose conversation is outside the window even if metadata bumped its mtime (#87900)', () => {
+    const old = NOW - 14 * 24 * 3600 * 1000;
+    const stamp = (o: object, ts: number) => ({ ...o, timestamp: new Date(ts).toISOString() });
+    writeSession('bumped', [
+      stamp(assistant('claude-opus-4-8', { input: 100, output: 10 }), old),
+      { type: 'bridge-session', sessionId: 'bumped', bridgeSessionId: 'cse_1' },
+      { type: 'mode', mode: 'normal', sessionId: 'bumped' },
+    ], NOW - 1000);
+    writeSession('fresh', [stamp(assistant('claude-opus-4-8', { input: 5, output: 1 }), NOW - 2000)], NOW - 2000);
+    const usage = service.usageForProject(CWD, SINCE);
+    expect(usage.sessions).toBe(1);
+    expect(usage.byModel).toEqual([{ model: 'claude-opus-4-8', input: 5, output: 1, cache: 0 }]);
+  });
+
   it('memo: same (mtime, size) is NOT re-read; changed mtime is', () => {
     const p = writeSession('s1', [assistant('claude-opus-4-8', { input: 100, output: 10 })], NOW - 5000);
     expect(service.usageForProject(CWD, SINCE).byModel[0].input).toBe(100);

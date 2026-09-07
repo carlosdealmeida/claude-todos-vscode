@@ -34,7 +34,9 @@ export class SnapshotService {
     const cachedNames = this.names?.entries() ?? {};
     const out: SessionSummary[] = [];
     for (const record of this.resolver.resolveCandidates()) {
-      const updatedAt = this.parser.transcriptMtime(record.sessionId, record.cwd);
+      // Atividade de conversa, não mtime (#87900): metadados anexados depois não
+      // reordenam o picker nem trocam a sessão escolhida.
+      const updatedAt = this.parser.transcriptActivityAt(record.sessionId, record.cwd);
       if (updatedAt === null) continue;
       out.push({
         sessionId: record.sessionId,
@@ -44,7 +46,7 @@ export class SnapshotService {
         ...(live.has(record.sessionId) ? { alive: true } : {}),
       });
     }
-    // Ordem por mtime, inalterada: a preferência por sessão viva vive no choose().
+    // Ordem por atividade de conversa (DESC): a preferência por sessão viva vive no choose().
     out.sort((a, b) => b.updatedAt - a.updatedAt);
     return out;
   }
@@ -102,7 +104,7 @@ export class SnapshotService {
       ? sessions.find(s => s.sessionId === this.pinnedSessionId)
       : undefined;
     if (pinned) return pinned;
-    // `sessions` já vem por mtime DESC, então o primeiro vivo é o vivo mais recente.
+    // `sessions` já vem por atividade DESC, então o primeiro vivo é o vivo mais recente.
     return sessions.find(s => s.alive) ?? sessions[0];
   }
 

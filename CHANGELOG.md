@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - **An invalid `settings.json` is never overwritten.** Both the hook installer and the new task-tools action now fail with a clear error when `~/.claude/settings.json` exists but is not valid JSON; previously the hook installer replaced such a file with just the hooks.
 
+### Fixed
+- **Session activity no longer follows metadata appends.** Claude Code's clients append timestamp-less records (`bridge-session`, `mode`, `last-prompt`, `ai-title`…) to old transcripts long after the conversation ended, moving the file mtime; the panel used that mtime as "last activity", so old sessions could jump to the top of the picker (and be auto-selected when no session is live), be counted in the 7-day dashboard, and re-arm the idle notification. Activity now comes from the timestamp of the last conversation message, read from the file tail and memoized (upstream [#87900](https://github.com/anthropics/claude-code/issues/87900)).
+
 ## [0.18.0] - 2026-09-05
 
 ### Added

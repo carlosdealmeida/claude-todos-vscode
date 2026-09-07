@@ -4,6 +4,7 @@ import { cwdCandidates } from './transcriptPaths';
 import { encodeCwdToProjectDir } from './projectDir';
 import { readFileUsage } from './usageParser';
 import { readSubAgentMeta } from './subAgentMeta';
+import { TranscriptActivity } from './transcriptActivity';
 import type { AgentTypeUsage, CacheStats, ModelUsage, ProjectUsage } from '../types';
 
 interface FileMemo {
@@ -20,6 +21,7 @@ interface FileMemo {
 // só a sessão ativa paga leitura em expansões repetidas.
 export class ProjectUsageService {
   private readonly memo = new Map<string, FileMemo>();
+  private readonly activity = new TranscriptActivity();
 
   constructor(private readonly claudeDir: string) {}
 
@@ -66,10 +68,11 @@ export class ProjectUsageService {
 
     for (const file of files) {
       const mainPath = path.join(dir, file);
-      let stat: fs.Stats;
-      try { stat = fs.statSync(mainPath); } catch { continue; }
-      if (stat.mtimeMs < sinceMs) continue;
-      // Sessão qualifica por atividade (mtime), mesmo que ainda não tenha usage.
+      // Sessão qualifica pela última mensagem de CONVERSA na janela — não pelo
+      // mtime, que metadados anexados semanas depois empurram (#87900) —, mesmo
+      // que ainda não tenha usage. Sem mensagem datada, vale o mtime.
+      const activityAt = this.activity.activityAt(mainPath);
+      if (activityAt === null || activityAt < sinceMs) continue;
       sessions++;
       addFile(mainPath, true, () => 'main');
 

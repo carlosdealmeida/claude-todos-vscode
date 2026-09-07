@@ -3,6 +3,7 @@ import * as path from 'path';
 import type { AgentTodos, AwaitingInput, PendingQuestion, Todo, TodoStatus } from '../types';
 import { transcriptPath as resolveTranscriptPath, subAgentsDir as resolveSubAgentsDir } from './transcriptPaths';
 import { readSubAgentMeta, type SubAgentMeta } from './subAgentMeta';
+import { TranscriptActivity } from './transcriptActivity';
 
 const VALID_STATUSES: TodoStatus[] = ['pending', 'in_progress', 'completed'];
 
@@ -202,6 +203,8 @@ function pendingItemsFor(block: ContentBlock, line: number): PendingQuestion[] {
 }
 
 export class TodosParser {
+  private readonly activity = new TranscriptActivity();
+
   constructor(private readonly claudeDir: string) {}
 
   listForSession(sessionId: string, cwd: string): AgentTodos[] {
@@ -240,6 +243,15 @@ export class TodosParser {
       awaitingInput: waits.awaitingInput,
       pendingQuestions: waits.pendingQuestions,
     };
+  }
+
+  // Última atividade de CONVERSA (timestamp da última mensagem user/assistant),
+  // não o mtime: metadados anexados depois pelos clientes oficiais empurram o
+  // mtime sem conversa nova (#87900). Cai para o mtime só sem mensagem datada.
+  transcriptActivityAt(sessionId: string, cwd: string): number | null {
+    const transcriptPath = this.transcriptPath(sessionId, cwd);
+    if (!transcriptPath) return null;
+    return this.activity.activityAt(transcriptPath);
   }
 
   transcriptMtime(sessionId: string, cwd: string): number | null {

@@ -95,6 +95,25 @@ describe('SessionCore', () => {
     expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(`node "${script}"`);
   });
 
+  it('session activity follows the last conversation message, not metadata appended later (#87900)', () => {
+    const T = Date.parse('2026-08-22T21:16:00.000Z');
+    const projDir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
+    fs.mkdirSync(projDir, { recursive: true });
+    const file = path.join(projDir, `${SID}.jsonl`);
+    fs.writeFileSync(file, JSON.stringify({ ...assistant('claude-opus-4-8'), timestamp: new Date(T).toISOString() }) + '\n');
+    const bridgeDir = path.join(claudeDir, '.vscode-todos-bridge');
+    fs.mkdirSync(bridgeDir, { recursive: true });
+    fs.writeFileSync(path.join(bridgeDir, 'sessions.json'), JSON.stringify([
+      { cwd: CWD, sessionId: SID, terminalPid: null, startedAt: 1 },
+    ]));
+    expect(make().listSessions()[0].updatedAt).toBe(T);
+    // indexer/bridge anexam metadado sem timestamp e o mtime pula duas semanas
+    fs.appendFileSync(file, JSON.stringify({ type: 'mode', mode: 'normal', sessionId: SID }) + '\n');
+    const later = new Date(T + 14 * 86400_000);
+    fs.utimesSync(file, later, later);
+    expect(make().listSessions()[0].updatedAt).toBe(T);
+  });
+
   it('enableTaskTools writes the env flag to <claudeDir>/settings.json and is idempotent', () => {
     const core = make();
     const first = core.enableTaskTools();

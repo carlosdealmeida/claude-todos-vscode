@@ -17,6 +17,7 @@ function makeParser(opts: {
   ];
   return {
     transcriptMtime: (sessionId: string, _cwd: string) => opts.mtimes[sessionId] ?? null,
+    transcriptActivityAt: (sessionId: string, _cwd: string) => opts.mtimes[sessionId] ?? null,
     readSessionTitle: (sessionId: string, _cwd: string) => opts.titles?.[sessionId] ?? null,
     listForSession: (sessionId: string) => agentsFor(sessionId),
     listSessionDetail: (sessionId: string) => ({
@@ -31,6 +32,7 @@ function makeParser(opts: {
 function makeParserNoAgents(mtimes: Record<string, number | null>) {
   return {
     transcriptMtime: (sessionId: string, _cwd: string) => mtimes[sessionId] ?? null,
+    transcriptActivityAt: (sessionId: string, _cwd: string) => mtimes[sessionId] ?? null,
     readSessionTitle: (_sessionId: string, _cwd: string) => null,
     listForSession: (_sessionId: string) => [],
     listSessionDetail: (_sessionId: string) => ({ agents: [], awaitingInput: null, pendingQuestions: [] }),
@@ -138,6 +140,7 @@ describe('SnapshotService', () => {
     };
     const parser = {
       transcriptMtime: () => 1000,
+      transcriptActivityAt: () => 1000,
       readSessionTitle: () => null,
       listForSession: () => [], // no TodoWrite yet → no agents
       listSessionDetail: () => ({ agents: [], awaitingInput: null, pendingQuestions: [] }),
@@ -391,6 +394,24 @@ describe('SnapshotService', () => {
     const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
     expect(svc.listSessions()[0].title).toBe('titulo derivado');
     expect(svc.build()?.sessionId).toBe('s');
+  });
+
+  it('orders and picks sessions by conversation activity, not by file mtime (#87900)', () => {
+    const resolver = {
+      resolveCandidates: () => [
+        { cwd: '/p', sessionId: 'bumped', terminalPid: null, startedAt: 1 },
+        { cwd: '/p', sessionId: 'recent', terminalPid: null, startedAt: 2 },
+      ],
+    };
+    const parser = {
+      ...makeParser({ mtimes: { bumped: 9_000, recent: 5_000 } }),
+      // metadado anexado depois empurrou o mtime de 'bumped'; a conversa e antiga
+      transcriptActivityAt: (sessionId: string) => (sessionId === 'bumped' ? 1_000 : 5_000),
+    };
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any);
+    expect(svc.listSessions().map(s => s.sessionId)).toEqual(['recent', 'bumped']);
+    expect(svc.listSessions()[0].updatedAt).toBe(5_000);
+    expect(svc.build()!.sessionId).toBe('recent');
   });
 
   it('marks taskToolsOff when there are no task agents, the harness is >= 2.1.233, the model is new and the flag is absent', () => {

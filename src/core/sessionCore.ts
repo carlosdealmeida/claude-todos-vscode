@@ -122,7 +122,10 @@ export class SessionCore {
   observeForNotifications(): { kinds: NotificationKind[]; awaitingInput: AwaitingInput | null; title: string | null } {
     const snapshot = this.snapshotService.build();
     if (!snapshot) return { kinds: [], awaitingInput: null, title: null };
-    const mtime = this.parser.transcriptMtime(snapshot.sessionId, snapshot.cwd) ?? 0;
+    // Marcador de atividade = última mensagem de conversa, não o mtime: metadados
+    // anexados pelos clientes oficiais (bridge-session, mode…) não contam como
+    // atividade nem rearmam o ciclo de "ociosa" (#87900).
+    const mtime = this.parser.transcriptActivityAt(snapshot.sessionId, snapshot.cwd) ?? 0;
     const main = snapshot.agents.find(a => a.isMain);
     const allComplete = main !== undefined && main.todos.length > 0
       && main.todos.every(td => td.status === 'completed');

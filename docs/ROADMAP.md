@@ -983,8 +983,16 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
     sessão desta análise já tem 10 records `last-prompt`, além de `ai-title`, `atis-latch`,
     `bridge-session`, `queue-operation`, `mode` e `file-history-snapshot` — o `.jsonl` deixou de
     ser só conversa. Paralelo no desktop: [#89871](https://github.com/anthropics/claude-code/issues/89871) `lastActivityAt` gravado para um turno que
-    nunca aconteceu, sessão morta ordenada acima das vivas. 🔍 **próximo bug a investigar**
-    (depois do R2).
+    nunca aconteceu, sessão morta ordenada acima das vivas.
+    **✅ Corrigido em 2026-09-06.** Medido no disco: 26 de 42 transcripts com mtime nos últimos
+    30 dias tinham o mtime mais de 1 h depois da última mensagem (11 com mais de 7 dias); a
+    última linha era sempre metadado **sem `timestamp`** (`bridge-session`, `mode`,
+    `last-prompt`, `ai-title`, `atis-latch`, `pr-link`). Correção: o sinal de atividade passou a
+    ser o `timestamp` da última mensagem `user`/`assistant`
+    ([transcriptActivity.ts](../src/services/transcriptActivity.ts): leitura da cauda do
+    arquivo memoizada por mtime+size, fallback mtime) nos três consumidores — ordenação e
+    escolha do picker, janela do dashboard de 7 dias e notifier. `AgentTodos.updatedAt` do
+    main segue mtime (sem consumidor no webview).
   - **⚠️ Risco nosso — stubs vazios e records não-conversa:** [#85892](https://github.com/anthropics/claude-code/issues/85892) (`platform:vscode`) o
     "teleport" da extensão oficial cria stubs de sessão com `messageCount: 0` que sombreiam
     sessões reais — checar se o nosso picker os lista · [#90002](https://github.com/anthropics/claude-code/issues/90002) (**15 comentários**) a aba
