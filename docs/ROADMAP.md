@@ -911,8 +911,9 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
      de tasks como recurso opt-in. É a decisão que os itens 8 e 23 esperavam.
   4. **Comentar em #80015** com disclosure — a extensão mostra a lista com a flag ligada e o
      estado vazio explica o porquê — **só depois** do passo 1 entregue. **Decisão 2026-09-06:**
-     publicar **depois da 0.19.0** (a release que leva o botão), citando a versão; rascunho
-     aprovado em teor, aprovação final do texto na hora de postar:
+     publicar **depois da 0.19.0** (a release que leva o botão), citando a versão. **✅ Publicado em
+     2026-09-07**, com o texto abaixo, logo após a 0.19.0 chegar às três lojas:
+     [issuecomment-5572982980](https://github.com/anthropics/claude-code/issues/80015#issuecomment-5572982980).
      > Disclosure: I maintain Claude Todos, an open-source VS Code/JetBrains panel that reads the
      > task list from the transcripts Claude Code writes, so this change hit us directly. Data
      > points: (1) verified on 2.1.261 — no flag → a fresh session on Opus 5 / Fable 5 has only
