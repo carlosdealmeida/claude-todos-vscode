@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-09-07
+
 ### Added
 - **Smart empty state when Claude Code has the task tools off.** On Claude Code 2.1.233+ with a newer model (Opus 4.8, Opus 5, Sonnet 5, Fable, Mythos…) and no `CLAUDE_CODE_ENABLE_TODO_TOOLS` flag in any settings source, the panel now says so instead of "waiting for tasks" and offers an **Enable task tools** button that writes `env.CLAUDE_CODE_ENABLE_TODO_TOOLS = "1"` to `~/.claude/settings.json` after a confirmation dialog — in VS Code and JetBrains. Also available as the command `Claude Todos: Enable Claude Code task tools`. Roadmap R2, step 1; spec `docs/specs/2026-09-05-task-tools-off-empty-state-design.md`.
 - **Walkthrough step to turn the task tools back on.** The "Get started" guide gains a step between the hook and the first session that explains the Claude Code 2.1.233 change and runs `Claude Todos: Enable Claude Code task tools` (same confirmation dialog as the panel button). Roadmap R2, step 2.

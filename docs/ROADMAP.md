@@ -393,6 +393,10 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 > Marketplace e Open VSX já listam; JetBrains em revisão leve. Passo 0 do R2 ✅ verificado no
 > mesmo dia (ver R2); próximo: passo 1 (estado vazio inteligente).
 >
+> **0.19.0 publicada em 2026-09-07** com R2 passos 1 e 2 (estado vazio inteligente + passo do
+> walkthrough), `settings.json` inválido protegido contra sobrescrita e a correção do sinal de
+> atividade (#87900, R3). Passo 4 (comentário em #80015) sai logo após a publicação.
+>
 > Filas anteriores, para histórico: 2026-07-25 → 1º 17 · 2º 5(a)+(c) · 3º 23. Manhã de
 > 2026-07-27 → 1º 17 · 2º 22-ext · 3º 5(a)+(c) (17 caiu na verificação de disco da mesma tarde).
 > Tarde de 2026-07-27 → 1º 22-ext · 2º 5(a)+(c) (ambos entregues no mesmo dia; fila zerada).
@@ -864,7 +868,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   (backup do settings.json no scratchpad da sessão). Script reproduzível: `run_ptest.sh` no
   scratchpad — não versionado; portar para `scripts/` se o teste virar rotina de release.
 - **Plano (📐 a especificar — passa na frente de qualquer feature):**
-  1. **Estado vazio inteligente:** ✅ implementado em 2026-09-05 (release pendente) — spec
+  1. **Estado vazio inteligente:** ✅ implementado em 2026-09-05, publicado na **0.19.0** (2026-09-07) — spec
      [docs/specs/2026-09-05-task-tools-off-empty-state-design.md](specs/2026-09-05-task-tools-off-empty-state-design.md),
      plano [docs/plans/2026-09-05-task-tools-off-empty-state.md](plans/2026-09-05-task-tools-off-empty-state.md).
      Distinguir "sessão sem tasks" de "ferramentas de task
