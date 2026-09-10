@@ -39,9 +39,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Astro 7 exige Node >= 22.12 (engines).
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       # Duas arvores de dependencia: a raiz fornece os componentes do webview,
       # site/ fornece o Astro.
