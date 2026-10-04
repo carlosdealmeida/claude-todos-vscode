@@ -15,6 +15,10 @@ Limites de método (aprendidos na varredura 2026-09-05):
     consultas explícitas por nome de ferramenta abaixo.
   - a lista KNOWN não acusa mudança de ESTADO: issues já comentadas podem ser fechadas pela
     Anthropic sem aparecer aqui — conferir à mão as que têm comentário nosso.
+  - com ~4 semanas de intervalo, três janelas (varredura 2026-10-04: 995 candidatos na união).
+  - o script não substitui ler o CHANGELOG inteiro desde a última versão vista: na varredura
+    2026-10-04 os dois achados maiores (task tools em lista de permissão na 2.1.268, agent map
+    na 2.1.269) só apareceram lá.
 
 Nota de método: desde o lançamento do Fable 5 (jul/2026) o repositório é dominado por um
 cluster de billing ("usage credits required") com as maiores contagens de reação do período e
@@ -93,6 +97,20 @@ KNOWN = {
     87900, 89871, 85892, 90002, 88274, 87303,   # R3 (riscos nossos: mtime, stubs, metadados) + R5
     87748, 85743, 86730, 87423, 87710,          # R3 (retenção / índice perdido)
     91017, 91433, 89740,                        # R3 (índice perdido, inclusive na extensão VS Code)
+    # varredura 2026-10-04 (três janelas: >09-04, >09-14 e >09-24)
+    93036, 95227, 98118, 96382, 95379, 94620,   # validação: contexto, Task*, aninhamento, sessões vivas
+    97634, 97588, 97473, 95823, 94575, 93324,   # item 20 (11º-16º casos de modelo errado)
+    97258, 97819, 93812, 92950, 99018,          # validação: contabilidade, custo por agente, janela
+    94435, 92475, 99208, 93299, 95642,          # validação: desktop/TUI, JetBrains e i18n oficiais
+    93672, 98373, 94872, 95601, 97271,          # R6 (sub-agents em background)
+    97978, 97763, 98696,                        # R5 (fork duplica requestId, piso de subcontagem)
+    97229, 99088, 97230,                        # R4 (transcripts de 2 GiB, re-parse)
+    98642, 96013, 96018, 99068, 97237,          # R3 (a fonte some ou muda de lugar)
+    97665, 96950, 98564, 97316, 94808,          # R3 (escrita incompleta, stubs)
+    94253, 95252, 94700, 97894, 98056, 98761, 96135,  # R3 (índice perdido)
+    93675, 97903, 98095,                        # R2 / item 21 (chave de settings, task store)
+    98114, 94611, 95622,                        # item 23 (agent map oficial)
+    99045, 99401, 99423,                        # item 25 (Mods não desenham no VS Code)
 }
 
 # (rótulo, query) — todas com repo: e is:issue implícitos
