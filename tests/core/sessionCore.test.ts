@@ -150,4 +150,39 @@ describe('SessionCore', () => {
     writeSessionOn('2.1.261', 'claude-opus-4-7');
     expect(make().buildSnapshot()?.taskToolsOff).toBeUndefined();
   });
+
+  it('keeps polling while a background sub-agent of a live session runs (R6)', () => {
+    const projDir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
+    const subDir = path.join(projDir, SID, 'subagents');
+    fs.mkdirSync(subDir, { recursive: true });
+    fs.writeFileSync(path.join(projDir, `${SID}.jsonl`), [
+      { type: 'assistant', timestamp: '2026-10-01T10:00:00.000Z', message: { role: 'assistant', content: [
+        { type: 'tool_use', name: 'Agent', id: 'toolu_BG', input: { description: 'bg', prompt: 'p-bg', run_in_background: true } },
+      ] } },
+      { type: 'user', timestamp: '2026-10-01T10:00:01.000Z',
+        toolUseResult: { isAsync: true, status: 'async_launched', agentId: 'bg0001' },
+        message: { content: [{ type: 'tool_result', tool_use_id: 'toolu_BG', content: 'Async agent launched successfully.\nagentId: bg0001' }] } },
+    ].map(l => JSON.stringify(l)).join('\n'));
+    fs.writeFileSync(path.join(subDir, 'agent-bg0001.jsonl'),
+      JSON.stringify({ type: 'user', isSidechain: true, agentId: 'bg0001', message: { role: 'user', content: 'p-bg' } }));
+    fs.writeFileSync(path.join(subDir, 'agent-bg0001.meta.json'),
+      JSON.stringify({ agentType: 'general-purpose', description: 'bg', toolUseId: 'toolu_BG', spawnDepth: 1 }));
+    const bridgeDir = path.join(claudeDir, '.vscode-todos-bridge');
+    fs.mkdirSync(bridgeDir, { recursive: true });
+    fs.writeFileSync(path.join(bridgeDir, 'sessions.json'), JSON.stringify([
+      { cwd: CWD, sessionId: SID, terminalPid: null, startedAt: 1 },
+    ]));
+    // registro vivo: o pid deste processo de teste está vivo
+    fs.mkdirSync(path.join(claudeDir, 'sessions'), { recursive: true });
+    fs.writeFileSync(path.join(claudeDir, 'sessions', `${process.pid}.json`),
+      JSON.stringify({ pid: process.pid, sessionId: SID, cwd: CWD }));
+
+    let now = 1_000_000;
+    const core = new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now });
+    expect(core.buildSnapshot()?.agents.find(a => a.agentId === 'bg0001')?.status).toBe('running');
+    core.observeForNotifications();   // a primeira observação só inicializa
+    now += 10 * 60_000;               // 10 min sem mensagem nova no main
+    expect(core.observeForNotifications().kinds).toEqual([]);
+    expect(core.shouldPollNotifications()).toBe(true);
+  });
 });

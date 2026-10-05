@@ -202,4 +202,46 @@ describe('SessionNotifier', () => {
       expect(n.shouldPoll(T0 + 1_000)).toBe(false); // sem rajada mínima, nada pode disparar
     });
   });
+
+  describe('sub-agents rodando (R6)', () => {
+    it('does not fire idle while a sub-agent runs, even long after the main went quiet', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
+      const c1 = burst(n, 's1', T0, ACTIVITY_MIN_MS);
+      for (let t = c1 + 10_000; t <= c1 + 10 * 60_000; t += 10_000) {
+        expect(n.observe({ sessionId: 's1', mtime: c1, allComplete: false, subAgentRunning: true, now: t })).toEqual([]);
+      }
+    });
+
+    it('fires idle once the sub-agents finish and the main goes quiet, even after a short wrap-up', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 0, allComplete: false, subAgentRunning: true, now: T0 });
+      // main parado, agentes trabalhando por 5 min (observes a cada 10 s, como o timer)
+      let t = T0 + 10_000;
+      for (; t <= T0 + 5 * 60_000; t += 10_000) {
+        expect(n.observe({ sessionId: 's1', mtime: 0, allComplete: false, subAgentRunning: true, now: t })).toEqual([]);
+      }
+      // a notificação de conclusão chega ao main (mensagem nova) e o main fecha o turno em 20 s
+      expect(n.observe({ sessionId: 's1', mtime: t, allComplete: false, subAgentRunning: false, now: t })).toEqual([]);
+      const wrapUp = t + 20_000;
+      expect(n.observe({ sessionId: 's1', mtime: wrapUp, allComplete: false, subAgentRunning: false, now: wrapUp })).toEqual([]);
+      expect(n.observe({ sessionId: 's1', mtime: wrapUp, allComplete: false, subAgentRunning: false, now: wrapUp + IDLE_MS }))
+        .toEqual(['idle']);
+    });
+
+    it('shouldPoll stays true while a sub-agent runs, even with no burst and past IDLE_MS', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 1, allComplete: false, subAgentRunning: true, now: T0 });
+      expect(n.shouldPoll(T0 + 1_000)).toBe(true);
+      n.observe({ sessionId: 's1', mtime: 1, allComplete: false, subAgentRunning: true, now: T0 + 10 * 60_000 });
+      expect(n.shouldPoll(T0 + 10 * 60_000 + 1_000)).toBe(true);
+    });
+
+    it('shouldPoll goes back to the usual rule once no sub-agent runs', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 1, allComplete: false, subAgentRunning: true, now: T0 });
+      n.observe({ sessionId: 's1', mtime: 1, allComplete: false, subAgentRunning: false, now: T0 + 1_000 });
+      expect(n.shouldPoll(T0 + 2_000)).toBe(false); // sem rajada mínima, nada pode disparar
+    });
+  });
 });

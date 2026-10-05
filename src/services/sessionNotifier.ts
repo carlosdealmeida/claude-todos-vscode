@@ -12,6 +12,9 @@ export interface NotifierInput {
   mtime: number;        // marcador de atividade: timestamp da última mensagem de conversa (0 se indisponível)
   allComplete: boolean; // main agent: todos.length > 0 && todas completed
   awaitingInput?: AwaitingInput | null;  // pergunta/plano pendente no transcript
+  // R6: algum sub-agent rodando (inclusive em background). Conta como
+  // atividade: o main pode estar em silêncio só esperando por ele.
+  subAgentRunning?: boolean;
   now: number;          // epoch ms, injetado
 }
 
@@ -29,6 +32,7 @@ export class SessionNotifier {
   private idleNotified = false;
   private prevAllComplete = false;
   private prevAwaiting: AwaitingInput | null = null;
+  private subAgentRunning = false;
 
   // Observa o estado corrente. Chamada a cada onChange do watcher E a cada
   // tick do timer. Retorna as notificações a disparar AGORA (no máximo uma de
@@ -44,6 +48,7 @@ export class SessionNotifier {
       this.idleNotified = false;
       this.prevAllComplete = input.allComplete;
       this.prevAwaiting = input.awaitingInput ?? null;
+      this.subAgentRunning = input.subAgentRunning === true;
       return [];
     }
 
@@ -59,9 +64,12 @@ export class SessionNotifier {
     if (awaiting !== null && awaiting !== this.prevAwaiting) out.push('awaitingInput');
     this.prevAwaiting = awaiting;
 
-    if (input.mtime !== this.lastMtime) {
-      // Atividade. Se o silêncio anterior já tinha vencido IDLE_MS, esta
-      // mudança abre uma NOVA rajada (o ciclo de idle rearma).
+    const running = input.subAgentRunning === true;
+    if (input.mtime !== this.lastMtime || running) {
+      // Atividade: mensagem nova no main ou sub-agent rodando. Se o silêncio
+      // anterior já tinha vencido IDLE_MS, abre uma NOVA rajada (o ciclo de
+      // idle rearma). Sub-agent rodando mantém a rajada viva, então o idle do
+      // fim inclui o trabalho dos agentes mesmo se o main fechar rápido.
       if (input.now - this.lastChangeAt >= IDLE_MS) this.activeSince = input.now;
       this.lastMtime = input.mtime;
       this.lastChangeAt = input.now;
@@ -77,6 +85,7 @@ export class SessionNotifier {
       out.push('idle');
     }
 
+    this.subAgentRunning = running;
     return out;
   }
 
@@ -84,6 +93,9 @@ export class SessionNotifier {
   // SEM nova atividade (rajada mínima já cumprida e silêncio ainda não vencido).
   shouldPoll(now: number): boolean {
     if (this.sessionId === null) return false;
+    // Com sub-agent rodando o timer não pode parar: um comando longo e
+    // silencioso do agente partiria a rajada e o idle do fim nunca sairia.
+    if (this.subAgentRunning) return true;
     return !this.idleNotified
       && this.lastChangeAt - this.activeSince >= ACTIVITY_MIN_MS
       && now - this.lastChangeAt < IDLE_MS;
