@@ -179,7 +179,9 @@ de tokens do 0.3.0).
   relação com o contexto e ainda derruba o prompt-cache — o modelo diz "sobra bastante" e morre
   no limite. Contagem própria a partir do transcript (a nossa) segue sendo a única fonte que não
   depende de widget nem de lembrete. Superfície = desktop → não comentar; usar na divulgação.
-- **⚠️ Bug (varredura 2026-10-04) — janela do Fable detectada como 200k.** O `ONE_M_FAMILY`
+- **✅ Corrigido em 2026-10-05 (aguardando release): Fable = 1M, como Opus e Sonnet** (decisão
+  do brainstorm, com a ressalva do Pro/Team abaixo). **Bug (varredura 2026-10-04) — janela do
+  Fable detectada como 200k.** O `ONE_M_FAMILY`
   ([usageParser.ts:12](../src/services/usageParser.ts#L12)) só reconhece `opus|sonnet`, e o
   transcript grava `claude-fable-5-1` (e `claude-fable-5`) **sem** o sufixo `[1m]`. Medido no
   disco (30 dias): 45 arquivos com Fable 5.1, contexto máximo de 962k, 6.071 records acima de
@@ -463,6 +465,8 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 > (item 2), que pede uma decisão antes do código; 3º a decisão de **posicionamento** (R2 passo
 > 3), agora pressionada pelo agent map da extensão oficial (ver o aviso no topo). Latentes, sem
 > pressa: achado 4 do R5 (fork duplica `requestId`) e o gate do R2 ainda como lista de bloqueio.
+> **2026-10-05:** R6 (achados 1 e 2) e o bug do Fable corrigidos; o próximo é o spike do mod
+> (item 25) e depois o posicionamento.
 >
 > Filas anteriores, para histórico: 2026-07-25 → 1º 17 · 2º 5(a)+(c) · 3º 23. Manhã de
 > 2026-07-27 → 1º 17 · 2º 22-ext · 3º 5(a)+(c) (17 caiu na verificação de disco da mesma tarde).
@@ -1246,7 +1250,14 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   usage final na maioria dos turnos com tool_use (o piso de subcontagem continua). **Validação:**
   [#97258](https://github.com/anthropics/claude-code/issues/97258) o gráfico de uso do desktop soma as linhas duplicadas — o bug que corrigimos em 08-11.
 
-### R6. Sub-agents em background: estado e notificação 🐛 bug nosso confirmado — 📐 prioridade
+### R6. Sub-agents em background: estado e notificação ✅ CORRIGIDO (achados 1 e 2 · 2026-10-05 · aguardando release)
+- **✅ Corrigido (2026-10-05):** status pelo ciclo de vida por `agentId` (lançamento
+  `async_launched`, retomada por `SendMessage`, `<task-notification>`), só com a sessão viva;
+  sub-agent rodando conta como atividade no notifier. Spec:
+  [docs/specs/2026-10-05-subagents-background-e-janela-fable-design.md](specs/2026-10-05-subagents-background-e-janela-fable-design.md)
+  · plano: [docs/plans/2026-10-05-subagents-background-e-janela-fable.md](plans/2026-10-05-subagents-background-e-janela-fable.md).
+  Medido no brainstorm: o modelo fecha 100% no disco (103 assíncronos, 90 notificados sem
+  atividade depois, 31 retomadas, 13 órfãos em sessões mortas).
 - **Origem:** varredura 2026-10-04 ([#93672](https://github.com/anthropics/claude-code/issues/93672), [#98373](https://github.com/anthropics/claude-code/issues/98373), [#94872](https://github.com/anthropics/claude-code/issues/94872), [#95601](https://github.com/anthropics/claude-code/issues/95601)) + **medição local**.
 - **Achado 1 — sub-agent assíncrono aparece como concluído (confirmado).** Quando o `Agent` roda
   em background (`run_in_background: true`, ou movido para background pelo harness), o
