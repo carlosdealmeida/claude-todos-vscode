@@ -2,14 +2,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // Registro vivo do CLI: ~/.claude/sessions/{pid}.json, um arquivo por processo.
-// Só lemos os campos que consumimos — o registro traz mais (startedAt, version,
-// kind, entrypoint, procStart), e carregá-los sem uso só criaria superfície.
+// Só lemos os campos que consumimos — o registro traz mais (version, kind,
+// entrypoint, procStart), e carregá-los sem uso só criaria superfície.
 export interface LiveSession {
   pid: number;
   sessionId: string;
   cwd: string;
   name?: string;
   nameSource?: string;
+  // Início do processo vivo (epoch ms). Uma sessão retomada tem o mesmo
+  // sessionId e um processo novo: o que o processo anterior lançou já morreu (R6).
+  startedAt?: number;
 }
 
 // EPERM = processo existe, só não é sinalizável por este usuário.
@@ -50,7 +53,7 @@ export function readLiveSessions(
     } catch {
       continue;
     }
-    const { pid, sessionId, cwd, name, nameSource } = parsed;
+    const { pid, sessionId, cwd, name, nameSource, startedAt } = parsed;
     if (!isValidPid(pid) || typeof sessionId !== 'string' || typeof cwd !== 'string') continue;
     if (!isAlive(pid)) continue;
     out.set(sessionId, {
@@ -59,6 +62,7 @@ export function readLiveSessions(
       cwd,
       ...(typeof name === 'string' ? { name } : {}),
       ...(typeof nameSource === 'string' ? { nameSource } : {}),
+      ...(typeof startedAt === 'number' && Number.isFinite(startedAt) ? { startedAt } : {}),
     });
   }
   return out;

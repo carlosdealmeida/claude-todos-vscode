@@ -214,8 +214,10 @@ export class TodosParser {
 
   // `alive`: a sessão tem processo do Claude Code vivo (registro em
   // ~/.claude/sessions). Sem a opção, nenhum sub-agent assíncrono conta como
-  // rodando — o comportamento de antes do R6.
-  listSessionDetail(sessionId: string, cwd: string, opts: { alive?: boolean } = {}): {
+  // rodando — o comportamento de antes do R6. `aliveSince`: início desse
+  // processo (epoch ms); um lançamento ou retomada anterior a ele é de um
+  // processo que já morreu (sessão retomada). Ausente = sem limite.
+  listSessionDetail(sessionId: string, cwd: string, opts: { alive?: boolean; aliveSince?: number } = {}): {
     agents: AgentTodos[];
     awaitingInput: AwaitingInput | null;
     pendingQuestions: PendingQuestion[];
@@ -240,7 +242,7 @@ export class TodosParser {
       });
     }
 
-    agents.push(...this.listSubAgents(sessionId, cwd, mainLines, opts.alive === true));
+    agents.push(...this.listSubAgents(sessionId, cwd, mainLines, opts.alive === true, opts.aliveSince));
     const waits = scanPendingWaits(mainLines, true);
     return {
       agents,
@@ -290,7 +292,13 @@ export class TodosParser {
     return null;
   }
 
-  private listSubAgents(sessionId: string, cwd: string, mainLines: string[], sessionAlive: boolean): AgentTodos[] {
+  private listSubAgents(
+    sessionId: string,
+    cwd: string,
+    mainLines: string[],
+    sessionAlive: boolean,
+    aliveSince: number | undefined,
+  ): AgentTodos[] {
     const dir = this.subAgentsDir(sessionId, cwd);
     if (!dir) return [];
 
@@ -352,15 +360,19 @@ export class TodosParser {
     // <task-notification>), juntando o transcript principal e os de cada
     // sub-agent — um neto é lançado no transcript do pai. O tool_result de um
     // disparo em background chega na hora, então não serve de fim; o ciclo de
-    // vida decide, e só com a sessão viva (sem processo, nada roda).
+    // vida decide, e só com a sessão viva (sem processo, nada roda) — e só o que
+    // o processo vivo lançou ou retomou (evento a partir de aliveSince).
     const lifecycle = mergeLifecycles([
       collectAgentLifecycle(mainLines),
       ...infos.map(i => i.lifecycle),
     ]);
-    const statusOf = (agentId: string, dispatch: Dispatch): 'running' | 'completed' =>
-      dispatch.result === 'none' || (sessionAlive && lifecycle.get(agentId)?.state === 'running')
+    const statusOf = (agentId: string, dispatch: Dispatch): 'running' | 'completed' => {
+      if (dispatch.result === 'none') return 'running';
+      const lc = lifecycle.get(agentId);
+      return sessionAlive && lc?.state === 'running' && (aliveSince === undefined || lc.at >= aliveSince)
         ? 'running'
         : 'completed';
+    };
 
     // Pass 2 — casa cada arquivo: meta.toolUseId (exato) ou prompt (legado).
     const pending: { agent: AgentTodos; ordinal: number }[] = [];

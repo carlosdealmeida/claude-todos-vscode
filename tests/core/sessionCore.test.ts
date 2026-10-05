@@ -151,7 +151,9 @@ describe('SessionCore', () => {
     expect(make().buildSnapshot()?.taskToolsOff).toBeUndefined();
   });
 
-  it('keeps polling while a background sub-agent of a live session runs (R6)', () => {
+  // Sessão viva com um agente lançado em background às 10:00:01 e sem notificação.
+  // `startedAt` é o início do processo vivo, como no registro real.
+  function writeLiveBackgroundSession(startedAt: number): void {
     const projDir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
     const subDir = path.join(projDir, SID, 'subagents');
     fs.mkdirSync(subDir, { recursive: true });
@@ -175,8 +177,11 @@ describe('SessionCore', () => {
     // registro vivo: o pid deste processo de teste está vivo
     fs.mkdirSync(path.join(claudeDir, 'sessions'), { recursive: true });
     fs.writeFileSync(path.join(claudeDir, 'sessions', `${process.pid}.json`),
-      JSON.stringify({ pid: process.pid, sessionId: SID, cwd: CWD }));
+      JSON.stringify({ pid: process.pid, sessionId: SID, cwd: CWD, startedAt }));
+  }
 
+  it('keeps polling while a background sub-agent of a live session runs (R6)', () => {
+    writeLiveBackgroundSession(Date.parse('2026-10-01T09:59:00.000Z')); // processo vivo desde antes do lançamento
     let now = 1_000_000;
     const core = new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now });
     expect(core.buildSnapshot()?.agents.find(a => a.agentId === 'bg0001')?.status).toBe('running');
@@ -184,5 +189,18 @@ describe('SessionCore', () => {
     now += 10 * 60_000;               // 10 min sem mensagem nova no main
     expect(core.observeForNotifications().kinds).toEqual([]);
     expect(core.shouldPollNotifications()).toBe(true);
+  });
+
+  // Revisão final, Critical 1: a sessão foi retomada num processo novo; o agente
+  // do processo anterior morreu com ele e não pode segurar o toast de ociosa.
+  it('a session resumed in a new process does not keep an old background agent running (R6)', () => {
+    writeLiveBackgroundSession(Date.parse('2026-10-02T08:00:00.000Z')); // processo atual começou depois
+    let now = 1_000_000;
+    const core = new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now });
+    expect(core.buildSnapshot()?.agents.find(a => a.agentId === 'bg0001')?.status).toBe('completed');
+    core.observeForNotifications();
+    now += 10 * 60_000;
+    core.observeForNotifications();
+    expect(core.shouldPollNotifications()).toBe(false);
   });
 });

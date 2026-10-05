@@ -1088,6 +1088,26 @@ describe('TodosParser', () => {
       expect(agentOf('fg0001', false).status).toBe('completed');
     });
 
+    // Revisão final, Critical 1: sessão retomada = mesmo sessionId, processo novo.
+    // O que o processo anterior lançou morreu com ele.
+    const liveSince = (agentId: string, aliveSince: number) =>
+      parser.listSessionDetail('s1', CWD, { alive: true, aliveSince }).agents.find(a => a.agentId === agentId)!.status;
+
+    it('a resumed session (new process) does not resurrect agents launched by the previous process', () => {
+      writeBackgroundSession();                                   // lançado em T(0)
+      expect(liveSince('bg0001', Date.parse(T(10)))).toBe('completed'); // processo atual começou depois
+      expect(liveSince('bg0001', Date.parse(T(-5)))).toBe('running');   // processo atual já vivia no lançamento
+    });
+
+    it('a resume by SendMessage in the current process makes an old agent running again', () => {
+      writeBackgroundSession([
+        taskNotification('bg0001', 'toolu_BG', T(8)),
+        sendMessageToolUse('toolu_SM', 'bg0001'),
+        resumeResult('toolu_SM', 'bg0001', T(20)),
+      ]);
+      expect(liveSince('bg0001', Date.parse(T(15)))).toBe('running');
+    });
+
     function writeParentLaunchingGrandchild(extraInParent: object[] = []): void {
       writeSubAgentLines('pai0001', [
         { type: 'user', isSidechain: true, agentId: 'pai0001', message: { role: 'user', content: 'p-pai' } },

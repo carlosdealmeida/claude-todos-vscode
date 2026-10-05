@@ -54,6 +54,16 @@ describe('readLiveSessions', () => {
     expect(readLiveSessions(claudeDir, () => true).size).toBe(0);
   });
 
+  it('expoe startedAt (epoch ms): o inicio do processo vivo da sessao', () => {
+    write(108, { pid: 108, sessionId: 's8', cwd: '/p', startedAt: 1791152675816 });
+    expect(readLiveSessions(claudeDir, () => true).get('s8')?.startedAt).toBe(1791152675816);
+  });
+
+  it('ignora startedAt que nao e numero finito', () => {
+    write(109, { pid: 109, sessionId: 's9', cwd: '/p', startedAt: '2026-10-04T22:24:35Z' });
+    expect(readLiveSessions(claudeDir, () => true).get('s9')).toEqual({ pid: 109, sessionId: 's9', cwd: '/p' });
+  });
+
   it('nao apaga arquivos de sessoes mortas', () => {
     write(107, { pid: 107, sessionId: 's7', cwd: '/p' });
     readLiveSessions(claudeDir, () => false);
