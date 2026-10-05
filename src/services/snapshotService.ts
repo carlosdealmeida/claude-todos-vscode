@@ -56,7 +56,8 @@ export class SnapshotService {
     const chosen = this.choose(sessions);
     if (!chosen) return null;
 
-    const detail = this.parser.listSessionDetail(chosen.sessionId, chosen.cwd);
+    // R6: sub-agent em background só roda com o processo da sessão vivo.
+    const detail = this.parser.listSessionDetail(chosen.sessionId, chosen.cwd, { alive: chosen.alive === true });
     const agents = detail.agents;
     // Desacopla "tem sessão" de "tem todo": antes de qualquer TodoWrite, ainda
     // resolvemos o agente main para que tokens/contexto/cache apareçam assim que
