@@ -15,6 +15,10 @@ export class TodosWatcher {
 
     this.tryWatch(projectsDir, { recursive: true });
     this.tryWatch(bridgeDir, { recursive: false });
+    // R6: o registro de processos vivos. Quando um processo encerra, o arquivo
+    // sai e os sub-agents em background dele deixam de rodar — o painel precisa
+    // redesenhar sem esperar uma escrita em projects/. Muda raramente.
+    this.tryWatch(path.join(claudeDir, 'sessions'), { recursive: false });
   }
 
   onChange(listener: () => void): { dispose(): void } {
