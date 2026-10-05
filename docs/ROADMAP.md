@@ -1185,6 +1185,14 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
     `frame-link`, `file-history-delta`, `artifact-*`. Verificado: uma sessão que entra num
     worktree continua gravando no project dir **original** (o `relocated` só anota a cwd nova). O
     parser ignora tipos desconhecidos; sem ação.
+    **⚠️ Corrigido em 2026-10-05 — depende do caminho:** a sessão que implementou o R6 entrou
+    num worktree novo com `EnterWorktree` (2.1.28x), e o transcript **inteiro** (6 MB, desde o
+    início da sessão) e os sub-agents passaram para o project dir do worktree
+    (`…-claude-todos-vscode--claude-worktrees-r6-fable`); o project dir original ficou sem a
+    sessão. A de 2026-10-04 (`96adbae3`, worktree já existente) tinha ficado no original.
+    **Risco nosso a investigar:** enquanto uma sessão trabalha num worktree, o painel do
+    workspace principal não a enxerga — justamente o fluxo de SDD em worktree. Conferir o que
+    acontece no `ExitWorktree` (o transcript volta?) antes de desenhar.
 
 ### R4. Performance com transcripts grandes — agora com evidência externa 🔍 a avaliar
 - **Origem:** o tema era preocupação interna sem issue; a varredura 2026-07-25 trouxe evidência
@@ -1252,12 +1260,20 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 
 ### R6. Sub-agents em background: estado e notificação ✅ CORRIGIDO (achados 1 e 2 · 2026-10-05 · aguardando release)
 - **✅ Corrigido (2026-10-05):** status pelo ciclo de vida por `agentId` (lançamento
-  `async_launched`, retomada por `SendMessage`, `<task-notification>`), só com a sessão viva;
-  sub-agent rodando conta como atividade no notifier. Spec:
+  `async_launched`, retomada por `SendMessage`, `<task-notification>` entregue entre turnos
+  como mensagem `user` ou no meio de um turno como `attachment` `queued_command`), só para o que
+  o **processo vivo** da sessão lançou ou retomou (`startedAt` do registro); sub-agent rodando
+  conta como atividade no notifier; o watcher observa `~/.claude/sessions` e redesenha quando
+  um processo encerra. Spec:
   [docs/specs/2026-10-05-subagents-background-e-janela-fable-design.md](specs/2026-10-05-subagents-background-e-janela-fable-design.md)
   · plano: [docs/plans/2026-10-05-subagents-background-e-janela-fable.md](plans/2026-10-05-subagents-background-e-janela-fable.md).
-  Medido no brainstorm: o modelo fecha 100% no disco (103 assíncronos, 90 notificados sem
-  atividade depois, 31 retomadas, 13 órfãos em sessões mortas).
+  Medição refeita na revisão final: dos 112 assíncronos do disco, 111 fecham (98 com a
+  notificação entre turnos, 15 no meio do turno, 13 só nesse formato); sobra 1 sem parada. Os
+  "13 órfãos em sessões mortas" do brainstorm eram notificações no meio do turno. A revisão
+  final (revisor novo) achou ainda que "sessão viva" não é "processo que lançou vivo": uma
+  sessão retomada ressuscitava os agentes do processo anterior — corrigido com o `startedAt`.
+  Verificado ao vivo: um agente em background desta sessão apareceu rodando e virou concluído
+  com a notificação; a sessão `04061916`, viva num processo novo, ficou sem fantasmas.
 - **Origem:** varredura 2026-10-04 ([#93672](https://github.com/anthropics/claude-code/issues/93672), [#98373](https://github.com/anthropics/claude-code/issues/98373), [#94872](https://github.com/anthropics/claude-code/issues/94872), [#95601](https://github.com/anthropics/claude-code/issues/95601)) + **medição local**.
 - **Achado 1 — sub-agent assíncrono aparece como concluído (confirmado).** Quando o `Agent` roda
   em background (`run_in_background: true`, ou movido para background pelo harness), o
