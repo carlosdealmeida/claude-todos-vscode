@@ -861,7 +861,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   decisão de posicionamento (R2 passo 3), não antes. Antes de qualquer UI nova de background,
   corrigir o estado dos sub-agents assíncronos (**R6**), que é a base de dados disso.
 
-### 25. Mods (function hooks) — nova superfície de extensão do Claude Code ⏸️ observar
+### 25. Mods (function hooks) — nova superfície de extensão do Claude Code ⏸️ observar · 🧪 spike da ponte ✅ (2026-10-05)
 - **Origem:** varredura 2026-10-04. A 2.1.287 lançou **Claude Mods** (*"plugins may now modify
   deeper behavior"*): um plugin cujo comportamento vive num módulo de hooks em TypeScript
   (`register(on, options)`, hooks `($, e, next)` que interceptam eventos do engine como
@@ -888,6 +888,50 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   exata quando existir (opt-in, mesmo espírito do "statusline bridge" do item 2); (b) um mod
   "Claude Todos" para o terminal. Reabrir quando a API sair do early access **ou** a extensão VS
   Code passar a desenhar mods; até lá, só observar a cada varredura.
+- **🧪 Spike da ponte de dados (2026-10-05, descartável, nada entrou no repo).** Um mod mínimo, sem
+  UI, carregado por hot reload de `~/.claude/dev-mods/<sessão>/` numa sessão da **extensão VS Code**
+  (Claude Code 2.1.289, Windows 11), gravando num JSON a cada `session.start`, `agent.spawn` e
+  `turn.complete`. As três incógnitas:
+  1. **Function hooks ligados aqui? Sim.** Os três hooks dispararam. A única porta foi o
+     consentimento que o engine pede uma vez por sessão (*"Enable hot reloading for this session?"*).
+  2. **Carrega na sessão da extensão VS Code? Sim, sem superfície.** `$.session.surfaces()` = `[]` e
+     `session.start` chega com `surface: null`: nada desenha, mas os hooks e o `$` funcionam. Uma
+     ponte sem UI cabe; um Pane ou uma banda não apareceriam.
+  3. **O id do `$.agent.list()` é o `agentId` do `agent-*.jsonl`? Sim.** O mesmo id em todos os
+     pontos: resultado do `agent.spawn` (`agentId`), `turn.complete.agentId`, `$.agent.list()[].id`,
+     `toolUseResult.agentId` do `async_launched` e o nome `subagents/agent-<id>.jsonl`. Verificado com
+     dois agentes em background (Explore/haiku). A junção ponte↔parser é direta, sem mapeamento.
+- **O que mais o spike mostrou:**
+  - `$.agent.list()` é um retrato do que está **vivo**: o agente aparece `running`, passa a
+    `completed` no `turn.complete` e sai da lista em seguida (o primeiro já não estava listado
+    ≤ 76 s depois). A ponte precisa registrar as **transições** (eventos), não confiar num snapshot.
+  - `$.session.usage()` sem argumentos (chamada de graça, sem contar tokens) devolveu
+    `context { tokens, window: 1000000, percent }`, `rateLimits` (`five_hour` e `seven_day`, cada um
+    com `percentUsed` e `resetsAt`), `cost.usd` e `startedAt` (o primeiro lançamento, também em sessão
+    retomada). **Rate limits e janela exata são inalcançáveis pelo transcript.**
+  - `agent.spawn` traz `background`, `subagentType`, o `tool_use_id` do Agent no transcript e o
+    modelo resolvido (`haiku` → `claude-haiku-4-5-20251001`).
+- **Pegadinhas para quem for escrever a ponte:**
+  - A primeira versão não gravou nada e nenhum erro ficou visível. Duas causas possíveis, as duas
+    corrigidas na segunda: o validador (`claude plugin validate`) segue o `$` estaticamente e **só
+    aceita passá-lo a funções declaradas no topo do arquivo** (a v1 usava uma closure dentro do
+    `register`); e trabalho disparado com `void` **depois** do `return` do hook roda fora do
+    dispatch, que já acabou. Aguardar o trabalho dentro do hook (`$` em voo não conta no orçamento).
+  - Sem `claude --debug`, `$.ui.log(…, { to: 'debug' })` não aparece em lugar nenhum: gravar o erro
+    no próprio arquivo de saída.
+  - Na recarga, o `turn.complete` de um sub-agent que terminou ~0,8 s depois do `session.start` não
+    chegou ao mod. Hipótese: o engine aguarda o `session.start` do plugin recarregado (o nosso fazia
+    I/O ali) antes de lhe entregar outros eventos. Manter o `session.start` leve.
+  - O próprio aviso de hot reload entra no transcript como `attachment` `queued_command` com
+    `commandMode: "task-notification"` e texto livre, sem `<task-notification>`. O coletor do R6 o
+    ignora porque exige esse prefixo; nada mais no parser lê `queued_command`.
+- **Recomendação do spike:** a ponte (ideia a) é **viável**, e as incógnitas técnicas estão
+  resolvidas. O que ainda segura é **distribuição e early access**: hoje o mod só carregou por hot
+  reload (consentimento por sessão). Falta validar como um usuário comum o instalaria (plugin num
+  marketplace ou `--plugin-dir`) e se function hooks estão ligados fora desta conta. O maior ganho
+  seriam os rate limits e a janela exata (item 2) e o fim exato de cada sub-agent (R6), com o parser
+  continuando como fonte de verdade e a ponte só enriquecendo quando existir. Se for adiante, vira
+  spec própria.
 
 ---
 
