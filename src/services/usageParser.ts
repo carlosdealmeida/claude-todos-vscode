@@ -6,17 +6,20 @@ import type { AgentUsage, CacheStats, ContextUsage, ModelUsage, SessionUsage } f
 const DEFAULT_CONTEXT_LIMIT = 200_000;
 const ONE_MILLION = 1_000_000;
 
-// opus/sonnet generation 4–19 (e.g. opus-4-8, sonnet-4-6). The `(?!\d)` stops
-// the date-suffixed legacy id "claude-3-5-sonnet-20241022" from matching
-// (its "sonnet-20" is neither [4-9] nor 1\d).
-const ONE_M_FAMILY = /(?:opus|sonnet)-(?:[4-9]|1\d)(?!\d)/i;
+// opus/sonnet generation 4–19 (e.g. opus-4-8, sonnet-4-6) and every Fable
+// (claude-fable-5, claude-fable-5-1): the CHANGELOG lists Fable among the 1M
+// models (2.1.285, 2.1.287) and the transcript records it without a [1m]
+// suffix. The `(?!\d)` stops the date-suffixed legacy id
+// "claude-3-5-sonnet-20241022" from matching (its "sonnet-20" is neither
+// [4-9] nor 1\d).
+const ONE_M_FAMILY = /(?:opus|sonnet)-(?:[4-9]|1\d)(?!\d)|fable/i;
 
 function supportsOneMillion(model: string): boolean {
   return /1m/i.test(model) || ONE_M_FAMILY.test(model);
 }
 
 // The context window for a model. 1M when the family supports it (opus/sonnet
-// gen 4+, or an explicit 1m suffix) OR when the observed context already
+// gen 4+, Fable, or an explicit 1m suffix) OR when the observed context already
 // exceeds 200k (proof of a larger window). Always elevates, never lowers.
 export function contextLimitFor(model: string, observedTokens = 0): number {
   const base = supportsOneMillion(model) ? ONE_MILLION : DEFAULT_CONTEXT_LIMIT;
