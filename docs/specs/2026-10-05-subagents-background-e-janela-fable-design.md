@@ -124,8 +124,8 @@ status = running ? 'running' : 'completed';
 - Um agente em foreground que já terminou e foi retomado por `SendMessage` também volta a
   "rodando" pelo ciclo de vida, pelo mesmo caminho.
 - `rejected` continua igual: o nó nem entra na lista.
-- `TranscriptEntry.toolUseResult` ganha `status?` e `resumedAgentId?` no tipo; o `Dispatch` não
-  muda.
+- O `TranscriptEntry` e o `Dispatch` do parser não mudam: o `agentLifecycle` tem o próprio tipo
+  de entrada.
 
 ### 3. Liveness só para o ciclo de vida, decidida no `SnapshotService`
 
