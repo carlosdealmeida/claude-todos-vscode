@@ -127,6 +127,16 @@ describe('collectAgentLifecycle', () => {
     expect(collectAgentLifecycle([toolError]).has('ghost01')).toBe(false);
   });
 
+  // Revisão final, Important 2: só o JSON do SendMessage (resumedAgentId no topo) retoma.
+  it('a transcript record pasted as tool output (cat/grep of a JSONL line) does not resume an agent', () => {
+    const record = JSON.stringify({ type: 'user', toolUseResult: resumePayload('real01'), message: { content: [] } });
+    const catOutput = line({
+      type: 'user', isSidechain: true, timestamp: T(0),
+      message: { content: [{ type: 'tool_result', tool_use_id: 'toolu_cat', content: record }] },
+    });
+    expect(collectAgentLifecycle([catOutput]).has('real01')).toBe(false);
+  });
+
   it('skips malformed lines; a record without timestamp counts with at = 0', () => {
     const noTimestamp = line({
       type: 'user', toolUseResult: { status: 'async_launched', agentId: 'nots01' },

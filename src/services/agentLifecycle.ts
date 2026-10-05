@@ -16,7 +16,6 @@ export interface LifecycleEntry {
 const MARKERS = ['async_launched', 'Async agent launched', 'resumedAgentId', '<task-notification>'];
 const LAUNCH_TEXT = 'Async agent launched';
 const LAUNCH_ID = /agentId: ([\w-]+)/;
-const RESUME_ID = /"resumedAgentId":"([^"]+)"/;
 const TASK_ID = /<task-id>([^<]+)<\/task-id>/;
 const NOTIFICATION = '<task-notification>';
 
@@ -42,6 +41,20 @@ function textOf(content: unknown): string {
       ? (b as { text: string }).text
       : ''))
     .join('\n');
+}
+
+// O resultado de uma retomada é o JSON do SendMessage, com resumedAgentId no
+// nível de cima (medido: 69 de 69 no disco). Um registro de transcript colado
+// como saída de ferramenta (cat, grep) tem o campo aninhado e não conta.
+function resumedAgentIdOf(text: string): string | null {
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    if (parsed !== null && typeof parsed === 'object') {
+      const id = (parsed as { resumedAgentId?: unknown }).resumedAgentId;
+      if (typeof id === 'string') return id;
+    }
+  } catch { /* não é um JSON único: saída de ferramenta comum */ }
+  return null;
 }
 
 export function collectAgentLifecycle(lines: string[]): Map<string, LifecycleEntry> {
@@ -84,7 +97,7 @@ export function collectAgentLifecycle(lines: string[]): Map<string, LifecycleEnt
         const id = LAUNCH_ID.exec(text)?.[1];
         if (id) out.set(id, { state: 'running', at });
       } else if (text.startsWith('{')) {
-        const id = RESUME_ID.exec(text)?.[1];
+        const id = resumedAgentIdOf(text);
         if (id) out.set(id, { state: 'running', at });
       }
     }
