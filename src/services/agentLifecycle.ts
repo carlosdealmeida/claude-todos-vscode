@@ -23,7 +23,15 @@ interface RawEntry {
   type?: unknown;
   timestamp?: unknown;
   toolUseResult?: unknown;
+  attachment?: unknown;
   message?: { content?: unknown };
+}
+
+// agentId de um texto que É uma <task-notification> (começa por ela); null
+// para qualquer outro texto, inclusive um que só a mencione no meio.
+function notifiedAgentId(text: string): string | null {
+  if (!text.startsWith(NOTIFICATION)) return null;
+  return TASK_ID.exec(text)?.[1] ?? null;
 }
 
 function epochOf(ts: unknown): number {
@@ -63,17 +71,27 @@ export function collectAgentLifecycle(lines: string[]): Map<string, LifecycleEnt
     if (!line || !MARKERS.some(m => line.includes(m))) continue;
     let entry: RawEntry;
     try { entry = JSON.parse(line) as RawEntry; } catch { continue; }
-    // A cópia em queue-operation (content no nível de cima) fica de fora aqui.
-    if (entry.type !== 'user') continue;
     const at = epochOf(entry.timestamp);
-    const content = entry.message?.content;
 
-    // Parada: a notificação chega como mensagem do usuário, em string.
-    if (typeof content === 'string') {
-      if (content.startsWith(NOTIFICATION)) {
-        const id = TASK_ID.exec(content)?.[1];
+    // Parada entregue no meio de um turno do main: attachment queued_command
+    // com o texto da notificação em `prompt` (medido: 15 de 112 paradas no disco,
+    // 13 delas só nesse formato).
+    if (entry.type === 'attachment') {
+      const attachment = entry.attachment as { type?: unknown; prompt?: unknown } | null | undefined;
+      if (attachment?.type === 'queued_command' && typeof attachment.prompt === 'string') {
+        const id = notifiedAgentId(attachment.prompt);
         if (id) out.set(id, { state: 'stopped', at });
       }
+      continue;
+    }
+    // A cópia em queue-operation (content no nível de cima) fica de fora aqui.
+    if (entry.type !== 'user') continue;
+    const content = entry.message?.content;
+
+    // Parada entregue entre turnos: mensagem do usuário, em string.
+    if (typeof content === 'string') {
+      const id = notifiedAgentId(content);
+      if (id) out.set(id, { state: 'stopped', at });
       continue;
     }
     if (!Array.isArray(content)) continue;

@@ -51,6 +51,19 @@ function notification(taskId: string, min: number, status = 'completed'): string
   });
 }
 
+// Notificação entregue no meio de um turno do main: attachment queued_command
+// com o texto em `prompt` (formato real, medido em 2026-10-05: 15 de 112 paradas).
+function notificationMidTurn(taskId: string, min: number): string {
+  return line({
+    type: 'attachment', isSidechain: false, timestamp: T(min),
+    attachment: {
+      type: 'queued_command', commandMode: 'task-notification',
+      origin: { kind: 'task-notification', producer: 'session-task' },
+      prompt: `<task-notification>\n<task-id>${taskId}</task-id>\n<tool-use-id>toolu_x</tool-use-id>\n<status>completed</status>\n<summary>Agent "bg" finished</summary>\n</task-notification>`,
+    },
+  });
+}
+
 function queuedNotification(taskId: string, min: number): string {
   return line({
     type: 'queue-operation', operation: 'enqueue', timestamp: T(min),
@@ -79,6 +92,20 @@ describe('collectAgentLifecycle', () => {
   it('failed and stopped notifications also stop the agent', () => {
     expect(collectAgentLifecycle([launch('a1', 0), notification('a1', 1, 'failed')]).get('a1')?.state).toBe('stopped');
     expect(collectAgentLifecycle([launch('a2', 0), notification('a2', 1, 'stopped')]).get('a2')?.state).toBe('stopped');
+  });
+
+  // Verificação com dados reais (fix pass): a parada que chega no meio de um turno não é mensagem user.
+  it('a notification delivered mid-turn (attachment queued_command) stops the agent', () => {
+    expect(collectAgentLifecycle([launch('bg01', 0), notificationMidTurn('bg01', 4)]).get('bg01'))
+      .toEqual({ state: 'stopped', at: at(4) });
+  });
+
+  it('a queued command that only mentions a notification mid-text does not stop the agent', () => {
+    const typed = line({
+      type: 'attachment', timestamp: T(4),
+      attachment: { type: 'queued_command', prompt: 'olha esse <task-notification><task-id>bg01</task-id>' },
+    });
+    expect(collectAgentLifecycle([launch('bg01', 0), typed]).get('bg01')?.state).toBe('running');
   });
 
   it('the queue-operation copy of the notification alone does not stop the agent', () => {
