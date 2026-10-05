@@ -444,4 +444,55 @@ describe('SnapshotService', () => {
     const svc = new SnapshotService(resolverA as any, makeParserNoAgents({ a: 100 }) as any, newModelUsage as any);
     expect(svc.build()?.taskToolsOff).toBeUndefined();
   });
+
+  it('passes the liveness of the chosen session to the parser (R6)', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 }] };
+    const received: unknown[] = [];
+    const parser = {
+      ...makeParser({ mtimes: { a: 10 } }),
+      listSessionDetail: (_sessionId: string, _cwd: string, opts?: unknown) => {
+        received.push(opts);
+        return { agents: [], awaitingInput: null, pendingQuestions: [] };
+      },
+    };
+    new SnapshotService(resolver as any, parser as any, usageStub as any, liveMap({ a: {} }), namesStub() as any).build();
+    new SnapshotService(resolver as any, parser as any, usageStub as any).build();
+    expect(received).toEqual([{ alive: true }, { alive: false }]);
+  });
+
+  // Review Focus 5
+  it('a pinned session that is no longer alive is read with alive: false', () => {
+    const resolver = { resolveCandidates: () => [
+      { cwd: '/p', sessionId: 'viva', terminalPid: null, startedAt: 1 },
+      { cwd: '/p', sessionId: 'fixada', terminalPid: null, startedAt: 1 },
+    ] };
+    const received: unknown[] = [];
+    const parser = {
+      ...makeParser({ mtimes: { viva: 5, fixada: 1 } }),
+      listSessionDetail: (_sessionId: string, _cwd: string, opts?: unknown) => {
+        received.push(opts);
+        return { agents: [], awaitingInput: null, pendingQuestions: [] };
+      },
+    };
+    const svc = new SnapshotService(resolver as any, parser as any, usageStub as any, liveMap({ viva: {} }), namesStub() as any);
+    svc.setPinnedSession('fixada');
+    expect(svc.build()?.sessionId).toBe('fixada');
+    expect(received).toEqual([{ alive: false }]);
+  });
+
+  // Revisão final, Critical 1: o início do processo vivo delimita o que ainda pode rodar.
+  it('passes the start of the live process as aliveSince', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 }] };
+    const received: unknown[] = [];
+    const parser = {
+      ...makeParser({ mtimes: { a: 10 } }),
+      listSessionDetail: (_sessionId: string, _cwd: string, opts?: unknown) => {
+        received.push(opts);
+        return { agents: [], awaitingInput: null, pendingQuestions: [] };
+      },
+    };
+    const live = () => new Map([['a', { pid: 1, sessionId: 'a', cwd: '/p', startedAt: 1_791_152_675_816 }]]);
+    new SnapshotService(resolver as any, parser as any, usageStub as any, live, namesStub() as any).build();
+    expect(received).toEqual([{ alive: true, aliveSince: 1_791_152_675_816 }]);
+  });
 });

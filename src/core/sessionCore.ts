@@ -130,8 +130,10 @@ export class SessionCore {
     const allComplete = main !== undefined && main.todos.length > 0
       && main.todos.every(td => td.status === 'completed');
     const awaitingInput = snapshot.awaitingInput ?? null;
+    // R6: sub-agent rodando (inclusive em background) é atividade da sessão.
+    const subAgentRunning = snapshot.agents.some(a => !a.isMain && a.status === 'running');
     const kinds = this.notifier.observe({
-      sessionId: snapshot.sessionId, mtime, allComplete, awaitingInput, now: this.now(),
+      sessionId: snapshot.sessionId, mtime, allComplete, awaitingInput, subAgentRunning, now: this.now(),
     });
     return { kinds, awaitingInput, title: snapshot.title };
   }

@@ -28,7 +28,12 @@ export class SnapshotService {
   }
 
   listSessions(): SessionSummary[] {
-    const live = this.liveSessions();
+    return this.summarize(this.liveSessions());
+  }
+
+  // `live` lido uma vez por chamada pública: o build() precisa do mesmo mapa
+  // para o startedAt do processo vivo, sem reler ~/.claude/sessions.
+  private summarize(live: Map<string, LiveSession>): SessionSummary[] {
     // Uma leitura do arquivo de nomes por chamada, igual ao `live` — resolveTitle
     // roda em laço por sessão candidata e não pode reabrir o arquivo a cada volta.
     const cachedNames = this.names?.entries() ?? {};
@@ -52,11 +57,19 @@ export class SnapshotService {
   }
 
   build(): SessionSnapshot | null {
-    const sessions = this.listSessions();
+    const live = this.liveSessions();
+    const sessions = this.summarize(live);
     const chosen = this.choose(sessions);
     if (!chosen) return null;
 
-    const detail = this.parser.listSessionDetail(chosen.sessionId, chosen.cwd);
+    // R6: sub-agent em background só roda com o processo da sessão vivo — e só
+    // o que esse processo lançou ou retomou. Numa sessão retomada (mesmo id,
+    // processo novo), o que o processo anterior deixou rodando morreu com ele.
+    const aliveSince = live.get(chosen.sessionId)?.startedAt;
+    const detail = this.parser.listSessionDetail(chosen.sessionId, chosen.cwd, {
+      alive: chosen.alive === true,
+      ...(aliveSince !== undefined ? { aliveSince } : {}),
+    });
     const agents = detail.agents;
     // Desacopla "tem sessão" de "tem todo": antes de qualquer TodoWrite, ainda
     // resolvemos o agente main para que tokens/contexto/cache apareçam assim que

@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **Background sub-agents no longer show as finished while they run.** When the `Agent` tool runs in the background, Claude Code answers the call right away (`status: "async_launched"`), and the panel took that answer as the end of the agent: the node moved to the history group and the stale-list hint never showed. Sub-agents now follow their lifecycle in the parent transcript — launch, resume via `SendMessage`, and the `<task-notification>` that ends each run, whether it arrives between turns or in the middle of one — and count as running only while the Claude Code process that launched or resumed them is alive: a session resumed in a new process doesn't bring back agents that died with the old one, and the panel redraws as soon as a Claude Code process exits, so orphaned agents don't stay "running" (upstream [#94872](https://github.com/anthropics/claude-code/issues/94872)). Measured on 30 days of local transcripts: 103 of 473 dispatches ran in the background, still working a median of 7.5 minutes after the panel had marked them done. Roadmap R6; spec `docs/specs/2026-10-05-subagents-background-e-janela-fable-design.md`.
+- **No "idle" notification while sub-agents are still working.** A running sub-agent now counts as session activity, so the toast waits until the background work and the main agent's wrap-up are both over — the same problem Claude Code fixed in its own `idle_prompt` hook in 2.1.288 (upstream [#93672](https://github.com/anthropics/claude-code/issues/93672)). Roadmap R6.
+- **Fable's context window is 1M.** The transcript records the model id without a `[1m]` suffix (`claude-fable-5-1`), so the panel measured Fable sessions against 200k until they passed it: 150k of context showed as 75% (yellow) instead of 15%. Fable now gets the same 1M window as Opus and Sonnet; on Pro and Team plans without usage credits, where Fable runs on 200k, the bar under-reports, as it already does for Opus and Sonnet there. Roadmap item 2.
+
 ## [0.19.0] - 2026-09-07
 
 ### Added

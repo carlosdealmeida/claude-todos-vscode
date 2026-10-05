@@ -28,4 +28,24 @@ describe('TodosWatcher', () => {
     await new Promise(r => setTimeout(r, 400));
     expect(hits).toBe(afterDispose);
   });
+
+  // R6, revisão final: o fim do processo (registro removido de ~/.claude/sessions)
+  // precisa redesenhar o painel; senão um agente em background segue "rodando"
+  // até alguma escrita em projects/.
+  it('fires onChange when the live session registry changes', async () => {
+    const claudeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-'));
+    fs.mkdirSync(path.join(claudeDir, 'projects'), { recursive: true });
+    const sessions = path.join(claudeDir, 'sessions');
+    fs.mkdirSync(sessions, { recursive: true });
+    fs.writeFileSync(path.join(sessions, '123.json'), '{}');
+    w = new TodosWatcher(claudeDir);
+
+    let hits = 0;
+    w.onChange(() => { hits++; });
+
+    await new Promise(r => setTimeout(r, 50));
+    fs.rmSync(path.join(sessions, '123.json')); // o processo encerrou
+    await new Promise(r => setTimeout(r, 400)); // > debounce (150ms)
+    expect(hits).toBeGreaterThanOrEqual(1);
+  });
 });

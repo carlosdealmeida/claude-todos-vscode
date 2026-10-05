@@ -982,6 +982,185 @@ describe('TodosParser', () => {
     const ids = agents.map(a => a.agentId);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  describe('background sub-agents (R6)', () => {
+    const T = (min: number) => new Date(Date.parse('2026-10-01T10:00:00Z') + min * 60_000).toISOString();
+
+    // Formatos reais (Claude Code 2.1.28x), medidos no disco em 2026-10-04.
+    function asyncLaunchResult(toolUseId: string, agentId: string, timestamp: string): object {
+      return {
+        type: 'user', timestamp,
+        toolUseResult: { isAsync: true, status: 'async_launched', agentId, description: 'bg', resolvedModel: 'claude-sonnet-5' },
+        message: { content: [{ type: 'tool_result', tool_use_id: toolUseId, content: [{ type: 'text',
+          text: `Async agent launched successfully.\nagentId: ${agentId} (internal ID - do not mention to user.)` }] }] },
+      };
+    }
+
+    function taskNotification(agentId: string, toolUseId: string, timestamp: string, status = 'completed'): object {
+      return {
+        type: 'user', timestamp,
+        message: { role: 'user', content: `<task-notification>\n<task-id>${agentId}</task-id>\n<tool-use-id>${toolUseId}</tool-use-id>\n<status>${status}</status>\n<summary>Agent "bg" finished</summary>\n</task-notification>` },
+      };
+    }
+
+    function sendMessageToolUse(toolUseId: string, to: string): object {
+      return { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'SendMessage', id: toolUseId, input: { to, message: 'mais uma rodada' } }] } };
+    }
+
+    function resumeResult(toolUseId: string, agentId: string, timestamp: string): object {
+      const payload = { success: true, message: `Resuming agent ${agentId.slice(0, 7)}`, resumedAgentId: agentId };
+      return {
+        type: 'user', timestamp, toolUseResult: payload,
+        message: { content: [{ type: 'tool_result', tool_use_id: toolUseId, content: [{ type: 'text', text: JSON.stringify(payload) }] }] },
+      };
+    }
+
+    function writeSubAgentLines(agentId: string, lines: object[]): void {
+      const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD), 's1', 'subagents');
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, `agent-${agentId}.jsonl`), lines.map(l => JSON.stringify(l)).join('\n'));
+    }
+
+    function writeBackgroundSession(extra: object[] = []): void {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('toolu_BG', 'Revisar em background', 'p-bg'),
+        asyncLaunchResult('toolu_BG', 'bg0001', T(0)),
+        ...extra,
+      ]);
+      writeSubAgent('s1', CWD, 'bg0001', 'p-bg', null);
+      writeSubAgentMeta('s1', CWD, 'bg0001', { agentType: 'general-purpose', description: 'Revisar em background', toolUseId: 'toolu_BG', spawnDepth: 1 });
+    }
+
+    const agentOf = (agentId: string, alive?: boolean) =>
+      parser.listSessionDetail('s1', CWD, alive === undefined ? undefined : { alive }).agents.find(a => a.agentId === agentId)!;
+
+    it('live session: an async agent without a notification is running', () => {
+      writeBackgroundSession();
+      expect(agentOf('bg0001', true).status).toBe('running');
+    });
+
+    it('live session: an async agent with a completion notification is completed', () => {
+      writeBackgroundSession([taskNotification('bg0001', 'toolu_BG', T(8))]);
+      expect(agentOf('bg0001', true).status).toBe('completed');
+    });
+
+    it('dead session, or no liveness info: an async agent without a notification is completed', () => {
+      writeBackgroundSession();
+      expect(agentOf('bg0001', false).status).toBe('completed');
+      expect(agentOf('bg0001').status).toBe('completed');
+      expect(parser.listForSession('s1', CWD).find(a => a.agentId === 'bg0001')!.status).toBe('completed');
+    });
+
+    it('a resume by SendMessage after the notification makes it running; a new notification stops it', () => {
+      const resumed = [
+        taskNotification('bg0001', 'toolu_BG', T(8)),
+        sendMessageToolUse('toolu_SM', 'bg0001'),
+        resumeResult('toolu_SM', 'bg0001', T(20)),
+      ];
+      writeBackgroundSession(resumed);
+      expect(agentOf('bg0001', true).status).toBe('running');
+      writeBackgroundSession([...resumed, taskNotification('bg0001', 'toolu_SM', T(31))]);
+      expect(agentOf('bg0001', true).status).toBe('completed');
+    });
+
+    it('foreground without a tool_result stays running even when the session is not alive', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('toolu_FG', 'Em foreground', 'p-fg'),
+      ]);
+      writeSubAgent('s1', CWD, 'fg0001', 'p-fg', null);
+      writeSubAgentMeta('s1', CWD, 'fg0001', { toolUseId: 'toolu_FG', spawnDepth: 1 });
+      expect(agentOf('fg0001', false).status).toBe('running');
+    });
+
+    it('a finished foreground agent resumed by SendMessage is running while the session lives', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('toolu_FG', 'Em foreground', 'p-fg'),
+        agentResult('toolu_FG', 'fg0001'),
+        sendMessageToolUse('toolu_SM', 'fg0001'),
+        resumeResult('toolu_SM', 'fg0001', T(5)),
+      ]);
+      writeSubAgent('s1', CWD, 'fg0001', 'p-fg', null);
+      writeSubAgentMeta('s1', CWD, 'fg0001', { toolUseId: 'toolu_FG', spawnDepth: 1 });
+      expect(agentOf('fg0001', true).status).toBe('running');
+      expect(agentOf('fg0001', false).status).toBe('completed');
+    });
+
+    // Revisão final, Critical 1: sessão retomada = mesmo sessionId, processo novo.
+    // O que o processo anterior lançou morreu com ele.
+    const liveSince = (agentId: string, aliveSince: number) =>
+      parser.listSessionDetail('s1', CWD, { alive: true, aliveSince }).agents.find(a => a.agentId === agentId)!.status;
+
+    it('a resumed session (new process) does not resurrect agents launched by the previous process', () => {
+      writeBackgroundSession();                                   // lançado em T(0)
+      expect(liveSince('bg0001', Date.parse(T(10)))).toBe('completed'); // processo atual começou depois
+      expect(liveSince('bg0001', Date.parse(T(-5)))).toBe('running');   // processo atual já vivia no lançamento
+    });
+
+    it('a resume by SendMessage in the current process makes an old agent running again', () => {
+      writeBackgroundSession([
+        taskNotification('bg0001', 'toolu_BG', T(8)),
+        sendMessageToolUse('toolu_SM', 'bg0001'),
+        resumeResult('toolu_SM', 'bg0001', T(20)),
+      ]);
+      expect(liveSince('bg0001', Date.parse(T(15)))).toBe('running');
+    });
+
+    function writeParentLaunchingGrandchild(extraInParent: object[] = []): void {
+      writeSubAgentLines('pai0001', [
+        { type: 'user', isSidechain: true, agentId: 'pai0001', message: { role: 'user', content: 'p-pai' } },
+        { type: 'assistant', isSidechain: true, agentId: 'pai0001',
+          message: { content: [{ type: 'tool_use', name: 'Agent', id: 'toolu_N', input: { description: 'Neto', prompt: 'p-neto', run_in_background: true } }] } },
+        // transcript de sub-agent: sem toolUseResult, só o texto
+        { type: 'user', isSidechain: true, agentId: 'pai0001', timestamp: T(1),
+          message: { content: [{ type: 'tool_result', tool_use_id: 'toolu_N', content: [{ type: 'text',
+            text: 'Async agent launched successfully.\nagentId: neto0001 (internal ID - do not mention to user.)' }] }] } },
+        ...extraInParent,
+      ]);
+      writeSubAgentMeta('s1', CWD, 'pai0001', { toolUseId: 'toolu_P', spawnDepth: 1 });
+      writeSubAgent('s1', CWD, 'neto0001', 'p-neto', null);
+      writeSubAgentMeta('s1', CWD, 'neto0001', { description: 'Neto', toolUseId: 'toolu_N', spawnDepth: 2 });
+    }
+
+    it('nested: a grandchild launched in background by a sub-agent is running while the session lives', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('toolu_P', 'Pai', 'p-pai'),
+      ]);
+      writeParentLaunchingGrandchild();
+      expect(agentOf('neto0001', true).status).toBe('running');
+      expect(agentOf('neto0001', true).parentAgentId).toBe('pai0001');
+      expect(agentOf('neto0001', false).status).toBe('completed');
+    });
+
+    // Review Focus 4
+    it('a resume recorded in the main for a grandchild stopped in its parent transcript wins by timestamp', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUseDesc('toolu_P', 'Pai', 'p-pai'),
+        sendMessageToolUse('toolu_SM', 'neto0001'),
+        resumeResult('toolu_SM', 'neto0001', T(10)),
+      ]);
+      writeParentLaunchingGrandchild([
+        { type: 'user', isSidechain: true, agentId: 'pai0001', timestamp: T(5),
+          message: { role: 'user', content: '<task-notification>\n<task-id>neto0001</task-id>\n<tool-use-id>toolu_N</tool-use-id>\n<status>completed</status>\n</task-notification>' } },
+      ]);
+      expect(agentOf('neto0001', true).status).toBe('running');
+    });
+
+    it('legacy prompt matching (no meta.json) also follows the lifecycle', () => {
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUse('toolu_L', 'legacy-bg', 'p-legacy'),
+        asyncLaunchResult('toolu_L', 'lg0001', T(0)),
+      ]);
+      writeSubAgent('s1', CWD, 'lg0001', 'p-legacy', null);
+      expect(agentOf('lg0001', true).status).toBe('running');
+      expect(agentOf('lg0001', false).status).toBe('completed');
+    });
+  });
 });
 
 describe('detectAwaitingInput', () => {

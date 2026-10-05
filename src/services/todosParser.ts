@@ -4,6 +4,7 @@ import type { AgentTodos, AwaitingInput, PendingQuestion, Todo, TodoStatus } fro
 import { transcriptPath as resolveTranscriptPath, subAgentsDir as resolveSubAgentsDir } from './transcriptPaths';
 import { readSubAgentMeta, type SubAgentMeta } from './subAgentMeta';
 import { TranscriptActivity } from './transcriptActivity';
+import { collectAgentLifecycle, mergeLifecycles, type LifecycleEntry } from './agentLifecycle';
 
 const VALID_STATUSES: TodoStatus[] = ['pending', 'in_progress', 'completed'];
 
@@ -211,7 +212,12 @@ export class TodosParser {
     return this.listSessionDetail(sessionId, cwd).agents;
   }
 
-  listSessionDetail(sessionId: string, cwd: string): {
+  // `alive`: a sessão tem processo do Claude Code vivo (registro em
+  // ~/.claude/sessions). Sem a opção, nenhum sub-agent assíncrono conta como
+  // rodando — o comportamento de antes do R6. `aliveSince`: início desse
+  // processo (epoch ms); um lançamento ou retomada anterior a ele é de um
+  // processo que já morreu (sessão retomada). Ausente = sem limite.
+  listSessionDetail(sessionId: string, cwd: string, opts: { alive?: boolean; aliveSince?: number } = {}): {
     agents: AgentTodos[];
     awaitingInput: AwaitingInput | null;
     pendingQuestions: PendingQuestion[];
@@ -236,7 +242,7 @@ export class TodosParser {
       });
     }
 
-    agents.push(...this.listSubAgents(sessionId, cwd, mainLines));
+    agents.push(...this.listSubAgents(sessionId, cwd, mainLines, opts.alive === true, opts.aliveSince));
     const waits = scanPendingWaits(mainLines, true);
     return {
       agents,
@@ -286,7 +292,13 @@ export class TodosParser {
     return null;
   }
 
-  private listSubAgents(sessionId: string, cwd: string, mainLines: string[]): AgentTodos[] {
+  private listSubAgents(
+    sessionId: string,
+    cwd: string,
+    mainLines: string[],
+    sessionAlive: boolean,
+    aliveSince: number | undefined,
+  ): AgentTodos[] {
     const dir = this.subAgentsDir(sessionId, cwd);
     if (!dir) return [];
 
@@ -308,6 +320,7 @@ export class TodosParser {
       updatedAt: number;
       meta: SubAgentMeta | null;
       dispatches: Map<string, Dispatch>;
+      lifecycle: Map<string, LifecycleEntry>;
     }
     const infos: FileInfo[] = [];
     for (const file of files) {
@@ -324,6 +337,7 @@ export class TodosParser {
         updatedAt,
         meta: readSubAgentMeta(filePath),
         dispatches: this.collectDispatches(lines, false),
+        lifecycle: collectAgentLifecycle(lines),
       });
     }
 
@@ -341,6 +355,24 @@ export class TodosParser {
         if (!index.has(id)) index.set(id, { ownerAgentId: info.agentId, dispatch: d, ordinal: ord++ });
       }
     }
+
+    // R6: ciclo de vida dos sub-agents assíncronos (lançamento, retomada e
+    // <task-notification>), juntando o transcript principal e os de cada
+    // sub-agent — um neto é lançado no transcript do pai. O tool_result de um
+    // disparo em background chega na hora, então não serve de fim; o ciclo de
+    // vida decide, e só com a sessão viva (sem processo, nada roda) — e só o que
+    // o processo vivo lançou ou retomou (evento a partir de aliveSince).
+    const lifecycle = mergeLifecycles([
+      collectAgentLifecycle(mainLines),
+      ...infos.map(i => i.lifecycle),
+    ]);
+    const statusOf = (agentId: string, dispatch: Dispatch): 'running' | 'completed' => {
+      if (dispatch.result === 'none') return 'running';
+      const lc = lifecycle.get(agentId);
+      return sessionAlive && lc?.state === 'running' && (aliveSince === undefined || lc.at >= aliveSince)
+        ? 'running'
+        : 'completed';
+    };
 
     // Pass 2 — casa cada arquivo: meta.toolUseId (exato) ou prompt (legado).
     const pending: { agent: AgentTodos; ordinal: number }[] = [];
@@ -363,7 +395,7 @@ export class TodosParser {
           ...(info.todosUpdatedAt !== undefined ? { todosUpdatedAt: info.todosUpdatedAt } : {}),
         };
         if (entry) {
-          agent.status = entry.dispatch.result === 'completed' ? 'completed' : 'running';
+          agent.status = statusOf(info.agentId, entry.dispatch);
           agent.parentAgentId = entry.ownerAgentId;
         }
         if (info.meta.agentType !== undefined) agent.agentType = info.meta.agentType;
@@ -393,7 +425,7 @@ export class TodosParser {
           agentId: info.agentId,
           name: matched.entry.dispatch.label!,
           isMain: false,
-          status: matched.entry.dispatch.result === 'completed' ? 'completed' : 'running',
+          status: statusOf(info.agentId, matched.entry.dispatch),
           todos: info.todos,
           updatedAt: info.updatedAt,
           ...(info.todosUpdatedAt !== undefined ? { todosUpdatedAt: info.todosUpdatedAt } : {}),
@@ -414,8 +446,10 @@ export class TodosParser {
 
   // Varre um transcript e devolve os disparos do tool Agent: toolUseId ->
   // {label, prompt, result}. `result` reflete o tool_result correspondente:
-  // 'none' = ainda rodando; 'completed' = terminou; 'rejected' = recusado
-  // pelo usuário ou morto por erro. `enriched` indica se o transcript recebe
+  // 'none' = ainda rodando; 'completed' = terminou (para disparos em
+  // background o tool_result chega na hora — quem decide o fim é o ciclo de
+  // vida, ver listSubAgents); 'rejected' = recusado pelo usuário ou morto por
+  // erro. `enriched` indica se o transcript recebe
   // o enriquecimento `toolUseResult` (só o transcript principal recebe —
   // transcripts de sub-agents nunca têm esse campo, verificado nos dados
   // reais): quando `enriched`, um tool_result sem `toolUseResult.agentId`
