@@ -1191,8 +1191,11 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
     (`…-claude-todos-vscode--claude-worktrees-r6-fable`); o project dir original ficou sem a
     sessão. A de 2026-10-04 (`96adbae3`, worktree já existente) tinha ficado no original.
     **Risco nosso a investigar:** enquanto uma sessão trabalha num worktree, o painel do
-    workspace principal não a enxerga — justamente o fluxo de SDD em worktree. Conferir o que
-    acontece no `ExitWorktree` (o transcript volta?) antes de desenhar.
+    workspace principal não a enxerga — justamente o fluxo de SDD em worktree. Conferido no
+    mesmo dia: no `ExitWorktree` o transcript e os sub-agents **voltam** para o project dir
+    original (o do worktree fica vazio). O risco se limita ao período dentro do worktree, que
+    numa execução de plano é a maior parte do trabalho. Candidato: o painel também procurar a
+    sessão no project dir dos worktrees do workspace (`.claude/worktrees/*`).
 
 ### R4. Performance com transcripts grandes — agora com evidência externa 🔍 a avaliar
 - **Origem:** o tema era preocupação interna sem issue; a varredura 2026-07-25 trouxe evidência
