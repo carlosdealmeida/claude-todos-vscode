@@ -117,7 +117,7 @@ export class BridgeModInstaller {
   }
 
   // Tira a nossa entrada do env (a chave sai quando fica vazia, e o env também)
-  // e apaga a pasta mod/. Os arquivos de live/ ficam para a limpeza de 30 dias.
+  // e apaga a pasta mod/ (presa, fica para trás sem erro). Os arquivos de live/ ficam para a limpeza de 30 dias.
   // `changed` = a entrada existia.
   uninstall(): { changed: boolean; path: string } {
     this.statusMemo = null;
@@ -134,7 +134,13 @@ export class BridgeModInstaller {
       else delete settings.env;
       this.settings.write(settings);
     }
-    fs.rmSync(path.dirname(this.modDir), { recursive: true, force: true });
+    // A entrada já saiu do settings.json: as sessões novas não carregam mais o mod,
+    // e a pasta é só a cópia. No Windows um arquivo recém-gravado pode ficar preso
+    // por instantes (antivírus, indexador): tenta de novo e, se ainda falhar, deixa
+    // a sobra — status() exige a entrada, e o próximo install() regrava a pasta.
+    try {
+      fs.rmSync(path.dirname(this.modDir), { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+    } catch { /* sobra inofensiva */ }
     return { changed, path: this.settings.path };
   }
 

@@ -68,6 +68,21 @@ describe('BridgeModInstaller', () => {
     expect(make().status()).toEqual({ installed: false });
   });
 
+  // No Windows um arquivo aberto impede apagar a pasta (ENOTEMPTY/EBUSY); no Linux e
+  // no macOS não, e este teste passa sem exercitar a trava.
+  it('uninstall still removes our entry when a file of the mod is held open', () => {
+    fs.writeFileSync(settingsPath, JSON.stringify({ env: { [PLUGIN_DIRS_ENV]: 'D:\\mine' } }));
+    make().install();
+    const fd = fs.openSync(path.join(modDir(), 'hooks', 'register.ts'), 'r');
+    try {
+      expect(make().uninstall()).toEqual({ changed: true, path: settingsPath });
+      expect(settings()).toEqual({ env: { [PLUGIN_DIRS_ENV]: 'D:\\mine' } });
+      expect(make().status()).toEqual({ installed: false });
+    } finally {
+      fs.closeSync(fd);
+    }
+  });
+
   it('uninstall restores a settings.json that had no env at all', () => {
     fs.writeFileSync(settingsPath, JSON.stringify({ model: 'opus' }));
     make().install();
