@@ -11,3 +11,6 @@ docs/superpowers/
 .worktrees/
 .idea/
 .claude/worktrees/
+
+# Gerado por scripts/buildBridgeMod.mjs (mod da ponte embutido no core)
+src/generated/
