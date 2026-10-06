@@ -95,13 +95,13 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
             private fun withPath(args: Map<String, String>) =
                 if (args["path"].isNullOrEmpty()) args + ("path" to settingsPath) else args
 
-            override fun confirm(messageKey: String, onOk: () -> Unit) {
+            override fun confirm(messageKey: String, okKey: String, onOk: () -> Unit) {
                 SwingUtilities.invokeLater {
                     val answer = com.intellij.openapi.ui.Messages.showYesNoDialog(
                         project,
                         NotifyMessages.get(locale, messageKey, "path" to settingsPath),
                         "Claude Todos",
-                        NotifyMessages.get(locale, "taskTools.enable"),
+                        NotifyMessages.get(locale, okKey),
                         NotifyMessages.get(locale, "taskTools.cancel"),
                         com.intellij.openapi.ui.Messages.getQuestionIcon(),
                     )

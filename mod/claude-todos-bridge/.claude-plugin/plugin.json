@@ -1,0 +1,5 @@
+{
+  "name": "claude-todos-bridge",
+  "version": "0.0.0",
+  "description": "Claude Todos data bridge: records each session's exact context window, usage limits and sub-agent lifecycle for the Claude Todos panel. No UI."
+}

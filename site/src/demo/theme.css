@@ -1,5 +1,5 @@
 /* Simula as variaveis que o VS Code injeta na webview. Valores do tema Dark+
-   e do Light+ padrao. A lista cobre as 23 vars usadas em src/webview/ — uma
+   e do Light+ padrao. A lista cobre as 24 vars usadas em src/webview/ — uma
    var faltando renderiza o componente correspondente sem cor. */
 :root {
   --vscode-font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
@@ -21,6 +21,7 @@
   --vscode-button-background: #0e639c;
   --vscode-button-foreground: #ffffff;
   --vscode-button-hoverBackground: #1177bb;
+  --vscode-textLink-foreground: #3794ff;
 
   --vscode-charts-blue: #4daafc;
   --vscode-charts-green: #89d185;
@@ -47,6 +48,7 @@
   --vscode-button-background: #007acc;
   --vscode-button-foreground: #ffffff;
   --vscode-button-hoverBackground: #0062a3;
+  --vscode-textLink-foreground: #006ab1;
 
   --vscode-charts-blue: #005bc2;
   --vscode-charts-green: #2f742c;

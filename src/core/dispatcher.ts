@@ -14,6 +14,8 @@ export type CoreCommand = (
   | { cmd: 'hookStatus'; hookScriptPath: string }
   | { cmd: 'installHook'; hookScriptPath: string }
   | { cmd: 'enableTaskTools' }
+  | { cmd: 'installBridgeMod' }
+  | { cmd: 'uninstallBridgeMod' }
 ) & { id?: string };
 
 export type CoreEvent = (
@@ -27,6 +29,7 @@ export type CoreEvent = (
   | { ev: 'hookStatus'; installed: boolean }
   | { ev: 'hookInstalled' }
   | { ev: 'taskToolsEnabled'; changed: boolean; path: string }
+  | { ev: 'bridgeModChanged'; installed: boolean; changed: boolean; path: string }
 ) & { id?: string };
 
 type MakeCore = (deps: SessionCoreDeps) => SessionCore;
@@ -59,6 +62,9 @@ export function createDispatcher(
       cwds = cmd.cwds;
       core = makeCore({ claudeDir: cmd.claudeDir, workspaceCwds: () => cwds });
       core.pruneBridge(BRIDGE_MAX_AGE_MS);
+      // Ponte de dados (item 25): o sidecar do JetBrains é o ponto de ativação
+      // do lado JetBrains, como o activate() no VS Code.
+      core.refreshBridgeMod();
       return;
     }
     if (!core) { emit(withId({ ev: 'error', message: 'not initialized' }, cmd.id)); return; }
@@ -120,6 +126,17 @@ export function createDispatcher(
           emit(withId({ ev: 'error', message: String(err) }, cmd.id));
         }
         break;
+      case 'installBridgeMod':
+      case 'uninstallBridgeMod': {
+        const install = cmd.cmd === 'installBridgeMod';
+        try {
+          const r = install ? core.installBridgeMod() : core.uninstallBridgeMod();
+          emit(withId({ ev: 'bridgeModChanged', installed: install, changed: r.changed, path: r.path }, cmd.id));
+        } catch (err) {
+          emit(withId({ ev: 'error', message: String(err) }, cmd.id));
+        }
+        break;
+      }
       default: {
         const c = cmd as { cmd: string; id?: string };
         emit(withId({ ev: 'error', message: `unknown command: ${c.cmd}` }, c.id));

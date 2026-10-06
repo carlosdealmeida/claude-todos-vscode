@@ -3,7 +3,7 @@ import { createDispatcher, type CoreEvent } from '../../src/core/dispatcher';
 
 function fakeCore(over: Partial<Record<string, any>> = {}) {
   return {
-    pruneBridge: vi.fn(), setPinnedSession: vi.fn(), dispose: vi.fn(),
+    pruneBridge: vi.fn(), setPinnedSession: vi.fn(), dispose: vi.fn(), refreshBridgeMod: vi.fn(),
     buildSnapshot: () => ({ sessionId: 's', cwd: '/p', title: 'T', pinned: false, agents: [] }),
     listSessions: () => [{ sessionId: 's', cwd: '/p', title: 'T', updatedAt: 1 }],
     activeCwd: () => '/p',
@@ -120,6 +120,30 @@ describe('createDispatcher', () => {
     dispatch({ cmd: 'init', claudeDir: '/c', cwds: ['/q'] });
     expect(subDispose).toHaveBeenCalledTimes(1);
     expect(coreDispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('init refreshes the installed bridge mod (item 25)', () => {
+    const core = fakeCore();
+    run([{ cmd: 'init', claudeDir: '/c', cwds: ['/p'] }], core);
+    expect(core.refreshBridgeMod).toHaveBeenCalledOnce();
+  });
+
+  it('installBridgeMod and uninstallBridgeMod answer with bridgeModChanged (item 25)', () => {
+    const core = fakeCore({
+      installBridgeMod: () => ({ changed: true, path: '/c/settings.json' }),
+      uninstallBridgeMod: () => ({ changed: false, path: '/c/settings.json' }),
+    });
+    const base = [{ cmd: 'init', claudeDir: '/c', cwds: ['/p'] }];
+    expect(run([...base, { cmd: 'installBridgeMod', id: 'b1' }], core).at(-1))
+      .toEqual({ ev: 'bridgeModChanged', installed: true, changed: true, path: '/c/settings.json', id: 'b1' });
+    expect(run([...base, { cmd: 'uninstallBridgeMod', id: 'b2' }], core).at(-1))
+      .toEqual({ ev: 'bridgeModChanged', installed: false, changed: false, path: '/c/settings.json', id: 'b2' });
+  });
+
+  it('a settings.json error during the bridge install becomes an error event with the id (item 25)', () => {
+    const core = fakeCore({ installBridgeMod: () => { throw new Error('settings.json is not valid JSON'); } });
+    expect(run([{ cmd: 'init', claudeDir: '/c', cwds: ['/p'] }, { cmd: 'installBridgeMod', id: 'b3' }], core).at(-1))
+      .toEqual({ ev: 'error', message: 'Error: settings.json is not valid JSON', id: 'b3' });
   });
 });
 

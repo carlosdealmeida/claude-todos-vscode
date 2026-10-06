@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { SnapshotService } from '../../src/services/snapshotService';
-import type { PendingQuestion } from '../../src/types';
+import type { PendingQuestion, RateLimitsReading } from '../../src/types';
+import type { LiveSession } from '../../src/services/liveSessions';
+import type { BridgeFile } from '../../src/bridgeMod/state';
 
 const usageStub = {
   usageForSession: () => ({ byModel: [], byAgent: [] }),
@@ -494,5 +496,118 @@ describe('SnapshotService', () => {
     const live = () => new Map([['a', { pid: 1, sessionId: 'a', cwd: '/p', startedAt: 1_791_152_675_816 }]]);
     new SnapshotService(resolver as any, parser as any, usageStub as any, live, namesStub() as any).build();
     expect(received).toEqual([{ alive: true, aliveSince: 1_791_152_675_816 }]);
+  });
+});
+
+describe('SnapshotService with the data bridge (item 25)', () => {
+  const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 }] };
+  const NOW = Date.parse('2026-10-05T18:00:00.000Z');
+  const usageWithContext = {
+    usageForSession: () => ({ byModel: [], byAgent: [], context: { tokens: 150_000, limit: 200_000 } }),
+  };
+  const bridgeFile = (over: Partial<BridgeFile> = {}): BridgeFile => ({
+    schema: 1, sessionId: 'a', engineVersion: '2.1.289', writtenAt: NOW, agents: {},
+    usage: { at: NOW - 60_000, context: { tokens: 150_000, window: 1_000_000, percent: 15 }, rateLimits: [] },
+    ...over,
+  });
+  const bridgeOf = (opts: {
+    file?: BridgeFile;
+    reading?: RateLimitsReading;
+    status?: { installed: boolean; installedAt?: number };
+  }) => ({
+    forSession: (id: string) => (opts.file && opts.file.sessionId === id ? opts.file : undefined),
+    latestRateLimits: () => opts.reading,
+    status: () => opts.status ?? { installed: true, installedAt: NOW - 3_600_000 },
+  });
+  const make = (
+    bridge: ReturnType<typeof bridgeOf> | undefined,
+    live: Map<string, LiveSession> = new Map(),
+    usage: object = usageWithContext,
+    parser: object = makeParser({ mtimes: { a: 10 } }),
+  ) => new SnapshotService(resolver as any, parser as any, usage as any, () => live, undefined, () => NOW, undefined, bridge);
+
+  it('replaces the estimated window with the exact one and marks the source', () => {
+    expect(make(bridgeOf({ file: bridgeFile() })).build()?.usage?.context)
+      .toEqual({ tokens: 150_000, limit: 1_000_000, source: 'mod' });
+  });
+
+  it('keeps the estimate when the bridge has no window for the session, or without a bridge', () => {
+    expect(make(bridgeOf({ file: bridgeFile({ usage: undefined }) })).build()?.usage?.context)
+      .toEqual({ tokens: 150_000, limit: 200_000 });
+    expect(make(undefined).build()?.usage?.context).toEqual({ tokens: 150_000, limit: 200_000 });
+  });
+
+  it('does not invent a context the parser does not have', () => {
+    const noContext = { usageForSession: () => ({ byModel: [], byAgent: [] }) };
+    expect(make(bridgeOf({ file: bridgeFile() }), new Map(), noContext).build()?.usage?.context).toBeUndefined();
+  });
+
+  it('shows the most recent rate limits and hides the windows that already reset', () => {
+    const reading: RateLimitsReading = { readAt: NOW - 120_000, limits: [
+      { kind: 'five_hour', percentUsed: 32, resetsAt: '2026-10-05T20:40:00.000Z' },
+      { kind: 'seven_day', percentUsed: 9, resetsAt: '2026-10-05T17:00:00.000Z' },
+    ] };
+    expect(make(bridgeOf({ file: bridgeFile(), reading })).build()?.usage?.rateLimits).toEqual({
+      readAt: NOW - 120_000, limits: [{ kind: 'five_hour', percentUsed: 32, resetsAt: '2026-10-05T20:40:00.000Z' }],
+    });
+  });
+
+  it('omits rate limits when every window already reset, or when the mod is not installed', () => {
+    const stale: RateLimitsReading = { readAt: NOW - 86_400_000, limits: [
+      { kind: 'five_hour', percentUsed: 80, resetsAt: '2026-10-04T20:40:00.000Z' },
+    ] };
+    expect(make(bridgeOf({ file: bridgeFile(), reading: stale })).build()?.usage?.rateLimits).toBeUndefined();
+    const fresh: RateLimitsReading = { readAt: NOW, limits: [
+      { kind: 'five_hour', percentUsed: 5, resetsAt: '2026-10-05T20:40:00.000Z' },
+    ] };
+    expect(make(bridgeOf({ file: bridgeFile(), reading: fresh, status: { installed: false } })).build()?.usage?.rateLimits)
+      .toBeUndefined();
+  });
+
+  // Review Focus 4
+  it('feeds the agents of a 2.1.289 file to the parser as extra lifecycle', () => {
+    const received: Array<{ extraLifecycle?: unknown }> = [];
+    const parser = {
+      ...makeParser({ mtimes: { a: 10 } }),
+      listSessionDetail: (_s: string, _c: string, opts?: { extraLifecycle?: unknown }) => {
+        received.push(opts ?? {});
+        return { agents: [], awaitingInput: null, pendingQuestions: [] };
+      },
+    };
+    const file = bridgeFile({ agents: { ag1: { state: 'stopped', at: NOW - 5_000 } } });
+    make(bridgeOf({ file }), new Map(), usageWithContext, parser).build();
+    expect(received[0].extraLifecycle).toEqual(new Map([['ag1', { state: 'stopped', at: NOW - 5_000 }]]));
+    received.length = 0;
+    const older = make(bridgeOf({ file: { ...file, engineVersion: '2.1.286' } }), new Map(), usageWithContext, parser).build();
+    expect(received[0].extraLifecycle).toBeUndefined();
+    expect(older?.usage?.context).toEqual({ tokens: 150_000, limit: 1_000_000, source: 'mod' });
+  });
+
+  describe('bridge status', () => {
+    const installed = { installed: true, installedAt: NOW - 3_600_000 };
+    const liveA = (startedAt: number) =>
+      new Map<string, LiveSession>([['a', { pid: 1, sessionId: 'a', cwd: '/p', startedAt }]]);
+
+    it('off when the mod is not installed', () => {
+      expect(make(bridgeOf({ status: { installed: false } })).build()?.bridge).toBe('off');
+    });
+
+    it('active when the session has a file', () => {
+      expect(make(bridgeOf({ file: bridgeFile() })).build()?.bridge).toBe('active');
+    });
+
+    it('silent when a live session started after the install has no file after a minute', () => {
+      expect(make(bridgeOf({ status: installed }), liveA(NOW - 120_000)).build()?.bridge).toBe('silent');
+    });
+
+    it('next-session for a session started before the install, too recent, or not alive', () => {
+      expect(make(bridgeOf({ status: installed }), liveA(NOW - 7_200_000)).build()?.bridge).toBe('next-session');
+      expect(make(bridgeOf({ status: installed }), liveA(NOW - 30_000)).build()?.bridge).toBe('next-session');
+      expect(make(bridgeOf({ status: installed })).build()?.bridge).toBe('next-session');
+    });
+
+    it('absent when the host injects no bridge', () => {
+      expect(make(undefined).build()?.bridge).toBeUndefined();
+    });
   });
 });

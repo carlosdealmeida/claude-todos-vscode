@@ -15,7 +15,7 @@ describe('HookInstaller', () => {
   });
 
   afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
   });
 
   it('creates settings.json with hook when file does not exist', () => {

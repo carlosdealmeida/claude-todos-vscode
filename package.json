@@ -86,6 +86,14 @@
       {
         "command": "claudeTodos.enableTaskTools",
         "title": "%command.enableTaskTools.title%"
+      },
+      {
+        "command": "claudeTodos.installBridgeMod",
+        "title": "%command.installBridgeMod.title%"
+      },
+      {
+        "command": "claudeTodos.uninstallBridgeMod",
+        "title": "%command.uninstallBridgeMod.title%"
       }
     ],
     "keybindings": [
@@ -227,10 +235,14 @@
     "build:hook": "esbuild src/hooks/sessionStart.ts --bundle --outfile=dist/hooks/sessionStart.js --format=cjs --platform=node",
     "build:core": "esbuild src/core/main.ts --bundle --outfile=dist/core/main.js --format=cjs --platform=node",
     "build:webview": "vite build",
-    "build": "npm run build:ext && npm run build:hook && npm run build:core && npm run build:webview",
+    "build:mod": "node scripts/buildBridgeMod.mjs",
+    "build": "npm run build:mod && npm run build:ext && npm run build:hook && npm run build:core && npm run build:webview",
+    "mod:dev": "node scripts/buildBridgeMod.mjs --out dist/mod/claude-todos-bridge",
     "watch": "npm run build -- --watch",
+    "pretypecheck": "npm run build:mod",
     "typecheck": "tsc --noEmit",
     "check:svelte": "svelte-check --tsconfig ./tsconfig.webview.json",
+    "pretest": "npm run build:mod",
     "test": "vitest run",
     "test:watch": "vitest",
     "vscode:prepublish": "npm run build",

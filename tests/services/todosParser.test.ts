@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { TodosParser, detectAwaitingInput, detectPendingQuestions } from '../../src/services/todosParser';
+import type { LifecycleEntry } from '../../src/services/agentLifecycle';
 import { encodeCwdToProjectDir } from '../../src/services/projectDir';
 
 describe('TodosParser', () => {
@@ -1106,6 +1107,26 @@ describe('TodosParser', () => {
         resumeResult('toolu_SM', 'bg0001', T(20)),
       ]);
       expect(liveSince('bg0001', Date.parse(T(15)))).toBe('running');
+    });
+
+    // Ponte de dados (item 25): os agentes do arquivo do mod entram no mergeLifecycles.
+    const withBridge = (agentId: string, extra: Map<string, LifecycleEntry>) =>
+      parser.listSessionDetail('s1', CWD, { alive: true, extraLifecycle: extra }).agents.find(a => a.agentId === agentId)!.status;
+
+    it('a stop recorded by the bridge after the launch completes the agent', () => {
+      writeBackgroundSession();   // lançado em T(0), sem notificação no transcript
+      expect(withBridge('bg0001', new Map<string, LifecycleEntry>([['bg0001', { state: 'stopped', at: Date.parse(T(3)) }]])))
+        .toBe('completed');
+    });
+
+    it('a resume in the transcript after the bridge stop keeps the agent running', () => {
+      writeBackgroundSession([
+        taskNotification('bg0001', 'toolu_BG', T(8)),
+        sendMessageToolUse('toolu_SM', 'bg0001'),
+        resumeResult('toolu_SM', 'bg0001', T(20)),
+      ]);
+      expect(withBridge('bg0001', new Map<string, LifecycleEntry>([['bg0001', { state: 'stopped', at: Date.parse(T(8)) }]])))
+        .toBe('running');
     });
 
     function writeParentLaunchingGrandchild(extraInParent: object[] = []): void {

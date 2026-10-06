@@ -97,12 +97,14 @@ This extension is **fully local**. Nothing is sent to any server.
 
 | File | How it is accessed | Why |
 |---|---|---|
-| `~/.claude/settings.json` | Read + written (only with your permission) | Adds two hook commands under `hooks.SessionStart` and `hooks.UserPromptSubmit` and, when you click **Enable task tools**, the `env.CLAUDE_CODE_ENABLE_TODO_TOOLS` key. Other hooks and settings are preserved; an invalid file is never overwritten. |
+| `~/.claude/settings.json` | Read + written (only with your permission) | Adds two hook commands under `hooks.SessionStart` and `hooks.UserPromptSubmit`; when you click **Enable task tools**, the `env.CLAUDE_CODE_ENABLE_TODO_TOOLS` key; and, when you turn on **Exact data**, the mod folder in `env.CLAUDE_CODE_PLUGIN_DIRS`. Other hooks and settings are preserved; an invalid file is never overwritten. |
 | `~/.claude/.vscode-todos-bridge/sessions.json` | Written by the bundled hook script | Records `{cwd, sessionId, terminalPid, startedAt}` so the extension knows which Claude session belongs to which VSCode window. Capped at 200 entries. |
+| `~/.claude/.vscode-todos-bridge/mod/` | Written by the extension (only with your permission) | A copy of the `claude-todos-bridge` Claude Code mod and the time you turned it on. Deleted when you turn Exact data off. |
+| `~/.claude/.vscode-todos-bridge/live/<sessionId>.json` | Written by the mod, inside Claude Code | Per session: context window, 5-hour and 7-day usage limits, the end of the last turn, and the start and end of each sub-agent (type, description, model). No cost and no message content. Files older than 30 days are deleted. |
 | `~/.claude/projects/{cwd-encoded}/…` | Read-only | Session and sub-agent transcripts (`.jsonl` + `.meta.json`) written by Claude Code itself — the source of tasks, tree, timings and tokens. |
 | `~/.claude/todos/` | Not touched | Legacy Claude Code 1.x location. Ignored. |
 
-The extension never modifies your transcripts and never deletes anything.
+The extension never modifies your transcripts. It only deletes what it created: the mod copy, when you turn Exact data off, and bridge files older than 30 days.
 
 ## Requirements
 
@@ -127,6 +129,7 @@ To run the extension in a development host: open the folder in VSCode and press 
 
 - The hook script must stay reachable at the path stored in `~/.claude/settings.json`. If you delete the extension manually without uninstalling it, those hook commands remain as no-ops — remove them by hand or reinstall and run `Claude Todos: Install Session Hook` again.
 - If Claude Code's task tools are off (the default since 2.1.233 on the new models), the list stays empty and the panel shows "Active session — waiting for tasks" even while the agent works. The rest of the panel does not depend on them. How to turn them on: [Install](#install).
+- **Exact data** relies on Claude Code Mods, an early-access feature. If the footer of the usage block says the bridge didn't respond, Mods may be off for your account, or a `CLAUDE_CODE_PLUGIN_DIRS` set in your environment may win over the one in `settings.json`; the panel keeps its estimates. Uninstalling the extension does not remove the mod folder or the `settings.json` entry: run `Claude Todos: Disable exact data from Claude Code` first, or remove both by hand.
 
 ## Contributing
 

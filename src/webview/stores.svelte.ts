@@ -75,6 +75,16 @@ class TodosStore {
   enableTaskTools(): void {
     this.post({ type: 'enableTaskTools' });
   }
+
+  // Ponte de dados (item 25): o rodapé do bloco de uso. O host confirma e grava;
+  // o snapshot seguinte já traz o estado novo.
+  installBridgeMod(): void {
+    this.post({ type: 'installBridgeMod' });
+  }
+
+  uninstallBridgeMod(): void {
+    this.post({ type: 'uninstallBridgeMod' });
+  }
 }
 
 export const todosStore = new TodosStore();

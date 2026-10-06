@@ -99,12 +99,14 @@
 
 | 檔案 | 存取方式 | 原因 |
 |---|---|---|
-| `~/.claude/settings.json` | 讀取 + 寫入（僅在你授權時） | 在 `hooks.SessionStart` 和 `hooks.UserPromptSubmit` 下新增兩個掛鉤命令；當你點擊**開啟任務工具**時，還會寫入 `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`。其他掛鉤和設定會被保留；無效的檔案絕不會被覆寫。 |
+| `~/.claude/settings.json` | 讀取 + 寫入（僅在你授權時） | 在 `hooks.SessionStart` 和 `hooks.UserPromptSubmit` 下新增兩個掛鉤命令；當你點擊**開啟任務工具**時，寫入 `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`；當你開啟**精確資料**時，把 mod 資料夾寫入 `env.CLAUDE_CODE_PLUGIN_DIRS`。其他掛鉤和設定會被保留；無效的檔案絕不會被覆寫。 |
 | `~/.claude/.vscode-todos-bridge/sessions.json` | 由內建的掛鉤指令碼寫入 | 記錄 `{cwd, sessionId, terminalPid, startedAt}`，讓擴充功能知道哪個 Claude 工作階段屬於哪個 VSCode 視窗。最多保留 200 筆記錄。 |
+| `~/.claude/.vscode-todos-bridge/mod/` | 由擴充功能寫入（僅在你授權時） | Claude Code mod `claude-todos-bridge` 的副本以及開啟的時間。關閉精確資料時會被刪除。 |
+| `~/.claude/.vscode-todos-bridge/live/<sessionId>.json` | 由 mod 在 Claude Code 內寫入 | 每個工作階段：上下文視窗、5 小時和 7 天的用量限制、最後一輪的結束時間，以及每個子智慧體的開始和結束（類型、描述、模型）。不包含費用和訊息內容。超過 30 天的檔案會被刪除。 |
 | `~/.claude/projects/{cwd-encoded}/…` | 唯讀 | 由 Claude Code 自身寫入的工作階段和子智慧體對話記錄（`.jsonl` + `.meta.json`）— 任務、樹狀結構、耗時和權杖資料的來源。 |
 | `~/.claude/todos/` | 不會被存取 | Claude Code 1.x 的舊版位置，已被忽略。 |
 
-此擴充功能不會修改你的對話記錄，也不會刪除任何內容。
+此擴充功能不會修改你的對話記錄。它只會刪除自己建立的內容：關閉精確資料時的 mod 副本，以及超過 30 天的橋接檔案。
 
 ## 環境需求
 
@@ -129,6 +131,7 @@ npx vsce package # produces claude-todos-<version>.vsix
 
 - 掛鉤指令碼必須始終可以透過 `~/.claude/settings.json` 中儲存的路徑存取。如果你手動刪除擴充功能而未解除安裝它，那些掛鉤命令會變成空操作（no-op）— 需要手動移除它們，或是重新安裝並再次執行 `Claude Todos: Install Session Hook`。
 - 如果 Claude Code 的任務工具處於關閉狀態（自 2.1.233 起在新模型上為預設），清單會是空的，即使智慧體正在工作，面板也只顯示「工作階段進行中 — 等待任務」。面板的其餘部分不依賴這些工具。如何開啟：見[安裝](#安裝)。
+- **精確資料**依賴 Claude Code 的 Mod 功能，目前處於搶先體驗階段。如果用量區塊底部顯示橋接沒有回應，可能是你的帳戶關閉了 Mod，或者環境中設定的 `CLAUDE_CODE_PLUGIN_DIRS` 覆蓋了 `settings.json` 中的設定；面板會繼續使用估算值。解除安裝擴充功能不會刪除 mod 資料夾和 `settings.json` 中的項目：請先執行 `Claude Todos: Disable exact data from Claude Code`，或手動刪除兩者。
 
 ## 貢獻
 

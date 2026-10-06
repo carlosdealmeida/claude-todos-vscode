@@ -244,4 +244,77 @@ describe('SessionNotifier', () => {
       expect(n.shouldPoll(T0 + 2_000)).toBe(false); // sem rajada mínima, nada pode disparar
     });
   });
+
+  describe('turn end from the data bridge (item 25)', () => {
+    it('fires idle right away when the bridge says the main turn ended after the last message', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
+      const last = burst(n, 's1', T0, ACTIVITY_MIN_MS);
+      expect(n.observe({ sessionId: 's1', mtime: last, allComplete: false, turnEndedAt: last + 500, now: last + 1_000 }))
+        .toEqual(['idle']);
+    });
+
+    it('a turn end older than the last message belongs to an earlier turn: waits for the 45 s', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
+      const last = burst(n, 's1', T0, ACTIVITY_MIN_MS);
+      expect(n.observe({ sessionId: 's1', mtime: last, allComplete: false, turnEndedAt: last - 60_000, now: last + 1_000 }))
+        .toEqual([]);
+      expect(n.observe({ sessionId: 's1', mtime: last, allComplete: false, turnEndedAt: last - 60_000, now: last + IDLE_MS }))
+        .toEqual(['idle']);
+    });
+
+    it('does not fire on a fresh turn end while a sub-agent runs', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
+      const last = burst(n, 's1', T0, ACTIVITY_MIN_MS);
+      expect(n.observe({
+        sessionId: 's1', mtime: last, allComplete: false, subAgentRunning: true, turnEndedAt: last + 500, now: last + 1_000,
+      })).toEqual([]);
+    });
+
+    it('still requires the minimum burst of activity', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
+      const last = burst(n, 's1', T0, 20_000);
+      expect(n.observe({ sessionId: 's1', mtime: last, allComplete: false, turnEndedAt: last + 500, now: last + 1_000 }))
+        .toEqual([]);
+    });
+
+    it('does not repeat in the same cycle', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
+      const last = burst(n, 's1', T0, ACTIVITY_MIN_MS);
+      expect(n.observe({ sessionId: 's1', mtime: last, allComplete: false, turnEndedAt: last + 500, now: last + 1_000 }))
+        .toEqual(['idle']);
+      expect(n.observe({ sessionId: 's1', mtime: last, allComplete: false, turnEndedAt: last + 500, now: last + 2_000 }))
+        .toEqual([]);
+    });
+
+    it('after a bridge idle, a quick reply opens a new burst: a short turn does not notify again', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
+      const last = burst(n, 's1', T0, ACTIVITY_MIN_MS);
+      expect(n.observe({ sessionId: 's1', mtime: last, allComplete: false, turnEndedAt: last + 500, now: last + 1_000 }))
+        .toEqual(['idle']);
+      // resposta rápida: usuário em +5 s, assistente em +8 s, fim do turno em +8,5 s
+      expect(n.observe({ sessionId: 's1', mtime: last + 5_000, allComplete: false, turnEndedAt: last + 500, now: last + 5_000 }))
+        .toEqual([]);
+      expect(n.observe({ sessionId: 's1', mtime: last + 8_000, allComplete: false, turnEndedAt: last + 500, now: last + 8_000 }))
+        .toEqual([]);
+      expect(n.observe({ sessionId: 's1', mtime: last + 8_000, allComplete: false, turnEndedAt: last + 8_500, now: last + 9_000 }))
+        .toEqual([]);
+    });
+
+    it('after a bridge idle, a long turn notifies again at its end', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
+      const last = burst(n, 's1', T0, ACTIVITY_MIN_MS);
+      expect(n.observe({ sessionId: 's1', mtime: last, allComplete: false, turnEndedAt: last + 500, now: last + 1_000 }))
+        .toEqual(['idle']);
+      const last2 = burst(n, 's1', last + 5_000, ACTIVITY_MIN_MS);
+      expect(n.observe({ sessionId: 's1', mtime: last2, allComplete: false, turnEndedAt: last2 + 500, now: last2 + 1_000 }))
+        .toEqual(['idle']);
+    });
+  });
 });

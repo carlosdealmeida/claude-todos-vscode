@@ -14,13 +14,18 @@ function assistant(model: string): object {
 
 describe('SessionCore', () => {
   let claudeDir: string;
+  // Cada SessionCore abre quatro fs.watch (projects/, .vscode-todos-bridge/, live/ e
+  // sessions/): sem dispose() os handles seguem abertos e, no Windows, podem travar o rmSync.
+  const cores: SessionCore[] = [];
+  const track = (core: SessionCore): SessionCore => { cores.push(core); return core; };
   beforeEach(() => {
     claudeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'core-'));
     vi.stubEnv('CLAUDE_CODE_ENABLE_TODO_TOOLS', '');
   });
   afterEach(() => {
     vi.unstubAllEnvs();
-    fs.rmSync(claudeDir, { recursive: true, force: true });
+    for (const core of cores.splice(0)) core.dispose();
+    fs.rmSync(claudeDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
   });
 
   function writeSession(): void {
@@ -47,7 +52,7 @@ describe('SessionCore', () => {
   }
 
   function make(): SessionCore {
-    return new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => 1_000_000 });
+    return track(new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => 1_000_000 }));
   }
 
   it('builds a snapshot for the active session', () => {
@@ -183,7 +188,7 @@ describe('SessionCore', () => {
   it('keeps polling while a background sub-agent of a live session runs (R6)', () => {
     writeLiveBackgroundSession(Date.parse('2026-10-01T09:59:00.000Z')); // processo vivo desde antes do lançamento
     let now = 1_000_000;
-    const core = new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now });
+    const core = track(new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now }));
     expect(core.buildSnapshot()?.agents.find(a => a.agentId === 'bg0001')?.status).toBe('running');
     core.observeForNotifications();   // a primeira observação só inicializa
     now += 10 * 60_000;               // 10 min sem mensagem nova no main
@@ -196,11 +201,98 @@ describe('SessionCore', () => {
   it('a session resumed in a new process does not keep an old background agent running (R6)', () => {
     writeLiveBackgroundSession(Date.parse('2026-10-02T08:00:00.000Z')); // processo atual começou depois
     let now = 1_000_000;
-    const core = new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now });
+    const core = track(new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now }));
     expect(core.buildSnapshot()?.agents.find(a => a.agentId === 'bg0001')?.status).toBe('completed');
     core.observeForNotifications();
     now += 10 * 60_000;
     core.observeForNotifications();
     expect(core.shouldPollNotifications()).toBe(false);
+  });
+
+  // Ponte de dados (item 25)
+  function writeBridgeFile(file: object): void {
+    const live = path.join(claudeDir, '.vscode-todos-bridge', 'live');
+    fs.mkdirSync(live, { recursive: true });
+    fs.writeFileSync(path.join(live, `${SID}.json`), JSON.stringify(file));
+  }
+
+  function writeLiveRegistry(startedAt: number): void {
+    fs.mkdirSync(path.join(claudeDir, 'sessions'), { recursive: true });
+    fs.writeFileSync(path.join(claudeDir, 'sessions', `${process.pid}.json`),
+      JSON.stringify({ pid: process.pid, sessionId: SID, cwd: CWD, startedAt }));
+  }
+
+  function writeMainWithMessagesAt(times: number[]): void {
+    const projDir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
+    fs.mkdirSync(projDir, { recursive: true });
+    fs.writeFileSync(path.join(projDir, `${SID}.jsonl`), times.map(t =>
+      JSON.stringify({ ...assistant('claude-opus-4-8'), timestamp: new Date(t).toISOString() })).join('\n') + '\n');
+    const bridgeDir = path.join(claudeDir, '.vscode-todos-bridge');
+    fs.mkdirSync(bridgeDir, { recursive: true });
+    fs.writeFileSync(path.join(bridgeDir, 'sessions.json'), JSON.stringify([
+      { cwd: CWD, sessionId: SID, terminalPid: null, startedAt: 1 },
+    ]));
+  }
+
+  // Rajada de 60 s de atividade no main, observada pelo core.
+  function burstThroughCore(T: number, setNow: (v: number) => void, core: SessionCore): void {
+    setNow(T);
+    writeMainWithMessagesAt([T]);
+    core.observeForNotifications();                       // inicializa
+    for (const dt of [30_000, 60_000]) {
+      setNow(T + dt);
+      writeMainWithMessagesAt([T, T + dt]);
+      expect(core.observeForNotifications().kinds).toEqual([]);
+    }
+  }
+
+  it('a turn end reported by the bridge fires the idle toast without the 45 s wait (item 25)', () => {
+    const T = Date.parse('2026-10-05T10:00:00.000Z');
+    writeLiveRegistry(T - 60_000);
+    let now = T;
+    const core = track(new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now }));
+    burstThroughCore(T, v => { now = v; }, core);
+    now = T + 61_000;
+    writeBridgeFile({ schema: 1, sessionId: SID, engineVersion: '2.1.289', writtenAt: now, agents: {},
+      turn: { state: 'idle', at: T + 60_500, reason: 'answer' } });
+    expect(core.observeForNotifications().kinds).toEqual(['idle']);
+  });
+
+  // Review Focus 3
+  it('ignores a turn end written before the live process started (item 25)', () => {
+    const T = Date.parse('2026-10-05T10:00:00.000Z');
+    writeLiveRegistry(T + 60_800);
+    let now = T;
+    const core = track(new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now }));
+    burstThroughCore(T, v => { now = v; }, core);
+    now = T + 61_000;
+    writeBridgeFile({ schema: 1, sessionId: SID, engineVersion: '2.1.289', writtenAt: now, agents: {},
+      turn: { state: 'idle', at: T + 60_500, reason: 'answer' } });
+    expect(core.observeForNotifications().kinds).toEqual([]);
+  });
+
+  it('installs and uninstalls the bridge mod through settings.json (item 25)', () => {
+    writeSession();
+    const core = make();
+    expect(core.buildSnapshot()?.bridge).toBe('off');
+    expect(core.installBridgeMod()).toEqual({ changed: true, path: path.join(claudeDir, 'settings.json') });
+    const modDir = path.join(claudeDir, '.vscode-todos-bridge', 'mod', 'claude-todos-bridge');
+    expect(fs.existsSync(path.join(modDir, 'hooks', 'register.ts'))).toBe(true);
+    expect(core.buildSnapshot()?.bridge).toBe('next-session');
+    writeBridgeFile({ schema: 1, sessionId: SID, writtenAt: 1, agents: {} });
+    expect(core.buildSnapshot()?.bridge).toBe('active');
+    expect(core.uninstallBridgeMod().changed).toBe(true);
+    expect(core.buildSnapshot()?.bridge).toBe('off');
+    expect(JSON.parse(fs.readFileSync(path.join(claudeDir, 'settings.json'), 'utf-8'))).toEqual({});
+  });
+
+  it('pruneBridge also removes bridge files older than the window (item 25)', () => {
+    writeBridgeFile({ schema: 1, sessionId: SID, writtenAt: 1, agents: {} });
+    const file = path.join(claudeDir, '.vscode-todos-bridge', 'live', `${SID}.json`);
+    const old = new Date('2026-09-01T00:00:00Z');
+    fs.utimesSync(file, old, old);
+    const core = track(new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => Date.parse('2026-10-06T00:00:00Z') }));
+    core.pruneBridge(30 * 24 * 3600 * 1000);
+    expect(fs.existsSync(file)).toBe(false);
   });
 });

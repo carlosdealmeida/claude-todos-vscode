@@ -15,6 +15,9 @@ export interface NotifierInput {
   // R6: algum sub-agent rodando (inclusive em background). Conta como
   // atividade: o main pode estar em silêncio só esperando por ele.
   subAgentRunning?: boolean;
+  // Ponte de dados (item 25): fim do último turno do main informado pelo mod;
+  // presente só com a sessão viva e a partir do início do processo.
+  turnEndedAt?: number;
   now: number;          // epoch ms, injetado
 }
 
@@ -23,6 +26,15 @@ export interface NotifierInput {
 // agente parou e espera o usuário.
 export const ACTIVITY_MIN_MS = 60_000;
 export const IDLE_MS = 45_000;
+
+// Ponte de dados (item 25): o fim do turno do main é mais recente que a última
+// mensagem do transcript, então o turno acabou de verdade e o silêncio de
+// IDLE_MS deixa de ser exigido. Sem marcador de atividade (mtime 0) não dá para
+// comparar: vale a regra de sempre. (No ramo que chama esta função nenhum
+// sub-agent está rodando: sub-agent rodando cai no ramo de atividade.)
+function turnEndedFresh(input: NotifierInput): boolean {
+  return input.turnEndedAt !== undefined && input.mtime > 0 && input.turnEndedAt >= input.mtime;
+}
 
 export class SessionNotifier {
   private sessionId: string | null = null;
@@ -67,10 +79,13 @@ export class SessionNotifier {
     const running = input.subAgentRunning === true;
     if (input.mtime !== this.lastMtime || running) {
       // Atividade: mensagem nova no main ou sub-agent rodando. Se o silêncio
-      // anterior já tinha vencido IDLE_MS, abre uma NOVA rajada (o ciclo de
-      // idle rearma). Sub-agent rodando mantém a rajada viva, então o idle do
-      // fim inclui o trabalho dos agentes mesmo se o main fechar rápido.
-      if (input.now - this.lastChangeAt >= IDLE_MS) this.activeSince = input.now;
+      // anterior já tinha vencido IDLE_MS, ou o aviso de idle já saiu (por
+      // silêncio ou pelo fim de turno da ponte, que não espera o IDLE_MS), abre
+      // uma NOVA rajada: o ciclo de idle rearma e uma resposta rápida depois do
+      // aviso não herda a rajada longa. Sub-agent rodando mantém a rajada viva,
+      // então o idle do fim inclui o trabalho dos agentes mesmo se o main fechar
+      // rápido.
+      if (input.now - this.lastChangeAt >= IDLE_MS || this.idleNotified) this.activeSince = input.now;
       this.lastMtime = input.mtime;
       this.lastChangeAt = input.now;
       this.idleNotified = false;
@@ -78,7 +93,7 @@ export class SessionNotifier {
       awaiting === null
       && !this.idleNotified
       && this.lastChangeAt - this.activeSince >= ACTIVITY_MIN_MS
-      && input.now - this.lastChangeAt >= IDLE_MS
+      && (input.now - this.lastChangeAt >= IDLE_MS || turnEndedFresh(input))
     ) {
       // Rajada longa o suficiente + silêncio vencido: o agente parou e espera.
       this.idleNotified = true;

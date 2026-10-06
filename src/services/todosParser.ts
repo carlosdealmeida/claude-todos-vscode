@@ -217,7 +217,13 @@ export class TodosParser {
   // rodando — o comportamento de antes do R6. `aliveSince`: início desse
   // processo (epoch ms); um lançamento ou retomada anterior a ele é de um
   // processo que já morreu (sessão retomada). Ausente = sem limite.
-  listSessionDetail(sessionId: string, cwd: string, opts: { alive?: boolean; aliveSince?: number } = {}): {
+  // `extraLifecycle`: eventos de ciclo de vida de fora do transcript (a ponte de
+  // dados, item 25), juntados pelo evento mais recente de cada agente.
+  listSessionDetail(sessionId: string, cwd: string, opts: {
+    alive?: boolean;
+    aliveSince?: number;
+    extraLifecycle?: Map<string, LifecycleEntry>;
+  } = {}): {
     agents: AgentTodos[];
     awaitingInput: AwaitingInput | null;
     pendingQuestions: PendingQuestion[];
@@ -242,7 +248,7 @@ export class TodosParser {
       });
     }
 
-    agents.push(...this.listSubAgents(sessionId, cwd, mainLines, opts.alive === true, opts.aliveSince));
+    agents.push(...this.listSubAgents(sessionId, cwd, mainLines, opts.alive === true, opts.aliveSince, opts.extraLifecycle));
     const waits = scanPendingWaits(mainLines, true);
     return {
       agents,
@@ -298,6 +304,7 @@ export class TodosParser {
     mainLines: string[],
     sessionAlive: boolean,
     aliveSince: number | undefined,
+    extraLifecycle: Map<string, LifecycleEntry> | undefined,
   ): AgentTodos[] {
     const dir = this.subAgentsDir(sessionId, cwd);
     if (!dir) return [];
@@ -365,6 +372,7 @@ export class TodosParser {
     const lifecycle = mergeLifecycles([
       collectAgentLifecycle(mainLines),
       ...infos.map(i => i.lifecycle),
+      ...(extraLifecycle ? [extraLifecycle] : []),
     ]);
     const statusOf = (agentId: string, dispatch: Dispatch): 'running' | 'completed' => {
       if (dispatch.result === 'none') return 'running';

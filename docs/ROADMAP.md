@@ -198,6 +198,8 @@ de tokens do 0.3.0).
   relatam que o indicador parou de atualizar no meio da sessão. A 2.1.273 corrigiu do lado deles
   o contexto ~2× em turnos com advisor (o nosso achado 2 do R5, corrigido em 08-11).
   [#99018](https://github.com/anthropics/claude-code/issues/99018) pede a janela de cada modelo no handshake do SDK — a mesma informação que nos falta.
+- **Janela exata para quem ativa a ponte (item 25, v1):** o `window` que o Claude Code informa
+  substitui a estimativa por nome de modelo; a heurística segue como reserva para quem não ativa.
 
 ### 3. Visibilidade de custo: cached vs uncached ✅ ENTREGUE (0.5.0)
 - **Issue:** [#44779](https://github.com/anthropics/claude-code/issues/44779) — labels `area:cost`, `area:tui`, `area:statusline`
@@ -861,7 +863,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   decisão de posicionamento (R2 passo 3), não antes. Antes de qualquer UI nova de background,
   corrigir o estado dos sub-agents assíncronos (**R6**), que é a base de dados disso.
 
-### 25. Mods (function hooks) — nova superfície de extensão do Claude Code ⏸️ observar · 🧪 spike da ponte ✅ (2026-10-05)
+### 25. Mods (function hooks) — nova superfície de extensão do Claude Code · ✅ ponte de dados v1 entregue
 - **Origem:** varredura 2026-10-04. A 2.1.287 lançou **Claude Mods** (*"plugins may now modify
   deeper behavior"*): um plugin cujo comportamento vive num módulo de hooks em TypeScript
   (`register(on, options)`, hooks `($, e, next)` que interceptam eventos do engine como
@@ -932,6 +934,13 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   seriam os rate limits e a janela exata (item 2) e o fim exato de cada sub-agent (R6), com o parser
   continuando como fonte de verdade e a ponte só enriquecendo quando existir. Se for adiante, vira
   spec própria.
+- **✅ Ponte v1 entregue:** o mod `claude-todos-bridge`, instalado pela extensão via
+  `CLAUDE_CODE_PLUGIN_DIRS`, grava a janela exata, os limites de 5h e 7 dias, o fim exato de
+  sub-agents e turnos; o aviso de ociosidade sai no fim do turno. Spec
+  `docs/specs/2026-10-06-ponte-de-dados-mod-design.md`, plano
+  `docs/plans/2026-10-06-ponte-de-dados-mod.md`. Fora da v1: custo, `failed`/`killed` na UI,
+  aviso de "esperando permissão", marketplace. A ideia (b), um mod "Claude Todos" para o
+  terminal, segue ⏸️.
 
 ---
 
