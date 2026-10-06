@@ -41,7 +41,7 @@
       <PendingQuestions questions={snapshot.pendingQuestions} sessionId={snapshot.sessionId} />
     {/if}
     {#if snapshot.usage}
-      <UsageTable usage={snapshot.usage} />
+      <UsageTable usage={snapshot.usage} bridge={snapshot.bridge} />
     {/if}
     <ProjectUsageSection />
     {#if snapshot.agents.length > 0}

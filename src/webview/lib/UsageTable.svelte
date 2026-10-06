@@ -1,9 +1,11 @@
 <script lang="ts">
-  import type { SessionUsage, ModelUsage } from '../../types';
-  import { formatCompact, shortModel, contextLevel, cacheLevel } from '../format';
+  import type { SessionUsage, ModelUsage, BridgeStatus } from '../../types';
+  import { formatCompact, shortModel, contextLevel, cacheLevel, limitLabelKey, formatResetTime, bridgeTextKey } from '../format';
   import { todosStore } from '../stores.svelte';
 
-  let { usage }: { usage: SessionUsage } = $props();
+  let { usage, bridge }: { usage: SessionUsage; bridge?: BridgeStatus } = $props();
+  // Ponte de dados (item 25): limites de uso da conta, quando a ponte os tem.
+  let limits = $derived(usage.rateLimits);
   let ctx = $derived(usage.context);
   let ctxPct = $derived(ctx ? Math.min(ctx.tokens / ctx.limit, 1) : 0);
   let ctxLevel = $derived(ctx ? contextLevel(ctx.tokens / ctx.limit) : 'ok');
@@ -40,7 +42,26 @@
     {#if ctx}
       <div class="ctx-bar-row">
         <div class="ctx-bar" aria-hidden="true"><div class="ctx-fill {ctxLevel}" style="width: {Math.round(ctxPct * 100)}%"></div></div>
-        <span class="ctx-count">{formatCompact(ctx.tokens)}/{formatCompact(ctx.limit)}</span>
+        <span class="ctx-count" title={ctx.source === 'mod' ? todosStore.t('usage.ctxExactTitle') : undefined}>{formatCompact(ctx.tokens)}/{formatCompact(ctx.limit)}</span>
+      </div>
+    {/if}
+
+    {#if limits}
+      <div class="limits">
+        <div class="limits-head">
+          <span class="limits-label">{todosStore.t('usage.limits')}</span>
+          <span class="limits-read">{todosStore.t('usage.limitsReadAt', { time: formatResetTime(new Date(limits.readAt).toISOString(), Date.now(), todosStore.locale) })}</span>
+        </div>
+        {#each limits.limits as limit (limit.kind)}
+          {@const key = limitLabelKey(limit.kind)}
+          {@const level = contextLevel(limit.percentUsed / 100)}
+          <div class="limit-row">
+            <span class="limit-name">{key ? todosStore.t(key) : limit.kind}</span>
+            <div class="ctx-bar" aria-hidden="true"><div class="ctx-fill {level}" style="width: {Math.min(100, Math.max(0, Math.round(limit.percentUsed)))}%"></div></div>
+            <span class="limit-pct">{Math.round(limit.percentUsed)}%</span>
+            <span class="limit-reset">{todosStore.t('usage.limitResets', { time: formatResetTime(limit.resetsAt, Date.now(), todosStore.locale) })}</span>
+          </div>
+        {/each}
       </div>
     {/if}
 
@@ -104,6 +125,14 @@
         </tr>
       </tfoot>
     </table>
+    {#if bridge}
+      <div class="bridge-foot">
+        <span>{todosStore.t(bridgeTextKey(bridge))}</span>
+        <button class="bridge-action" onclick={() => (bridge === 'off' ? todosStore.installBridgeMod() : todosStore.uninstallBridgeMod())}>
+          {todosStore.t(bridge === 'off' ? 'usage.bridge.enable' : 'usage.bridge.disable')}
+        </button>
+      </div>
+    {/if}
   </section>
 {/if}
 
@@ -242,4 +271,44 @@
   .cdot.read { background: var(--vscode-charts-green); }
   .cdot.create { background: var(--vscode-charts-blue); }
   .cdot.new { background: var(--vscode-descriptionForeground); }
+  .limits { margin-bottom: 0.4rem; }
+  .limits-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.2rem;
+  }
+  .limits-label { font-size: 0.9em; }
+  .limits-read, .limit-reset {
+    font-size: 0.8em;
+    color: var(--vscode-descriptionForeground);
+    white-space: nowrap;
+  }
+  .limit-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.2rem;
+  }
+  .limit-name { font-size: 0.85em; white-space: nowrap; }
+  .limit-pct { font-size: 0.8em; font-weight: 600; }
+  .bridge-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    margin-top: 0.35rem;
+    font-size: 0.75em;
+    color: var(--vscode-descriptionForeground);
+  }
+  .bridge-action {
+    background: transparent;
+    border: none;
+    color: var(--vscode-textLink-foreground);
+    font: inherit;
+    padding: 0;
+    cursor: pointer;
+  }
+  .bridge-action:hover { text-decoration: underline; }
 </style>

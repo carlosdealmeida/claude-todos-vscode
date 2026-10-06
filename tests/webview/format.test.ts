@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary } from '../../src/webview/format';
+import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey } from '../../src/webview/format';
 import type { Todo, TodoStatus, AgentUsage, PendingQuestion } from '../../src/types';
 
 function todo(status: TodoStatus, startedAt?: number, completedAt?: number): Todo {
@@ -328,5 +328,37 @@ describe('pendingSummary', () => {
     const out = pendingSummary([{ kind: 'plan', text: '## Plano', line: 7 }], t)!;
     expect(out.title).toBe('app.pendingPlanTitle');
     expect(out.items).toEqual([{ chip: 'app.pendingPlanChip', text: '## Plano', line: 7 }]);
+  });
+});
+
+describe('limitLabelKey', () => {
+  it('maps the known kinds and leaves the others raw', () => {
+    expect(limitLabelKey('five_hour')).toBe('usage.limit.fiveHour');
+    expect(limitLabelKey('seven_day')).toBe('usage.limit.sevenDay');
+    expect(limitLabelKey('spend_limit')).toBe('usage.limit.spend');
+    expect(limitLabelKey('seven_day_opus')).toBeNull();
+  });
+});
+
+describe('formatResetTime', () => {
+  const NOW = Date.parse('2026-10-05T14:05:00Z');
+  it('shows only the time on the same day', () => {
+    expect(formatResetTime('2026-10-05T20:40:00.000Z', NOW, 'pt-br', 'UTC')).toBe('20:40');
+  });
+  it('puts the date first on another day, in the panel language', () => {
+    expect(formatResetTime('2026-10-12T12:00:00.000Z', NOW, 'pt-br', 'UTC')).toBe('12/10 12:00');
+    expect(formatResetTime('2026-10-12T12:00:00.000Z', NOW, 'en', 'UTC')).toBe('10/12 12:00');
+  });
+  it('returns an empty string for an invalid date', () => {
+    expect(formatResetTime('nope', NOW, 'en', 'UTC')).toBe('');
+  });
+});
+
+describe('bridgeTextKey', () => {
+  it('has a text for every state', () => {
+    expect(bridgeTextKey('off')).toBe('usage.bridge.off');
+    expect(bridgeTextKey('active')).toBe('usage.bridge.active');
+    expect(bridgeTextKey('next-session')).toBe('usage.bridge.nextSession');
+    expect(bridgeTextKey('silent')).toBe('usage.bridge.silent');
   });
 });

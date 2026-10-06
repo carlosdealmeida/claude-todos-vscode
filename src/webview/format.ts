@@ -1,5 +1,6 @@
-import type { Todo, AgentUsage, PendingQuestion } from '../types';
+import type { Todo, AgentUsage, PendingQuestion, BridgeStatus } from '../types';
 import type { MessageKey } from '../i18n/messages';
+import type { Locale } from '../i18n/locale';
 
 // Compact token formatting for the panel: 7361 -> "7,4k", 24580 -> "24,6k".
 // Uses a comma decimal separator to match pt-BR.
@@ -220,4 +221,41 @@ export function pendingSummary(
       return { ...(chip ? { chip } : {}), text: q.text, line: q.line };
     }),
   };
+}
+
+// Ponte de dados (item 25): rótulo de cada limite de uso por kind. null para um
+// kind que o painel não conhece; aí ele aparece como o engine o escreve.
+export function limitLabelKey(kind: string): MessageKey | null {
+  if (kind === 'five_hour') return 'usage.limit.fiveHour';
+  if (kind === 'seven_day') return 'usage.limit.sevenDay';
+  if (kind === 'spend_limit') return 'usage.limit.spend';
+  return null;
+}
+
+const INTL_LOCALE: Record<Locale, string> = {
+  en: 'en-US', 'pt-br': 'pt-BR', es: 'es', 'zh-cn': 'zh-CN', 'zh-tw': 'zh-TW',
+};
+
+// Hora de um instante ISO no idioma do painel: só "HH:MM" quando cai no mesmo
+// dia de `now`; com a data antes nos outros dias. String vazia para um ISO
+// inválido. `timeZone` existe para os testes; o painel usa o fuso local.
+export function formatResetTime(iso: string, now: number, locale: Locale, timeZone?: string): string {
+  const at = Date.parse(iso);
+  if (!Number.isFinite(at)) return '';
+  const tag = INTL_LOCALE[locale] ?? 'en-US';
+  const zone = timeZone !== undefined ? { timeZone } : {};
+  const day = new Intl.DateTimeFormat(tag, { ...zone, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const time = new Intl.DateTimeFormat(tag, { ...zone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(at);
+  if (day.format(at) === day.format(now)) return time;
+  return `${new Intl.DateTimeFormat(tag, { ...zone, day: '2-digit', month: '2-digit' }).format(at)} ${time}`;
+}
+
+// Texto do rodapé da ponte para cada estado.
+export function bridgeTextKey(status: BridgeStatus): MessageKey {
+  switch (status) {
+    case 'off': return 'usage.bridge.off';
+    case 'active': return 'usage.bridge.active';
+    case 'next-session': return 'usage.bridge.nextSession';
+    case 'silent': return 'usage.bridge.silent';
+  }
 }
