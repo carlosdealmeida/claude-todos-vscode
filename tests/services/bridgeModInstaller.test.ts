@@ -131,14 +131,28 @@ describe('BridgeModInstaller', () => {
   });
 
   // Review Focus 1
-  it('matches our entry regardless of case and separators on Windows', () => {
-    if (process.platform !== 'win32') return;
+  it('matches our entry regardless of case, separators and a trailing separator (Windows rules)', () => {
+    const win = () => new BridgeModInstaller(claudeDir, new ClaudeSettingsFile(settingsPath),
+      { files: FILES, now: () => 1_000, delimiter: ';', platform: 'win32' });
+    for (const variant of [modDir().toUpperCase().replace(/\\/g, '/'), `${modDir()}\\`, `${modDir()}/`]) {
+      fs.mkdirSync(path.join(modDir(), '.claude-plugin'), { recursive: true });
+      fs.writeFileSync(path.join(modDir(), '.claude-plugin', 'plugin.json'), '{}');
+      fs.writeFileSync(settingsPath, JSON.stringify({ env: { [PLUGIN_DIRS_ENV]: variant } }));
+      expect(win().status().installed, variant).toBe(true);
+      expect(win().install().changed, variant).toBe(false);
+      expect(win().uninstall().changed, variant).toBe(true);
+      expect(settings(), variant).toEqual({});
+    }
+  });
+
+  it('ignores a trailing separator on POSIX too', () => {
+    // path.delimiter (':' no POSIX, ';' no Windows): o ':' da letra do drive partiria a entrada ao meio
+    const posix = () => new BridgeModInstaller(claudeDir, new ClaudeSettingsFile(settingsPath),
+      { files: FILES, now: () => 1_000, delimiter: path.delimiter, platform: 'linux' });
     fs.mkdirSync(path.join(modDir(), '.claude-plugin'), { recursive: true });
     fs.writeFileSync(path.join(modDir(), '.claude-plugin', 'plugin.json'), '{}');
-    fs.writeFileSync(settingsPath, JSON.stringify({ env: { [PLUGIN_DIRS_ENV]: modDir().toUpperCase().replace(/\\/g, '/') } }));
-    expect(make().status().installed).toBe(true);
-    expect(make().install().changed).toBe(false);
-    expect(make().uninstall().changed).toBe(true);
-    expect(settings()).toEqual({});
+    fs.writeFileSync(settingsPath, JSON.stringify({ env: { [PLUGIN_DIRS_ENV]: `${modDir()}/` } }));
+    expect(posix().status().installed).toBe(true);
+    expect(posix().install().changed).toBe(false);
   });
 });

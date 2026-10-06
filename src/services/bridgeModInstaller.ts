@@ -16,6 +16,7 @@ export interface BridgeModInstallerOptions {
   files?: Readonly<Record<string, string>>;
   now?: () => number;
   delimiter?: string;
+  platform?: NodeJS.Platform;  // regras de comparação dos caminhos; padrão process.platform
 }
 
 // Entradas de uma lista no formato do CLAUDE_CODE_PLUGIN_DIRS, sem vazios.
@@ -23,11 +24,17 @@ export function splitPluginDirs(value: string | undefined, delimiter: string = p
   return (value ?? '').split(delimiter).map(s => s.trim()).filter(s => s !== '');
 }
 
-// No Windows a comparação ignora maiúsculas e unifica os separadores.
-function samePath(a: string, b: string): boolean {
-  return process.platform === 'win32'
-    ? path.normalize(a).toLowerCase() === path.normalize(b).toLowerCase()
-    : path.normalize(a) === path.normalize(b);
+// Compara com as regras do sistema: no Windows ignora maiúsculas e unifica os
+// separadores (path.win32); nos demais só normaliza (path.posix). Um separador
+// final (/ ou \) não conta: a entrada editada à mão com ele ainda é a nossa.
+function samePath(a: string, b: string, platform: NodeJS.Platform): boolean {
+  const win = platform === 'win32';
+  const rules = win ? path.win32 : path.posix;
+  const canonical = (p: string): string => {
+    const normalized = rules.normalize(p.replace(/[\\/]+$/, ''));
+    return win ? normalized.toLowerCase() : normalized;
+  };
+  return canonical(a) === canonical(b);
 }
 
 function statOrNull(file: string): fs.Stats | null {
@@ -47,6 +54,7 @@ export class BridgeModInstaller {
   private readonly files: Readonly<Record<string, string>>;
   private readonly now: () => number;
   private readonly delimiter: string;
+  private readonly platform: NodeJS.Platform;
   private statusMemo: { key: string; value: BridgeModStatus } | null = null;
 
   constructor(
@@ -61,6 +69,7 @@ export class BridgeModInstaller {
     this.files = opts.files ?? BRIDGE_MOD_FILES;
     this.now = opts.now ?? (() => Date.now());
     this.delimiter = opts.delimiter ?? path.delimiter;
+    this.platform = opts.platform ?? process.platform;
   }
 
   // Instalado = a nossa entrada no env e a pasta do mod existem. Um
@@ -80,7 +89,7 @@ export class BridgeModInstaller {
   private readStatus(manifestExists: boolean): BridgeModStatus {
     let listed = false;
     try {
-      listed = this.pluginDirsOf(this.envOf(this.settings.read())).some(d => samePath(d, this.modDir));
+      listed = this.pluginDirsOf(this.envOf(this.settings.read())).some(d => samePath(d, this.modDir, this.platform));
     } catch { /* settings.json inválido */ }
     if (!listed || !manifestExists) return { installed: false };
     const installedAt = this.readInstalledAt();
@@ -96,7 +105,7 @@ export class BridgeModInstaller {
     const env = this.envOf(settings);
     const dirs = this.pluginDirsOf(env);
     this.writeFiles();
-    const listed = dirs.some(d => samePath(d, this.modDir));
+    const listed = dirs.some(d => samePath(d, this.modDir, this.platform));
     if (!listed) {
       settings.env = { ...env, [PLUGIN_DIRS_ENV]: [...dirs, this.modDir].join(this.delimiter) };
       this.settings.write(settings);
@@ -115,7 +124,7 @@ export class BridgeModInstaller {
     const settings = this.settings.read();
     const env = this.envOf(settings);
     const dirs = this.pluginDirsOf(env);
-    const kept = dirs.filter(d => !samePath(d, this.modDir));
+    const kept = dirs.filter(d => !samePath(d, this.modDir, this.platform));
     const changed = kept.length !== dirs.length;
     if (changed) {
       const next: Record<string, unknown> = { ...env };
