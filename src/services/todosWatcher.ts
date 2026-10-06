@@ -15,6 +15,9 @@ export class TodosWatcher {
 
     this.tryWatch(projectsDir, { recursive: true });
     this.tryWatch(bridgeDir, { recursive: false });
+    // Ponte de dados (item 25): o mod grava um arquivo por sessão em live/; a
+    // observação da pasta acima não vê o que muda dentro dela.
+    this.tryWatch(path.join(bridgeDir, 'live'), { recursive: false });
     // R6: o registro de processos vivos. Quando um processo encerra, o arquivo
     // sai e os sub-agents em background dele deixam de rodar — o painel precisa
     // redesenhar sem esperar uma escrita em projects/. Muda raramente.

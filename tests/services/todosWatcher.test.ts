@@ -48,4 +48,15 @@ describe('TodosWatcher', () => {
     await new Promise(r => setTimeout(r, 400)); // > debounce (150ms)
     expect(hits).toBeGreaterThanOrEqual(1);
   });
+
+  it('fires onChange when the data bridge writes a session file (item 25)', async () => {
+    const claudeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-'));
+    w = new TodosWatcher(claudeDir);
+    let hits = 0;
+    w.onChange(() => { hits++; });
+    await new Promise(r => setTimeout(r, 50));
+    fs.writeFileSync(path.join(claudeDir, '.vscode-todos-bridge', 'live', 's1.json'), '{}');
+    await new Promise(r => setTimeout(r, 400)); // > debounce (150ms)
+    expect(hits).toBeGreaterThanOrEqual(1);
+  });
 });

@@ -14,6 +14,8 @@ import { readLiveSessions } from '../services/liveSessions';
 import { SessionNames } from '../services/sessionNames';
 import { ClaudeSettingsFile } from '../services/claudeSettings';
 import { TaskToolsFlagReader, TASK_TOOLS_ENV } from '../services/taskToolsGate';
+import { BridgeLiveReader } from '../services/bridgeLive';
+import { BridgeModInstaller } from '../services/bridgeModInstaller';
 import type { SessionSnapshot, SessionSummary, ProjectUsage, AwaitingInput } from '../types';
 
 const SEVEN_DAYS_MS = 7 * 24 * 3600 * 1000;
@@ -36,6 +38,8 @@ export class SessionCore {
   private readonly snapshotService: SnapshotService;
   private readonly settingsFile: ClaudeSettingsFile;
   private readonly taskToolsFlags: TaskToolsFlagReader;
+  private readonly bridgeLive: BridgeLiveReader;
+  private readonly bridgeMod: BridgeModInstaller;
   private readonly notifier = new SessionNotifier();
   private readonly watcher: TodosWatcher;
 
@@ -52,6 +56,8 @@ export class SessionCore {
     );
     this.settingsFile = new ClaudeSettingsFile(path.join(this.claudeDir, 'settings.json'));
     this.taskToolsFlags = new TaskToolsFlagReader(this.settingsFile.path);
+    this.bridgeLive = new BridgeLiveReader(this.claudeDir);
+    this.bridgeMod = new BridgeModInstaller(this.claudeDir, this.settingsFile, { now: this.now });
     const resolver = new SessionResolver(this.bridge, this.workspaceCwds);
     this.snapshotService = new SnapshotService(
       resolver, this.parser, this.usageParser,
@@ -59,6 +65,11 @@ export class SessionCore {
       this.sessionNames,
       this.now,
       this.taskToolsFlags,
+      {
+        forSession: (sessionId) => this.bridgeLive.forSession(sessionId),
+        latestRateLimits: () => this.bridgeLive.latestRateLimits(),
+        status: () => this.bridgeMod.status(),
+      },
     );
     this.watcher = new TodosWatcher(this.claudeDir);
   }
@@ -66,7 +77,15 @@ export class SessionCore {
   pruneBridge(maxAgeMs: number): void {
     this.bridge.prune(maxAgeMs);
     this.sessionNames.prune(maxAgeMs, this.now());
+    this.bridgeLive.prune(maxAgeMs, this.now());
   }
+
+  // Ponte de dados (item 25): grava o mod e o lista em env.CLAUDE_CODE_PLUGIN_DIRS.
+  // Lança SettingsParseError com um settings.json inválido (nada é gravado).
+  installBridgeMod(): { changed: boolean; path: string } { return this.bridgeMod.install(); }
+  uninstallBridgeMod(): { changed: boolean; path: string } { return this.bridgeMod.uninstall(); }
+  // Na ativação: regrava os arquivos do mod instalado que mudaram. Nunca lança.
+  refreshBridgeMod(): void { this.bridgeMod.refresh(); }
   setPinnedSession(id: string | null): void { this.snapshotService.setPinnedSession(id); }
   buildSnapshot(): SessionSnapshot | null { return this.snapshotService.build(); }
   listSessions(): SessionSummary[] { return this.snapshotService.listSessions(); }
@@ -132,12 +151,28 @@ export class SessionCore {
     const awaitingInput = snapshot.awaitingInput ?? null;
     // R6: sub-agent rodando (inclusive em background) é atividade da sessão.
     const subAgentRunning = snapshot.agents.some(a => !a.isMain && a.status === 'running');
+    // Ponte de dados (item 25): fim do turno do main informado pelo mod.
+    const turnEndedAt = this.bridgeTurnEndedAt(snapshot.sessionId);
     const kinds = this.notifier.observe({
-      sessionId: snapshot.sessionId, mtime, allComplete, awaitingInput, subAgentRunning, now: this.now(),
+      sessionId: snapshot.sessionId, mtime, allComplete, awaitingInput, subAgentRunning,
+      ...(turnEndedAt !== undefined ? { turnEndedAt } : {}),
+      now: this.now(),
     });
     return { kinds, awaitingInput, title: snapshot.title };
   }
 
   shouldPollNotifications(): boolean { return this.notifier.shouldPoll(this.now()); }
+
+  // Só com a sessão viva e a partir do início do processo atual: um fim gravado
+  // por um processo anterior (sessão retomada) não diz nada sobre o turno de agora.
+  private bridgeTurnEndedAt(sessionId: string): number | undefined {
+    const turn = this.bridgeLive.forSession(sessionId)?.turn;
+    if (turn?.state !== 'idle') return undefined;
+    const live = readLiveSessions(this.claudeDir).get(sessionId);
+    if (!live) return undefined;
+    if (live.startedAt !== undefined && turn.at < live.startedAt) return undefined;
+    return turn.at;
+  }
+
   dispose(): void { this.watcher.dispose(); }
 }
