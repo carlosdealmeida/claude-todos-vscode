@@ -63,6 +63,19 @@ export interface CacheStats {
   creation: number;  // Σ cache_creation_input_tokens
 }
 
+// Ponte de dados (ROADMAP item 25): limites de uso da CONTA, não da sessão,
+// da leitura mais recente que o mod gravou.
+export interface RateLimit {
+  kind: string;          // five_hour | seven_day | spend_limit | outro
+  percentUsed: number;
+  resetsAt: string;      // ISO 8601
+}
+
+export interface RateLimitsReading {
+  readAt: number;        // epoch ms da leitura (usage.at do arquivo)
+  limits: RateLimit[];
+}
+
 export interface SessionUsage {
   byModel: ModelUsage[];  // totais da sessão agrupados por modelo
   byAgent: AgentUsage[];  // quebra por agente
