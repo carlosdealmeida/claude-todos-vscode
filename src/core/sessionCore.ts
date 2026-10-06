@@ -72,6 +72,11 @@ export class SessionCore {
       },
     );
     this.watcher = new TodosWatcher(this.claudeDir);
+    // Registrado aqui, antes de qualquer host (core.onChange em extension.ts e
+    // dispatcher.ts): o EventEmitter do watcher chama os ouvintes na ordem de registro,
+    // e o snapshot que o host monta depois de cada mudança relê live/. Sem guardar a
+    // assinatura: dispose() chama watcher.dispose(), que remove todos os ouvintes.
+    this.watcher.onChange(() => this.bridgeLive.invalidate());
   }
 
   pruneBridge(maxAgeMs: number): void {

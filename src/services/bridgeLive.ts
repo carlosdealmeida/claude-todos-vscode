@@ -36,8 +36,10 @@ export function lifecycleFromBridge(file: BridgeFile | undefined): Map<string, L
 }
 
 // latestRateLimits() varre live/ inteira (readdir e um stat por arquivo) e o
-// snapshot roda ~3x por mudança: a resposta vale por este tempo.
-export const RATE_LIMITS_TTL_MS = 2_000;
+// snapshot roda ~3x por mudança. O SessionCore descarta a resposta a cada evento
+// do watcher (invalidate), então live/ é lida uma vez por mudança; este prazo é
+// só a rede para um evento perdido do fs.watch.
+export const RATE_LIMITS_TTL_MS = 60_000;
 
 // Leitor dos arquivos que o mod claude-todos-bridge grava em
 // <claudeDir>/.vscode-todos-bridge/live/ (spec 2026-10-06, decisão 6).
@@ -61,8 +63,9 @@ export class BridgeLiveReader {
   }
 
   // Os limites são da conta: vale a leitura de usage.at mais recente entre os
-  // arquivos com rateLimits não vazio. A resposta fica em memo por RATE_LIMITS_TTL_MS
-  // (um relógio que volta atrás não prende o memo: idade negativa não vale).
+  // arquivos com rateLimits não vazio. A resposta fica em memo até o invalidate()
+  // ou por RATE_LIMITS_TTL_MS (um relógio que volta atrás não prende o memo:
+  // idade negativa não vale).
   latestRateLimits(): RateLimitsReading | undefined {
     const t = this.now();
     const memo = this.rateLimitsMemo;
@@ -70,6 +73,11 @@ export class BridgeLiveReader {
     const value = this.scanRateLimits();
     this.rateLimitsMemo = { at: t, value };
     return value;
+  }
+
+  // Descarta o memo dos limites: a próxima chamada relê live/.
+  invalidate(): void {
+    this.rateLimitsMemo = null;
   }
 
   private scanRateLimits(): RateLimitsReading | undefined {
