@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { SessionCore } from '../../src/core/sessionCore';
 import { encodeCwdToProjectDir } from '../../src/services/projectDir';
+import { applyEvent, emptyFile, toText } from '../../src/bridgeMod/state';
 
 const CWD = '/home/user/proj';
 const SID = 'core-sess-a';
@@ -295,4 +296,33 @@ describe('SessionCore', () => {
     core.pruneBridge(30 * 24 * 3600 * 1000);
     expect(fs.existsSync(file)).toBe(false);
   });
+
+  // O cenário real: o transcript e a gravação do mod chegam como dois eventos do
+  // watcher, e o snapshot do primeiro enche o memo dos limites. Com o relógio fixo o
+  // memo nunca expira, então só o descarte a cada evento deixa o segundo ver 40%.
+  it('a usage write from the mod reaches the next snapshot inside the memo window (item 25)', async () => {
+    writeSession();
+    const core = make();
+    core.installBridgeMod(); // os limites só entram no snapshot com o mod instalado
+    // live/ já existe: o construtor do TodosWatcher a cria
+    const file = path.join(claudeDir, '.vscode-todos-bridge', 'live', `${SID}.json`);
+    const writeModUsage = (at: number, pct: number, mtime: string) => {
+      const limits = [{ kind: 'five_hour', percentUsed: pct, resetsAt: '2099-01-01T00:00:00.000Z' }];
+      let f = applyEvent(emptyFile(SID, at), { kind: 'engine', version: '2.1.289' });
+      f = applyEvent(f, { kind: 'usage', at, usage: { context: { window: 1e6 }, rateLimits: limits } });
+      fs.writeFileSync(file, toText(f, at));
+      // as duas versões têm o mesmo tamanho: sem mtime novo o leitor serviria o cache
+      fs.utimesSync(file, new Date(mtime), new Date(mtime));
+    };
+    const percent = () => core.buildSnapshot()?.usage?.rateLimits?.limits[0]?.percentUsed;
+
+    writeModUsage(10, 10, '2026-10-06T12:00:00Z');
+    expect(percent()).toBe(10); // enche o memo dos limites
+    // como os hosts reais: o ouvinte entra depois do core
+    let seen: number | undefined;
+    core.onChange(() => { seen = percent(); });
+
+    writeModUsage(20, 40, '2026-10-06T12:00:05Z');
+    await vi.waitFor(() => { expect(seen).toBe(40); }, { timeout: 5_000, interval: 50 });
+  }, 10_000);
 });

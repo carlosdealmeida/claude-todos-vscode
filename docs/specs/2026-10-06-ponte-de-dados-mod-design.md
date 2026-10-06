@@ -387,3 +387,6 @@ seções acima divergirem delas, vale esta seção.
   destaque, porque o tema do JetBrains não define a cor de link.
 - A checagem de tipos de desenvolvimento do mod roda com `--allowImportingTsExtensions`; o
   `import './state.ts'` funciona no engine.
+- Os limites de uso saem de `live/` uma vez por mudança: `latestRateLimits` guarda a resposta e
+  o `SessionCore` a descarta a cada evento do watcher, com um ouvinte registrado antes dos hosts.
+  Um prazo de 60 s cobre um evento perdido do `fs.watch`.
