@@ -19,7 +19,7 @@ describe('BridgeModInstaller', () => {
     claudeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bridge-mod-'));
     settingsPath = path.join(claudeDir, 'settings.json');
   });
-  afterEach(() => fs.rmSync(claudeDir, { recursive: true, force: true }));
+  afterEach(() => fs.rmSync(claudeDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }));
 
   const make = (files: Record<string, string> = FILES, now = 1_000) =>
     new BridgeModInstaller(claudeDir, new ClaudeSettingsFile(settingsPath), { files, now: () => now, delimiter: ';' });

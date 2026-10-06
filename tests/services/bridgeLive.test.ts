@@ -22,7 +22,7 @@ describe('BridgeLiveReader', () => {
     live = path.join(claudeDir, '.vscode-todos-bridge', 'live');
     fs.mkdirSync(live, { recursive: true });
   });
-  afterEach(() => fs.rmSync(claudeDir, { recursive: true, force: true }));
+  afterEach(() => fs.rmSync(claudeDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }));
 
   const write = (sessionId: string, text: string, mtime?: Date) => {
     const p = path.join(live, `${sessionId}.json`);

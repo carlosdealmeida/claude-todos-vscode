@@ -14,13 +14,18 @@ function assistant(model: string): object {
 
 describe('SessionCore', () => {
   let claudeDir: string;
+  // Cada SessionCore abre quatro fs.watch (projects/, .vscode-todos-bridge/, live/ e
+  // sessions/): sem dispose() os handles seguem abertos e, no Windows, podem travar o rmSync.
+  const cores: SessionCore[] = [];
+  const track = (core: SessionCore): SessionCore => { cores.push(core); return core; };
   beforeEach(() => {
     claudeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'core-'));
     vi.stubEnv('CLAUDE_CODE_ENABLE_TODO_TOOLS', '');
   });
   afterEach(() => {
     vi.unstubAllEnvs();
-    fs.rmSync(claudeDir, { recursive: true, force: true });
+    for (const core of cores.splice(0)) core.dispose();
+    fs.rmSync(claudeDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
   });
 
   function writeSession(): void {
@@ -47,7 +52,7 @@ describe('SessionCore', () => {
   }
 
   function make(): SessionCore {
-    return new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => 1_000_000 });
+    return track(new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => 1_000_000 }));
   }
 
   it('builds a snapshot for the active session', () => {
@@ -183,7 +188,7 @@ describe('SessionCore', () => {
   it('keeps polling while a background sub-agent of a live session runs (R6)', () => {
     writeLiveBackgroundSession(Date.parse('2026-10-01T09:59:00.000Z')); // processo vivo desde antes do lançamento
     let now = 1_000_000;
-    const core = new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now });
+    const core = track(new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now }));
     expect(core.buildSnapshot()?.agents.find(a => a.agentId === 'bg0001')?.status).toBe('running');
     core.observeForNotifications();   // a primeira observação só inicializa
     now += 10 * 60_000;               // 10 min sem mensagem nova no main
@@ -196,7 +201,7 @@ describe('SessionCore', () => {
   it('a session resumed in a new process does not keep an old background agent running (R6)', () => {
     writeLiveBackgroundSession(Date.parse('2026-10-02T08:00:00.000Z')); // processo atual começou depois
     let now = 1_000_000;
-    const core = new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now });
+    const core = track(new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now }));
     expect(core.buildSnapshot()?.agents.find(a => a.agentId === 'bg0001')?.status).toBe('completed');
     core.observeForNotifications();
     now += 10 * 60_000;
@@ -245,7 +250,7 @@ describe('SessionCore', () => {
     const T = Date.parse('2026-10-05T10:00:00.000Z');
     writeLiveRegistry(T - 60_000);
     let now = T;
-    const core = new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now });
+    const core = track(new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now }));
     burstThroughCore(T, v => { now = v; }, core);
     now = T + 61_000;
     writeBridgeFile({ schema: 1, sessionId: SID, engineVersion: '2.1.289', writtenAt: now, agents: {},
@@ -258,7 +263,7 @@ describe('SessionCore', () => {
     const T = Date.parse('2026-10-05T10:00:00.000Z');
     writeLiveRegistry(T + 60_800);
     let now = T;
-    const core = new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now });
+    const core = track(new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => now }));
     burstThroughCore(T, v => { now = v; }, core);
     now = T + 61_000;
     writeBridgeFile({ schema: 1, sessionId: SID, engineVersion: '2.1.289', writtenAt: now, agents: {},
@@ -286,7 +291,7 @@ describe('SessionCore', () => {
     const file = path.join(claudeDir, '.vscode-todos-bridge', 'live', `${SID}.json`);
     const old = new Date('2026-09-01T00:00:00Z');
     fs.utimesSync(file, old, old);
-    const core = new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => Date.parse('2026-10-06T00:00:00Z') });
+    const core = track(new SessionCore({ claudeDir, workspaceCwds: () => [CWD], now: () => Date.parse('2026-10-06T00:00:00Z') }));
     core.pruneBridge(30 * 24 * 3600 * 1000);
     expect(fs.existsSync(file)).toBe(false);
   });
