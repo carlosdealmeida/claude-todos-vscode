@@ -308,7 +308,7 @@
   .bridge-action {
     background: transparent;
     border: none;
-    color: var(--vscode-textLink-foreground);
+    color: var(--vscode-textLink-foreground, var(--accent));
     font: inherit;
     padding: 0;
     cursor: pointer;
