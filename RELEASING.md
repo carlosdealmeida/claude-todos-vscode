@@ -33,6 +33,10 @@ real 128×128 (or 256×256) PNG. See the icon brief in `media/README.md`.
 # 1. Bump the version
 npm version patch    # or minor, major. updates package.json + creates a tag
 
+# 1b. Validate the Claude Code bridge mod (CI has no `claude`; run from a normal terminal)
+npm run mod:dev
+claude plugin validate "$(pwd)/dist/mod/claude-todos-bridge"
+
 # 2. Edit CHANGELOG.md — add a "[X.Y.Z] - YYYY-MM-DD" section above the previous one.
 $EDITOR CHANGELOG.md
 git add CHANGELOG.md

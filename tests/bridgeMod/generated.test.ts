@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { transformSync } from 'esbuild';
 import { BRIDGE_MOD_FILES, BRIDGE_MOD_VERSION } from '../../src/bridgeMod/modFiles.generated';
 
 const ROOT = resolve(__dirname, '../..');
@@ -27,5 +28,12 @@ describe('bridge mod embedded in the core bundle', () => {
 
   it('keeps the shared state module free of imports (it also runs inside the mod)', () => {
     expect(read('src/bridgeMod/state.ts')).not.toMatch(/^\s*import\s/m);
+  });
+
+  it('the mod modules are valid TypeScript (esbuild parses them)', () => {
+    for (const rel of ['hooks/register.ts', 'hooks/state.ts']) {
+      expect(() => transformSync(BRIDGE_MOD_FILES[rel], { loader: 'ts', format: 'esm' }), rel).not.toThrow();
+    }
+    expect(() => transformSync('export const = ;', { loader: 'ts', format: 'esm' })).toThrow();
   });
 });
