@@ -469,6 +469,8 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 > pressa: achado 4 do R5 (fork duplica `requestId`) e o gate do R2 ainda como lista de bloqueio.
 > **2026-10-05:** R6 (achados 1 e 2) e o bug do Fable corrigidos; o próximo é o spike do mod
 > (item 25) e depois o posicionamento.
+> **2026-10-06:** spike feito e ponte de dados v1 entregue (item 25); o próximo é o
+> posicionamento.
 >
 > Filas anteriores, para histórico: 2026-07-25 → 1º 17 · 2º 5(a)+(c) · 3º 23. Manhã de
 > 2026-07-27 → 1º 17 · 2º 22-ext · 3º 5(a)+(c) (17 caiu na verificação de disco da mesma tarde).
@@ -885,11 +887,12 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 - **Limites hoje:** a extensão VS Code **não desenha** UI de mod ([#99045](https://github.com/anthropics/claude-code/issues/99045), [#99401](https://github.com/anthropics/claude-code/issues/99401), [#99423](https://github.com/anthropics/claude-code/issues/99423) —
   abertas, embora o engine aceite a superfície `vscode`); só terminal e a aba Code do desktop. O
   módulo roda sem Node nem DOM, mas tem `$.fs` (leitura/escrita até 4 MiB).
-- **Duas ideias, ambas ⏸️:** (a) **ponte de dados** — um mod mínimo que grava
-  `$.session.usage()` e `$.agent.list()` num arquivo por sessão, lido pelo painel como fonte
-  exata quando existir (opt-in, mesmo espírito do "statusline bridge" do item 2); (b) um mod
-  "Claude Todos" para o terminal. Reabrir quando a API sair do early access **ou** a extensão VS
-  Code passar a desenhar mods; até lá, só observar a cada varredura.
+- **Duas ideias:** (a) **ponte de dados** — um mod mínimo que grava `$.session.usage()` e o
+  ciclo de vida dos agentes num arquivo por sessão, lido pelo painel como fonte exata quando
+  existir (opt-in, mesmo espírito do "statusline bridge" do item 2) — ✅ entregue, ver "Ponte v1
+  entregue" abaixo; (b) um mod "Claude Todos" para o terminal — ⏸️, reabrir quando a API sair do
+  early access **ou** a extensão VS Code passar a desenhar mods; até lá, só observar a cada
+  varredura.
 - **🧪 Spike da ponte de dados (2026-10-05, descartável, nada entrou no repo).** Um mod mínimo, sem
   UI, carregado por hot reload de `~/.claude/dev-mods/<sessão>/` numa sessão da **extensão VS Code**
   (Claude Code 2.1.289, Windows 11), gravando num JSON a cada `session.start`, `agent.spawn` e
@@ -941,6 +944,100 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   `docs/plans/2026-10-06-ponte-de-dados-mod.md`. Fora da v1: custo, `failed`/`killed` na UI,
   aviso de "esperando permissão", marketplace. A ideia (b), um mod "Claude Todos" para o
   terminal, segue ⏸️.
+- **⏳ Pendências da v1** (revisões de 2026-10-06; nenhuma impede o uso):
+  - **Verificação manual de ponta a ponta** ainda não feita: o roteiro de 10 passos está no plano
+    (Task 10, Step 5), para VS Code e JetBrains.
+  - **Mod** (`mod/claude-todos-bridge/hooks/register.ts`, `src/bridgeMod/state.ts`):
+    - a fila de gravações (`record()`) não tem timeout: um `$.fs.write` pendurado segura as
+      seguintes (só o `session.end` tem teto);
+    - id ou pasta inválidos fazem o hook voltar sem log, e qualquer erro de leitura conta como
+      arquivo ausente: uma falha passageira depois de uma recarga recomeça o estado;
+    - `normalizeUsage({})` devolve leitura vazia e apaga a anterior (o comentário promete
+      `undefined`, e o `if (normalized)` do `parseBridgeFile` fica morto);
+    - `agentEnd` sem `reason` herda o `reason` do fim anterior;
+    - `SAFE_ID` só vale na leitura: um id com `@` (teammate) é gravado e some na leitura, e
+      `__proto__` passa pelo filtro e troca o protótipo de `agents`;
+    - o teto de 500 agentes só se aplica em `spawn` e `agentEnd`: um arquivo lido com 600 devolve
+      os 600;
+    - o parse aceita `usage.at` absurdo, que vence o `latestRateLimits` de todas as sessões até o
+      `prune`, e não deduplica `kind` (o painel já tolera; endurecer é opcional);
+    - erros de tipo do `register.ts` só aparecem no `claude plugin validate` do release; a suíte
+      checa só a sintaxe.
+  - **Instalação** (`src/services/bridgeModInstaller.ts`):
+    - `install()` lê o `settings.json`, copia o mod e só então grava: uma escrita de terceiros
+      nesse intervalo se perde (reler antes de gravar);
+    - `uninstall()` lança `ENOTEMPTY` se um arquivo do mod estiver aberto, depois de já ter tirado
+      a entrada do `settings.json` (tolerar a falha da pasta);
+    - o memo do `status()` guarda o "não instalado" de um erro de leitura passageiro
+      (`EBUSY`/`EPERM`) até o `settings.json` mudar; não memorizar quando o erro não for
+      `SettingsParseError`;
+    - `status()` exige o `plugin.json`: com a pasta sem manifesto, o `refresh` não repara e o
+      `install` devolve `changed: false`;
+    - a cópia nunca apaga arquivos que saíram do pacote, e o `refresh` não compara versão: dois
+      IDEs em versões diferentes regravam o mod um do outro;
+    - a validação do `env` duplica a de `claudeSettings.ts`.
+  - **Leitura, snapshot e painel** (`bridgeLive`, `snapshotService`, `sessionNotifier`, webview):
+    - o botão Atualizar (`claudeTodos.refresh` e a mensagem `refresh` no VS Code, o `getSnapshot`
+      do sidecar no JetBrains) não descarta o memo dos limites: com um evento perdido do
+      `fs.watch`, mostra até 60 s de limites velhos (um `SessionCore.refresh()` que chame
+      `invalidate()` resolve);
+    - um erro de leitura passageiro (`EBUSY`/`EPERM`) num arquivo de `live/` vira "arquivo
+      inválido" até a próxima gravação (separar leitura de parse); `schema` diferente de 1 cai no
+      mesmo caminho, hoje inalcançável;
+    - o cache por mtime e tamanho não vê uma regravação do mesmo tamanho no mesmo tique do relógio
+      quando há leitura no meio (só em sistema de arquivos de 1–2 s ou com leitura fora do
+      watcher);
+    - com o mod desativado e um arquivo antigo em `live/`, o contexto pode sair com origem `mod` e
+      o rodapé em "Ativar" (conferir);
+    - `bridgeTurnEndedAt` relê o registro de processos que o snapshot já leu;
+    - o aviso pela ponte pode sair só no tick de 10 s quando a última linha do transcript e a
+      gravação em `live/` caem na mesma janela de 150 ms (aceito pela spec);
+    - sem `<svelte:boundary>` no `App`: outra exceção de render no `UsageTable` ainda derruba o
+      painel;
+    - "lido às 06/10 03:05" lê mal em pt-BR e es quando a leitura não é de hoje;
+    - o botão do rodapé tem nome acessível só "Ativar"/"Desativar" (falta `aria-describedby` com
+      o estado);
+    - o `margin-bottom: 0.6rem` do bloco de limites não preserva o respiro de 0.4rem, e o
+      `nowrap` de nome e reinício pode espremer a barra numa sidebar estreita.
+  - **Hosts** (VS Code e JetBrains): o toast de sucesso é igual com e sem mudança;
+    `bridgeMod.failed` atribui toda falha ao `settings.json`; os comandos aparecem sempre na
+    paleta; o rótulo do botão do diálogo (decisão 8) não tem guarda automática; o KDoc do
+    `MessageRouter` não lista os pedidos novos.
+  - **Build e release:** `npm run test:watch` quebra num clone novo (falta um `pretest:watch` que
+    gere o módulo do mod); o `--out` do gerador sem valor, ou como `--out=x`, é ignorado em
+    silêncio, resolve relativo à raiz, não limpa o destino e não tem teste; `dist/mod` e
+    `dist/bridge-smoke` podem entrar num `vsce package` local (faltam no `.vscodeignore`); o
+    `RELEASING.md` valida o mod depois do `npm version`, e deveria validar antes do bump.
+  - **Docs:** o CHANGELOG e o diálogo de instalação dizem que a pasta `mod/` vai para
+    `CLAUDE_CODE_PLUGIN_DIRS`, mas a entrada real é `mod/claude-todos-bridge`; a linha de `live/`
+    nos READMEs fala em "início e fim" (o arquivo guarda só o `at` do último evento) e não diz
+    que `rateLimits` guarda qualquer `kind`; "apagados após 30 dias" só vale com a extensão
+    instalada, e a remoção manual não cita `live/`; a limitação "a ponte não respondeu" não cita
+    um Claude Code anterior aos Mods como causa; um link `todosParser.ts#L365` da spec ficou
+    deslocado.
+  - **Testes:** casos de borda sem teste no parse (`engineVersion`, `turn`, opcionais do agente,
+    `parentId`, `resetsAt`), no teto de agentes (não distingue o evento mais recente do último
+    inserido), nos ramos de cache do leitor (arquivo apagado, recuperação depois de meia
+    gravação) e na guarda `SAFE_SESSION_ID`, no estado `silent` (60 000 exato,
+    `startedAt === installedAt`, `installedAt` ausente), no filtro de `resetsAt`, no caminho
+    rápido do notifier e no `bridgeTurnEndedAt`; no instalador, `env` não-objeto,
+    `install.json` e `splitPluginDirs` sem teste direto; o empate do `mergeLifecycles` (o
+    transcript vence) não é observável; o teste de `live/` do watcher não discrimina no Windows;
+    o fluxo dos hosts (confirmar, agir, atualizar) não tem teste automatizado, e o teste de erro
+    do dispatcher usa `Error` genérico e só exercita o instalar; os testes Kotlin não cobrem o
+    desinstalar, o toast de desinstalado nem a falha de instalação; o painel não tem teste de
+    template (o vitest roda sem jsdom); os horários não têm caso para meia-noite, fuso e es/zh, e
+    a paridade do i18n não confere `{time}`; 20 limpezas de pasta temporária sem retentativa em 14
+    outros arquivos de teste; ruído do vitest no Windows ("Timeout terminating forks worker",
+    `kill EPERM`) sem causa conhecida.
+  - **Polimento:** `prune()` repete o corpo de `invalidate()`; comentário defasado em
+    `sessionNotifier.ts:95`; marcações "Review Focus" nos testes; `'live'` e
+    `'.vscode-todos-bridge'` repetidos em vez de constantes; `resolver` e `installed` duplicados
+    e um `const window` que sombreia o global no snapshot; o `SnapshotService` com 8 parâmetros
+    posicionais; `Map` vazio em vez de `undefined`; o comentário do `mergeLifecycles` (R6) não
+    cita a ponte; o leitor guarda cache e última leitura boa em mapas paralelos; uma variável
+    local `settings` convive com `this.settings` no instalador.
+  - **Ferramenta:** o `shoot.sh` da skill `preview-webview` não isola o perfil do navegador.
 
 ---
 
@@ -1363,8 +1460,9 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 - **Plano:** TDD no `todosParser` (dispatch `async_launched` → `none` até a `<task-notification>`
   com o mesmo `tool-use-id`, com o fallback por inatividade) e teste no
   `SessionNotifier`/`sessionCore` para o achado 2, reproduzido antes com um transcript real
-  truncado. Os dois mexem no mesmo dado; fazer juntos. Fonte futura mais exata: `$.agent.list()`
-  dos Mods (item 25).
+  truncado. Os dois mexem no mesmo dado; fazer juntos. Fonte exata desde a ponte v1 (item 25),
+  com o mod ativo: o fim de cada sub-agent pelo `turn.complete` com `agentId` (o `$.agent.list()`
+  só mostra o que está vivo).
 
 ---
 
@@ -1559,7 +1657,8 @@ nenhuma busca de issue trouxe para o topo. Fica como passo fixo das próximas va
   itens 13, 23, 1 e parte do 22-ext; pressiona a decisão de posicionamento (R2 passo 3).
 - **R2:** a regra virou lista de permissão (2.1.268); #80015 sem resposta oficial; nenhum sinal
   de reversão.
-- **Superfície nova:** Mods / function hooks (item 25) — observar.
+- **Superfície nova:** Mods / function hooks (item 25) — observar. Depois: spike em 10-05 e
+  ponte de dados v1 entregue em 10-06.
 - **12 linhas novas de validação** (tabela no topo) — destaque para #93036 (indicador oficial
   escondido até 50%), #95227 (a webview oficial não renderiza `Task*`) e #98118 (o agent map
   oficial erra o aninhamento).
