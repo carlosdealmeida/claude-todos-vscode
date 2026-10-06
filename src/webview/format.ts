@@ -236,11 +236,13 @@ const INTL_LOCALE: Record<Locale, string> = {
   en: 'en-US', 'pt-br': 'pt-BR', es: 'es', 'zh-cn': 'zh-CN', 'zh-tw': 'zh-TW',
 };
 
-// Hora de um instante ISO no idioma do painel: só "HH:MM" quando cai no mesmo
-// dia de `now`; com a data antes nos outros dias. String vazia para um ISO
-// inválido. `timeZone` existe para os testes; o painel usa o fuso local.
-export function formatResetTime(iso: string, now: number, locale: Locale, timeZone?: string): string {
-  const at = Date.parse(iso);
+// Hora de um instante no idioma do painel: só "HH:MM" quando cai no mesmo dia
+// de `now`; com a data antes nos outros dias. `value` é um ISO 8601 ou um epoch
+// em ms. String vazia quando não é uma data ou cai fora do intervalo de Date
+// (±8,64e15 ms): um valor absurdo do arquivo da ponte não pode derrubar o
+// painel. `timeZone` existe para os testes; o painel usa o fuso local.
+export function formatResetTime(value: string | number, now: number, locale: Locale, timeZone?: string): string {
+  const at = new Date(value).getTime();
   if (!Number.isFinite(at)) return '';
   const tag = INTL_LOCALE[locale] ?? 'en-US';
   const zone = timeZone !== undefined ? { timeZone } : {};

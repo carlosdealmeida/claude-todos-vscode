@@ -352,6 +352,11 @@ describe('formatResetTime', () => {
   it('returns an empty string for an invalid date', () => {
     expect(formatResetTime('nope', NOW, 'en', 'UTC')).toBe('');
   });
+  it('accepts an epoch number and returns an empty string out of the Date range', () => {
+    expect(formatResetTime(Date.parse('2026-10-05T20:40:00.000Z'), NOW, 'pt-br', 'UTC')).toBe('20:40');
+    expect(formatResetTime(8.64e15 + 1, NOW, 'en', 'UTC')).toBe('');
+    expect(formatResetTime(1e20, NOW, 'en', 'UTC')).toBe('');
+  });
 });
 
 describe('bridgeTextKey', () => {

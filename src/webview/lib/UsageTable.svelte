@@ -6,6 +6,8 @@
   let { usage, bridge }: { usage: SessionUsage; bridge?: BridgeStatus } = $props();
   // Ponte de dados (item 25): limites de uso da conta, quando a ponte os tem.
   let limits = $derived(usage.rateLimits);
+  // Hora da leitura; vazia quando readAt não é uma data válida (aí o texto some).
+  let readAtText = $derived(limits ? formatResetTime(limits.readAt, Date.now(), todosStore.locale) : '');
   let ctx = $derived(usage.context);
   let ctxPct = $derived(ctx ? Math.min(ctx.tokens / ctx.limit, 1) : 0);
   let ctxLevel = $derived(ctx ? contextLevel(ctx.tokens / ctx.limit) : 'ok');
@@ -50,9 +52,11 @@
       <div class="limits">
         <div class="limits-head">
           <span class="limits-label">{todosStore.t('usage.limits')}</span>
-          <span class="limits-read">{todosStore.t('usage.limitsReadAt', { time: formatResetTime(new Date(limits.readAt).toISOString(), Date.now(), todosStore.locale) })}</span>
+          {#if readAtText}
+            <span class="limits-read">{todosStore.t('usage.limitsReadAt', { time: readAtText })}</span>
+          {/if}
         </div>
-        {#each limits.limits as limit (limit.kind)}
+        {#each limits.limits as limit, i (i)}
           {@const key = limitLabelKey(limit.kind)}
           {@const level = contextLevel(limit.percentUsed / 100)}
           <div class="limit-row">
