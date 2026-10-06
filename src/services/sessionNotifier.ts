@@ -79,10 +79,13 @@ export class SessionNotifier {
     const running = input.subAgentRunning === true;
     if (input.mtime !== this.lastMtime || running) {
       // Atividade: mensagem nova no main ou sub-agent rodando. Se o silêncio
-      // anterior já tinha vencido IDLE_MS, abre uma NOVA rajada (o ciclo de
-      // idle rearma). Sub-agent rodando mantém a rajada viva, então o idle do
-      // fim inclui o trabalho dos agentes mesmo se o main fechar rápido.
-      if (input.now - this.lastChangeAt >= IDLE_MS) this.activeSince = input.now;
+      // anterior já tinha vencido IDLE_MS, ou o aviso de idle já saiu (por
+      // silêncio ou pelo fim de turno da ponte, que não espera o IDLE_MS), abre
+      // uma NOVA rajada: o ciclo de idle rearma e uma resposta rápida depois do
+      // aviso não herda a rajada longa. Sub-agent rodando mantém a rajada viva,
+      // então o idle do fim inclui o trabalho dos agentes mesmo se o main fechar
+      // rápido.
+      if (input.now - this.lastChangeAt >= IDLE_MS || this.idleNotified) this.activeSince = input.now;
       this.lastMtime = input.mtime;
       this.lastChangeAt = input.now;
       this.idleNotified = false;

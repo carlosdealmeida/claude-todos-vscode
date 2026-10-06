@@ -290,5 +290,31 @@ describe('SessionNotifier', () => {
       expect(n.observe({ sessionId: 's1', mtime: last, allComplete: false, turnEndedAt: last + 500, now: last + 2_000 }))
         .toEqual([]);
     });
+
+    it('after a bridge idle, a quick reply opens a new burst: a short turn does not notify again', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
+      const last = burst(n, 's1', T0, ACTIVITY_MIN_MS);
+      expect(n.observe({ sessionId: 's1', mtime: last, allComplete: false, turnEndedAt: last + 500, now: last + 1_000 }))
+        .toEqual(['idle']);
+      // resposta rápida: usuário em +5 s, assistente em +8 s, fim do turno em +8,5 s
+      expect(n.observe({ sessionId: 's1', mtime: last + 5_000, allComplete: false, turnEndedAt: last + 500, now: last + 5_000 }))
+        .toEqual([]);
+      expect(n.observe({ sessionId: 's1', mtime: last + 8_000, allComplete: false, turnEndedAt: last + 500, now: last + 8_000 }))
+        .toEqual([]);
+      expect(n.observe({ sessionId: 's1', mtime: last + 8_000, allComplete: false, turnEndedAt: last + 8_500, now: last + 9_000 }))
+        .toEqual([]);
+    });
+
+    it('after a bridge idle, a long turn notifies again at its end', () => {
+      const n = new SessionNotifier();
+      n.observe({ sessionId: 's1', mtime: 0, allComplete: false, now: T0 });
+      const last = burst(n, 's1', T0, ACTIVITY_MIN_MS);
+      expect(n.observe({ sessionId: 's1', mtime: last, allComplete: false, turnEndedAt: last + 500, now: last + 1_000 }))
+        .toEqual(['idle']);
+      const last2 = burst(n, 's1', last + 5_000, ACTIVITY_MIN_MS);
+      expect(n.observe({ sessionId: 's1', mtime: last2, allComplete: false, turnEndedAt: last2 + 500, now: last2 + 1_000 }))
+        .toEqual(['idle']);
+    });
   });
 });
