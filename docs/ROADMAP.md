@@ -966,8 +966,6 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   - **Instalação** (`src/services/bridgeModInstaller.ts`):
     - `install()` lê o `settings.json`, copia o mod e só então grava: uma escrita de terceiros
       nesse intervalo se perde (reler antes de gravar);
-    - `uninstall()` lança `ENOTEMPTY` se um arquivo do mod estiver aberto, depois de já ter tirado
-      a entrada do `settings.json` (tolerar a falha da pasta);
     - o memo do `status()` guarda o "não instalado" de um erro de leitura passageiro
       (`EBUSY`/`EPERM`) até o `settings.json` mudar; não memorizar quando o erro não for
       `SettingsParseError`;
@@ -975,7 +973,10 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
       `install` devolve `changed: false`;
     - a cópia nunca apaga arquivos que saíram do pacote, e o `refresh` não compara versão: dois
       IDEs em versões diferentes regravam o mod um do outro;
-    - a validação do `env` duplica a de `claudeSettings.ts`.
+    - a validação do `env` duplica a de `claudeSettings.ts`;
+    - a pasta presa que o desativar deixa para trás fica até o próximo ciclo ativar/desativar
+      (inerte, poucos KB), e reativar com o arquivo ainda preso falha com `EPERM` no `rename` até
+      o antivírus soltar (erro passageiro, sem estado pela metade).
   - **Leitura, snapshot e painel** (`bridgeLive`, `snapshotService`, `sessionNotifier`, webview):
     - o botão Atualizar (`claudeTodos.refresh` e a mensagem `refresh` no VS Code, o `getSnapshot`
       do sidecar no JetBrains) não descarta o memo dos limites: com um evento perdido do
@@ -1021,7 +1022,9 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
     gravação) e na guarda `SAFE_SESSION_ID`, no estado `silent` (60 000 exato,
     `startedAt === installedAt`, `installedAt` ausente), no filtro de `resetsAt`, no caminho
     rápido do notifier e no `bridgeTurnEndedAt`; no instalador, `env` não-objeto,
-    `install.json` e `splitPluginDirs` sem teste direto; o empate do `mergeLifecycles` (o
+    `install.json` e `splitPluginDirs` sem teste direto, nenhum teste de que o `uninstall()` ainda
+    lança com `settings.json` inválido ou de que o `install()` se recupera de uma sobra, e o teste
+    da pasta presa não fixa os parâmetros de nova tentativa; o empate do `mergeLifecycles` (o
     transcript vence) não é observável; o teste de `live/` do watcher não discrimina no Windows;
     o fluxo dos hosts (confirmar, agir, atualizar) não tem teste automatizado, e o teste de erro
     do dispatcher usa `Error` genérico e só exercita o instalar; os testes Kotlin não cobrem o
