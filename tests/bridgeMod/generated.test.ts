@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { BRIDGE_MOD_FILES, BRIDGE_MOD_VERSION } from '../../src/generated/bridgeModFiles';
+import { BRIDGE_MOD_FILES, BRIDGE_MOD_VERSION } from '../../src/bridgeMod/modFiles.generated';
 
 const ROOT = resolve(__dirname, '../..');
 const read = (rel: string) => readFileSync(resolve(ROOT, rel), 'utf8');

@@ -1,4 +1,4 @@
-// Gera src/generated/bridgeModFiles.ts com o conteúdo de cada arquivo do mod
+// Gera src/bridgeMod/modFiles.generated.ts com o conteúdo de cada arquivo do mod
 // claude-todos-bridge (spec 2026-10-06, decisão 4). O módulo gerado entra no
 // bundle do core: o mod viaja dentro da extensão e do sidecar do JetBrains.
 // Com --out <pasta>, também monta o mod nessa pasta (desenvolvimento:
@@ -21,7 +21,7 @@ const files = {
   'hooks/state.ts': readFileSync(join(ROOT, 'src', 'bridgeMod', 'state.ts'), 'utf8'),
 };
 
-const outModule = join(ROOT, 'src', 'generated', 'bridgeModFiles.ts');
+const outModule = join(ROOT, 'src', 'bridgeMod', 'modFiles.generated.ts');
 mkdirSync(dirname(outModule), { recursive: true });
 writeFileSync(outModule, [
   '// GERADO por scripts/buildBridgeMod.mjs. Não editar: a fonte é mod/claude-todos-bridge/ e src/bridgeMod/state.ts.',

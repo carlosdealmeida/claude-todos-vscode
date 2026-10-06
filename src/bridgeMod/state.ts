@@ -166,12 +166,10 @@ export function restoreFile(text: string | undefined, sessionId: string, now: nu
 }
 
 function capAgents(file: BridgeFile): BridgeFile {
-  const ids = Object.keys(file.agents);
-  if (ids.length <= MAX_AGENTS) return file;
-  const keep = ids.sort((a, b) => file.agents[b].at - file.agents[a].at).slice(0, MAX_AGENTS);
-  const agents: Record<string, BridgeAgent> = {};
-  for (const id of keep) agents[id] = file.agents[id];
-  return { ...file, agents };
+  const entries = Object.entries(file.agents);
+  if (entries.length <= MAX_AGENTS) return file;
+  entries.sort(([, a], [, b]) => b.at - a.at);
+  return { ...file, agents: Object.fromEntries(entries.slice(0, MAX_AGENTS)) };
 }
 
 // Aplica um evento e devolve um estado NOVO; o anterior não muda.
