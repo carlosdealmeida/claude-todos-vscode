@@ -20,12 +20,18 @@ export function engineAtLeast(version: string | undefined, min: readonly [number
   return true;
 }
 
-// Os agentes do arquivo como mais uma fonte do mergeLifecycles; só quando o
-// arquivo veio de um engine que garante o mesmo id do transcript.
+// Os FINS de agente gravados no arquivo, como mais uma fonte do
+// mergeLifecycles. Só os fins: o início e a retomada já estão no transcript
+// (lançamento, SendMessage, disparo sem tool_result), e um início da ponte
+// cujo fim se perdeu (recarga do mod) deixaria "rodando" um agente que o
+// transcript já dá como concluído. Só com engine 2.1.289 ou mais nova, que
+// garante o mesmo id do transcript.
 export function lifecycleFromBridge(file: BridgeFile | undefined): Map<string, LifecycleEntry> | undefined {
   if (!file || !engineAtLeast(file.engineVersion, MIN_LIFECYCLE_ENGINE)) return undefined;
   const out = new Map<string, LifecycleEntry>();
-  for (const [id, agent] of Object.entries(file.agents)) out.set(id, { state: agent.state, at: agent.at });
+  for (const [id, agent] of Object.entries(file.agents)) {
+    if (agent.state === 'stopped') out.set(id, { state: 'stopped', at: agent.at });
+  }
   return out;
 }
 

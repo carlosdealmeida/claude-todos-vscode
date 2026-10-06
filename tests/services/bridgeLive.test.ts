@@ -96,11 +96,12 @@ describe('lifecycleFromBridge', () => {
     { kind: 'agentEnd', at: T + 2, agentId: 'ag2', reason: 'answer' },
   ];
 
-  it('maps the agents to lifecycle entries on 2.1.289 or newer', () => {
-    expect(lifecycleFromBridge(fileWith(SID, agents, '2.1.289'))).toEqual(new Map([
-      ['ag1', { state: 'running', at: T + 1 }],
-      ['ag2', { state: 'stopped', at: T + 2 }],
-    ]));
+  it('maps the agent ends to lifecycle entries on 2.1.289 or newer', () => {
+    expect(lifecycleFromBridge(fileWith(SID, agents, '2.1.289'))).toEqual(new Map([['ag2', { state: 'stopped', at: T + 2 }]]));
+  });
+
+  it('ignores a start whose end may have been lost: it must not revive a finished agent', () => {
+    expect(lifecycleFromBridge(fileWith(SID, [{ kind: 'spawn', at: T + 1, agentId: 'fg1' }]))).toEqual(new Map());
   });
 
   it('ignores the agents of an older engine, an unknown version or a missing file', () => {
