@@ -147,5 +147,7 @@ export type WebviewMessage =
   | { type: 'openPanel' }
   | { type: 'pickSession' }
   | { type: 'enableTaskTools' }
+  | { type: 'installBridgeMod' }
+  | { type: 'uninstallBridgeMod' }
   | { type: 'projectUsage' }
   | { type: 'openTodoSource'; sessionId: string; agentId: string; line: number };

@@ -6,6 +6,8 @@
   "command.refresh.title": "Claude Todos: Refresh",
   "command.pickSession.title": "Claude Todos: Choose Session",
   "command.enableTaskTools.title": "Claude Todos: Enable Claude Code task tools",
+  "command.installBridgeMod.title": "Claude Todos: Enable exact data from Claude Code (experimental)",
+  "command.uninstallBridgeMod.title": "Claude Todos: Disable exact data from Claude Code",
   "config.claudeDir.description": "Override ~/.claude path (empty = auto-detect)",
   "config.autoInstallHook.description": "Prompt to install session hook on first launch",
   "config.language.description": "UI language for the Claude Todos panel. 'auto' follows VS Code's display language. Note: command titles in the Command Palette always follow VS Code's display language.",

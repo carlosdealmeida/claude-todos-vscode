@@ -86,6 +86,14 @@
       {
         "command": "claudeTodos.enableTaskTools",
         "title": "%command.enableTaskTools.title%"
+      },
+      {
+        "command": "claudeTodos.installBridgeMod",
+        "title": "%command.installBridgeMod.title%"
+      },
+      {
+        "command": "claudeTodos.uninstallBridgeMod",
+        "title": "%command.uninstallBridgeMod.title%"
       }
     ],
     "keybindings": [

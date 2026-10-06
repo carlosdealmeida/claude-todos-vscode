@@ -63,6 +63,9 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   const core = new SessionCore({ claudeDir, workspaceCwds });
   core.pruneBridge(BRIDGE_MAX_AGE_MS);
+  // Ponte de dados (item 25): regrava os arquivos do mod instalado que mudaram
+  // nesta versão da extensão. Nunca lança.
+  core.refreshBridgeMod();
   core.setPinnedSession(context.workspaceState.get<string | null>('pinnedSessionId', null));
   let notifyTimer: NodeJS.Timeout | null = null;
 
@@ -158,6 +161,28 @@ export function activate(context: vscode.ExtensionContext): void {
     panelProvider.pushSnapshot();
   };
 
+  // Ponte de dados (item 25): ativa ou desativa o mod do Claude Code que grava a
+  // janela exata, os limites de uso e o fim de cada agente. Sempre atrás de
+  // confirmação modal; usado pelo rodapé do bloco de uso e pela paleta.
+  const setBridgeMod = async (enable: boolean): Promise<void> => {
+    const t = createT(resolveLocale());
+    const action = enable ? t('bridgeMod.enable') : t('bridgeMod.disable');
+    const choice = await vscode.window.showInformationMessage(
+      t(enable ? 'bridgeMod.confirmInstall' : 'bridgeMod.confirmUninstall', { path: settingsPath }),
+      { modal: true },
+      action,
+    );
+    if (choice !== action) return;
+    try {
+      if (enable) core.installBridgeMod(); else core.uninstallBridgeMod();
+      vscode.window.showInformationMessage(t(enable ? 'bridgeMod.installed' : 'bridgeMod.uninstalled'));
+    } catch (err) {
+      vscode.window.showErrorMessage(t('bridgeMod.failed', { path: settingsPath, error: String(err) }));
+    }
+    viewProvider.pushSnapshot();
+    panelProvider.pushSnapshot();
+  };
+
   const handleMessage = (msg: WebviewMessage): void => {
     if (msg.type === 'openPanel') {
       vscode.commands.executeCommand('claudeTodos.openPanel');
@@ -174,6 +199,10 @@ export function activate(context: vscode.ExtensionContext): void {
       void openTodoSource(target);
     } else if (msg.type === 'enableTaskTools') {
       void enableTaskTools();
+    } else if (msg.type === 'installBridgeMod') {
+      void setBridgeMod(true);
+    } else if (msg.type === 'uninstallBridgeMod') {
+      void setBridgeMod(false);
     } else if (msg.type === 'pickSession') {
       void showSessionPicker();
     }
@@ -228,6 +257,12 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand('claudeTodos.enableTaskTools', () => {
       void enableTaskTools();
+    }),
+    vscode.commands.registerCommand('claudeTodos.installBridgeMod', () => {
+      void setBridgeMod(true);
+    }),
+    vscode.commands.registerCommand('claudeTodos.uninstallBridgeMod', () => {
+      void setBridgeMod(false);
     }),
   );
 
