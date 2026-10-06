@@ -54,7 +54,8 @@ export interface AgentUsage {
 
 export interface ContextUsage {
   tokens: number;  // input + cache da última mensagem do transcript principal
-  limit: number;   // 200_000 | 1_000_000
+  limit: number;   // 200_000 | 1_000_000 (estimado) ou a janela exata da ponte
+  source?: 'mod';  // presente quando `limit` veio da ponte de dados (item 25)
 }
 
 export interface CacheStats {
@@ -81,7 +82,12 @@ export interface SessionUsage {
   byAgent: AgentUsage[];  // quebra por agente
   context?: ContextUsage;
   cache?: CacheStats;
+  rateLimits?: RateLimitsReading;  // ponte de dados (item 25): limites da conta
 }
+
+// Estado do rodapé da ponte de dados (item 25): mod não instalado, sessão com
+// arquivo, sessão que deveria ter arquivo e não tem, ou demais casos.
+export type BridgeStatus = 'off' | 'active' | 'next-session' | 'silent';
 
 export interface AgentTypeUsage {
   agentType: string;  // "main" | agentType do meta.json | "subagent" (meta ausente)
@@ -109,6 +115,8 @@ export interface SessionSnapshot {
   // R2: true quando o Claude Code (>= 2.1.233) está com TodoWrite/TaskCreate
   // desligados para o modelo da sessão e a flag não foi ligada em nenhuma fonte.
   taskToolsOff?: true;
+  // Ponte de dados (item 25): presente quando o host injeta a ponte.
+  bridge?: BridgeStatus;
 }
 
 export interface SessionSummary {

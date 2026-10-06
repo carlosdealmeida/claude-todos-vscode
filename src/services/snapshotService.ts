@@ -3,8 +3,25 @@ import type { TodosParser } from './todosParser';
 import type { UsageParser } from './usageParser';
 import type { LiveSession } from './liveSessions';
 import type { SessionNames } from './sessionNames';
-import type { AgentTodos, SessionSnapshot, SessionSummary } from '../types';
+import type {
+  AgentTodos, BridgeStatus, RateLimitsReading, SessionSnapshot, SessionSummary, SessionUsage,
+} from '../types';
 import { evaluateTaskTools, type FlagState } from './taskToolsGate';
+import type { BridgeFile } from '../bridgeMod/state';
+import type { BridgeModStatus } from './bridgeModInstaller';
+import { lifecycleFromBridge } from './bridgeLive';
+
+// Ponte de dados (item 25): sessão viva há mais que isto, iniciada depois da
+// ativação e sem arquivo = o mod não respondeu.
+export const SILENT_AFTER_MS = 60_000;
+
+// O que o snapshot precisa do leitor e do instalador da ponte. Opcional: sem
+// ele, nada muda (compatível com quem constrói só o básico).
+export interface SnapshotBridge {
+  forSession(sessionId: string): BridgeFile | undefined;
+  latestRateLimits(): RateLimitsReading | undefined;
+  status(): BridgeModStatus;
+}
 
 export class SnapshotService {
   private pinnedSessionId: string | null = null;
@@ -21,6 +38,9 @@ export class SnapshotService {
     // R2: leitor da flag CLAUDE_CODE_ENABLE_TODO_TOOLS. Opcional: sem ele, o
     // snapshot nunca marca taskToolsOff (compatível com quem constrói só o básico).
     private readonly taskToolsFlags?: { read(cwd: string | null): FlagState },
+    // Ponte de dados (item 25): janela exata, limites, ciclo de vida e o estado
+    // do rodapé. Opcional pelo mesmo motivo do taskToolsFlags.
+    private readonly bridge?: SnapshotBridge,
   ) {}
 
   setPinnedSession(sessionId: string | null): void {
@@ -65,10 +85,16 @@ export class SnapshotService {
     // R6: sub-agent em background só roda com o processo da sessão vivo — e só
     // o que esse processo lançou ou retomou. Numa sessão retomada (mesmo id,
     // processo novo), o que o processo anterior deixou rodando morreu com ele.
-    const aliveSince = live.get(chosen.sessionId)?.startedAt;
+    const liveSession = live.get(chosen.sessionId);
+    const aliveSince = liveSession?.startedAt;
+    // Ponte de dados (item 25): o arquivo do mod para a sessão, quando existe.
+    const modStatus = this.bridge?.status();
+    const bridgeFile = this.bridge?.forSession(chosen.sessionId);
+    const extraLifecycle = lifecycleFromBridge(bridgeFile);
     const detail = this.parser.listSessionDetail(chosen.sessionId, chosen.cwd, {
       alive: chosen.alive === true,
       ...(aliveSince !== undefined ? { aliveSince } : {}),
+      ...(extraLifecycle !== undefined ? { extraLifecycle } : {}),
     });
     const agents = detail.agents;
     // Desacopla "tem sessão" de "tem todo": antes de qualquer TodoWrite, ainda
@@ -83,7 +109,12 @@ export class SnapshotService {
       todos: [],
       updatedAt: 0,
     }];
-    const usage = this.usageParser.usageForSession(chosen.sessionId, chosen.cwd, usageAgents);
+    const usage = this.withBridgeUsage(
+      this.usageParser.usageForSession(chosen.sessionId, chosen.cwd, usageAgents),
+      bridgeFile,
+      modStatus?.installed === true,
+    );
+    const bridgeState = this.bridgeStatus(modStatus, bridgeFile, liveSession);
     // R2: só no ramo sem agentes com tasks. Versão e modelo vêm da última entrada
     // com usage do main; a flag, das quatro fontes (memo por mtime no leitor).
     const main = usage.byAgent.find(a => a.isMain);
@@ -103,6 +134,7 @@ export class SnapshotService {
       ...(detail.awaitingInput !== null ? { awaitingInput: detail.awaitingInput } : {}),
       ...(detail.pendingQuestions.length > 0 ? { pendingQuestions: detail.pendingQuestions } : {}),
       ...(taskToolsOff ? { taskToolsOff: true as const } : {}),
+      ...(bridgeState !== undefined ? { bridge: bridgeState } : {}),
     };
   }
 
@@ -119,6 +151,43 @@ export class SnapshotService {
     if (pinned) return pinned;
     // `sessions` já vem por atividade DESC, então o primeiro vivo é o vivo mais recente.
     return sessions.find(s => s.alive) ?? sessions[0];
+  }
+
+  // Janela exata e limites de uso vindos da ponte (spec 2026-10-06, decisão 6).
+  // A janela vale para qualquer sessão com arquivo; os limites são da conta e só
+  // aparecem com o mod instalado, sem as janelas que já reiniciaram.
+  private withBridgeUsage(usage: SessionUsage, file: BridgeFile | undefined, installed: boolean): SessionUsage {
+    if (!this.bridge) return usage;
+    let out = usage;
+    const window = file?.usage?.context?.window;
+    if (out.context && window !== undefined) {
+      out = { ...out, context: { ...out.context, limit: window, source: 'mod' } };
+    }
+    const reading = installed ? this.bridge.latestRateLimits() : undefined;
+    if (reading) {
+      const now = this.now();
+      const limits = reading.limits.filter(l => {
+        const reset = Date.parse(l.resetsAt);
+        return Number.isFinite(reset) && reset > now;
+      });
+      if (limits.length > 0) out = { ...out, rateLimits: { readAt: reading.readAt, limits } };
+    }
+    return out;
+  }
+
+  // Estado do rodapé da ponte (spec 2026-10-06, decisão 8).
+  private bridgeStatus(
+    status: BridgeModStatus | undefined,
+    file: BridgeFile | undefined,
+    live: LiveSession | undefined,
+  ): BridgeStatus | undefined {
+    if (status === undefined) return undefined;
+    if (!status.installed) return 'off';
+    if (file) return 'active';
+    const started = live?.startedAt;
+    if (started !== undefined && status.installedAt !== undefined
+      && started > status.installedAt && this.now() - started > SILENT_AFTER_MS) return 'silent';
+    return 'next-session';
   }
 
   // name do registro (só nameSource 'user') > nome em cache > aiTitle > id curto.
