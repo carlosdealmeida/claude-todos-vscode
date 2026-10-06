@@ -271,12 +271,21 @@
   .cdot.read { background: var(--vscode-charts-green); }
   .cdot.create { background: var(--vscode-charts-blue); }
   .cdot.new { background: var(--vscode-descriptionForeground); }
-  .limits { margin-bottom: 0.4rem; }
+  /* Uma grade só para o bloco (rótulo, barra, %, reset): as linhas entram nela
+     por display: contents, então as barras dos limites começam e terminam no
+     mesmo ponto e dá para comparar um com o outro. */
+  .limits {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 0.2rem 0.4rem;
+    margin-bottom: 0.6rem;
+  }
   .limits-head {
+    grid-column: 1 / -1;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.2rem;
   }
   .limits-label { font-size: 0.9em; }
   .limits-read, .limit-reset {
@@ -284,15 +293,9 @@
     color: var(--vscode-descriptionForeground);
     white-space: nowrap;
   }
-  .limit-row {
-    display: grid;
-    grid-template-columns: auto 1fr auto auto;
-    align-items: center;
-    gap: 0.4rem;
-    margin-bottom: 0.2rem;
-  }
+  .limit-row { display: contents; }
   .limit-name { font-size: 0.85em; white-space: nowrap; }
-  .limit-pct { font-size: 0.8em; font-weight: 600; }
+  .limit-pct { font-size: 0.8em; font-weight: 600; text-align: right; }
   .bridge-foot {
     display: flex;
     align-items: center;
