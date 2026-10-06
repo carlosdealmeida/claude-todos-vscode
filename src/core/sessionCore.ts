@@ -56,7 +56,7 @@ export class SessionCore {
     );
     this.settingsFile = new ClaudeSettingsFile(path.join(this.claudeDir, 'settings.json'));
     this.taskToolsFlags = new TaskToolsFlagReader(this.settingsFile.path);
-    this.bridgeLive = new BridgeLiveReader(this.claudeDir);
+    this.bridgeLive = new BridgeLiveReader(this.claudeDir, this.now);
     this.bridgeMod = new BridgeModInstaller(this.claudeDir, this.settingsFile, { now: this.now });
     const resolver = new SessionResolver(this.bridge, this.workspaceCwds);
     this.snapshotService = new SnapshotService(

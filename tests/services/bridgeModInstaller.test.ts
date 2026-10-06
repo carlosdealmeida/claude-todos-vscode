@@ -101,6 +101,35 @@ describe('BridgeModInstaller', () => {
     expect(fs.statSync(registerPath).mtimeMs).toBe(old.getTime());
   });
 
+  it('status() does not reread settings.json while it is unchanged', () => {
+    class CountingSettings extends ClaudeSettingsFile { reads = 0; read() { this.reads++; return super.read(); } }
+    const counting = new CountingSettings(settingsPath);
+    const installer = new BridgeModInstaller(claudeDir, counting, { files: FILES, now: () => 1_000, delimiter: ';' });
+    installer.install();
+    counting.reads = 0;
+    expect(installer.status().installed).toBe(true);
+    expect(installer.status().installed).toBe(true);
+    expect(counting.reads).toBe(1);
+    fs.writeFileSync(settingsPath, JSON.stringify({ model: 'opus' }));
+    const later = new Date(Date.now() + 5_000);
+    fs.utimesSync(settingsPath, later, later);
+    expect(installer.status().installed).toBe(false);
+    expect(counting.reads).toBe(2);
+  });
+
+  it('status() also follows install.json and the mod folder, not only settings.json', () => {
+    const installer = make(FILES, 1_000);
+    installer.install();
+    expect(installer.status()).toEqual({ installed: true, installedAt: 1_000 });
+    const marker = path.join(path.dirname(modDir()), 'install.json');
+    fs.writeFileSync(marker, JSON.stringify({ installedAt: 2_000 }));
+    const later = new Date(Date.now() + 5_000);
+    fs.utimesSync(marker, later, later);
+    expect(installer.status()).toEqual({ installed: true, installedAt: 2_000 });
+    fs.rmSync(modDir(), { recursive: true, force: true });
+    expect(installer.status()).toEqual({ installed: false });
+  });
+
   // Review Focus 1
   it('matches our entry regardless of case and separators on Windows', () => {
     if (process.platform !== 'win32') return;

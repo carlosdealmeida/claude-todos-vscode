@@ -30,6 +30,10 @@ function samePath(a: string, b: string): boolean {
     : path.normalize(a) === path.normalize(b);
 }
 
+function statOrNull(file: string): fs.Stats | null {
+  try { return fs.statSync(file); } catch { return null; }
+}
+
 // Instala, atualiza e desinstala o mod da ponte de dados (ROADMAP item 25; spec
 // docs/specs/2026-10-06-ponte-de-dados-mod-design.md, decisão 5). O mod viaja
 // dentro do bundle (BRIDGE_MOD_FILES); instalar grava os arquivos em
@@ -39,9 +43,11 @@ function samePath(a: string, b: string): boolean {
 export class BridgeModInstaller {
   readonly modDir: string;
   private readonly markerPath: string;
+  private readonly manifestPath: string;
   private readonly files: Readonly<Record<string, string>>;
   private readonly now: () => number;
   private readonly delimiter: string;
+  private statusMemo: { key: string; value: BridgeModStatus } | null = null;
 
   constructor(
     claudeDir: string,
@@ -51,6 +57,7 @@ export class BridgeModInstaller {
     const modRoot = path.join(claudeDir, '.vscode-todos-bridge', 'mod');
     this.modDir = path.join(modRoot, BRIDGE_MOD_NAME);
     this.markerPath = path.join(modRoot, 'install.json');
+    this.manifestPath = path.join(this.modDir, '.claude-plugin', 'plugin.json');
     this.files = opts.files ?? BRIDGE_MOD_FILES;
     this.now = opts.now ?? (() => Date.now());
     this.delimiter = opts.delimiter ?? path.delimiter;
@@ -58,13 +65,24 @@ export class BridgeModInstaller {
 
   // Instalado = a nossa entrada no env e a pasta do mod existem. Um
   // settings.json inválido conta como não instalado: o painel oferece Ativar, e
-  // a ativação mostra o erro real.
+  // a ativação mostra o erro real. Memo: o snapshot chama status() ~3x por mudança.
   status(): BridgeModStatus {
+    const manifestExists = fs.existsSync(this.manifestPath);
+    const settingsStat = statOrNull(this.settings.path);
+    const markerStat = statOrNull(this.markerPath);
+    const key = `${settingsStat?.mtimeMs ?? -1}:${settingsStat?.size ?? -1}|${markerStat?.mtimeMs ?? -1}|${manifestExists}`;
+    if (this.statusMemo?.key === key) return this.statusMemo.value;
+    const value = this.readStatus(manifestExists);
+    this.statusMemo = { key, value };
+    return value;
+  }
+
+  private readStatus(manifestExists: boolean): BridgeModStatus {
     let listed = false;
     try {
       listed = this.pluginDirsOf(this.envOf(this.settings.read())).some(d => samePath(d, this.modDir));
     } catch { /* settings.json inválido */ }
-    if (!listed || !fs.existsSync(path.join(this.modDir, '.claude-plugin', 'plugin.json'))) return { installed: false };
+    if (!listed || !manifestExists) return { installed: false };
     const installedAt = this.readInstalledAt();
     return { installed: true, ...(installedAt !== undefined ? { installedAt } : {}) };
   }
@@ -73,6 +91,7 @@ export class BridgeModInstaller {
   // quando o env ou a lista de pastas têm um formato que não é o nosso: nada é
   // gravado. `changed` = a entrada no env foi criada agora.
   install(): { changed: boolean; path: string } {
+    this.statusMemo = null;
     const settings = this.settings.read();
     const env = this.envOf(settings);
     const dirs = this.pluginDirsOf(env);
@@ -92,6 +111,7 @@ export class BridgeModInstaller {
   // e apaga a pasta mod/. Os arquivos de live/ ficam para a limpeza de 30 dias.
   // `changed` = a entrada existia.
   uninstall(): { changed: boolean; path: string } {
+    this.statusMemo = null;
     const settings = this.settings.read();
     const env = this.envOf(settings);
     const dirs = this.pluginDirsOf(env);

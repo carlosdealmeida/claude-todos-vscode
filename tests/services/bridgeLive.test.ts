@@ -77,6 +77,30 @@ describe('BridgeLiveReader', () => {
     expect(new BridgeLiveReader(claudeDir).latestRateLimits()).toEqual({ readAt: T + 9, limits: limits(40) });
   });
 
+  it('latestRateLimits keeps its answer for a short TTL', () => {
+    let now = 10_000;
+    const r = new BridgeLiveReader(claudeDir, () => now);
+    const limits = (pct: number) => [{ kind: 'five_hour', percentUsed: pct, resetsAt: '2026-10-05T20:40:00.000Z' }];
+    write('s1', toText(fileWith('s1', [{ kind: 'usage', at: T + 1, usage: { context: { window: 1e6 }, rateLimits: limits(10) } }]), T));
+    expect(r.latestRateLimits()?.limits).toEqual(limits(10));
+    write('s2', toText(fileWith('s2', [{ kind: 'usage', at: T + 9, usage: { context: { window: 1e6 }, rateLimits: limits(40) } }]), T));
+    now += 1_000;
+    expect(r.latestRateLimits()?.limits).toEqual(limits(10));
+    now += 1_500;
+    expect(r.latestRateLimits()?.limits).toEqual(limits(40));
+  });
+
+  it('latestRateLimits does not hold its answer when the clock goes backwards', () => {
+    let now = 50_000;
+    const r = new BridgeLiveReader(claudeDir, () => now);
+    const limits = (pct: number) => [{ kind: 'five_hour', percentUsed: pct, resetsAt: '2026-10-05T20:40:00.000Z' }];
+    write('s1', toText(fileWith('s1', [{ kind: 'usage', at: T + 1, usage: { context: { window: 1e6 }, rateLimits: limits(10) } }]), T));
+    expect(r.latestRateLimits()?.limits).toEqual(limits(10));
+    write('s2', toText(fileWith('s2', [{ kind: 'usage', at: T + 9, usage: { context: { window: 1e6 }, rateLimits: limits(40) } }]), T));
+    now = 10_000;
+    expect(r.latestRateLimits()?.limits).toEqual(limits(40));
+  });
+
   it('latestRateLimits is undefined without the folder', () => {
     fs.rmSync(live, { recursive: true, force: true });
     expect(new BridgeLiveReader(claudeDir).latestRateLimits()).toBeUndefined();

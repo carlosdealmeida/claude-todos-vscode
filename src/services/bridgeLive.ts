@@ -35,6 +35,10 @@ export function lifecycleFromBridge(file: BridgeFile | undefined): Map<string, L
   return out;
 }
 
+// latestRateLimits() varre live/ inteira (readdir e um stat por arquivo) e o
+// snapshot roda ~3x por mudança: a resposta vale por este tempo.
+export const RATE_LIMITS_TTL_MS = 2_000;
+
 // Leitor dos arquivos que o mod claude-todos-bridge grava em
 // <claudeDir>/.vscode-todos-bridge/live/ (spec 2026-10-06, decisão 6).
 // Tolerante: arquivo ausente devolve undefined; arquivo pela metade ou inválido
@@ -44,8 +48,9 @@ export class BridgeLiveReader {
   readonly liveDir: string;
   private readonly cache = new Map<string, { mtimeMs: number; size: number; file: BridgeFile | null }>();
   private readonly lastGood = new Map<string, BridgeFile>();
+  private rateLimitsMemo: { at: number; value: RateLimitsReading | undefined } | null = null;
 
-  constructor(claudeDir: string) {
+  constructor(claudeDir: string, private readonly now: () => number = () => Date.now()) {
     this.liveDir = path.join(claudeDir, '.vscode-todos-bridge', 'live');
   }
 
@@ -56,8 +61,18 @@ export class BridgeLiveReader {
   }
 
   // Os limites são da conta: vale a leitura de usage.at mais recente entre os
-  // arquivos com rateLimits não vazio.
+  // arquivos com rateLimits não vazio. A resposta fica em memo por RATE_LIMITS_TTL_MS
+  // (um relógio que volta atrás não prende o memo: idade negativa não vale).
   latestRateLimits(): RateLimitsReading | undefined {
+    const t = this.now();
+    const memo = this.rateLimitsMemo;
+    if (memo && t >= memo.at && t - memo.at < RATE_LIMITS_TTL_MS) return memo.value;
+    const value = this.scanRateLimits();
+    this.rateLimitsMemo = { at: t, value };
+    return value;
+  }
+
+  private scanRateLimits(): RateLimitsReading | undefined {
     let entries: string[];
     try { entries = fs.readdirSync(this.liveDir); } catch { return undefined; }
     let best: RateLimitsReading | undefined;
@@ -72,6 +87,7 @@ export class BridgeLiveReader {
 
   // Apaga de live/ os arquivos com mtime acima de maxAgeMs. Nunca lança.
   prune(maxAgeMs: number, now: number): void {
+    this.rateLimitsMemo = null;
     let entries: string[];
     try { entries = fs.readdirSync(this.liveDir); } catch { return; }
     for (const name of entries) {
