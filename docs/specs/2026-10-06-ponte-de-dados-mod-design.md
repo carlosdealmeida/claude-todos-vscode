@@ -367,3 +367,23 @@ Tudo em Node (`vitest`), com fixtures no formato da decisão 3.
   `preview-webview`; de ponta a ponta, ativar pelo painel no VS Code e no JetBrains, abrir uma
   sessão nova, ver o arquivo e os dados exatos no painel, desativar e conferir que o
   `settings.json` voltou ao que era.
+
+## Errata da execução (2026-10-06)
+
+O plano `docs/plans/2026-10-06-ponte-de-dados-mod.md` é anterior a estas decisões; onde ele ou as
+seções acima divergirem delas, vale esta seção.
+
+- O módulo gerado com os arquivos do mod fica em `src/bridgeMod/modFiles.generated.ts` (fora do
+  git pelo padrão `src/bridgeMod/*.generated.ts`), e não em `src/generated/bridgeModFiles.ts`: o
+  teste `tests/site/stores.test.ts` protege a pasta `src/generated/` contra um bug antigo do site.
+- A ponte entra no `mergeLifecycles` só com os fins de agente; o início e a retomada continuam
+  vindo do transcript. Um início cujo fim se perdesse (recarga do mod) deixaria "rodando" um
+  agente que o transcript já dá como concluído.
+- Depois de um aviso de ociosidade (por silêncio ou pelo fim de turno da ponte), a próxima
+  atividade abre uma rajada nova: uma resposta rápida seguida de um turno curto não avisa de novo.
+- O painel não cai com dado estranho porém válido no arquivo: as linhas de limites são chaveadas
+  pela posição, e o horário de leitura fora do intervalo de datas é omitido.
+- O link Ativar/Desativar do rodapé usa a cor de link do tema com fallback para a cor de
+  destaque, porque o tema do JetBrains não define a cor de link.
+- A checagem de tipos de desenvolvimento do mod roda com `--allowImportingTsExtensions`; o
+  `import './state.ts'` funciona no engine.

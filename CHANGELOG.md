@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Exact data from Claude Code (experimental).** An optional Claude Code mod (`claude-todos-bridge`, built on the early-access Mods API) records, per session, the exact context window, the 5-hour and 7-day usage limits, and when each sub-agent and each main turn ends. The panel uses this data when it exists and keeps its own estimates otherwise:
+  - the context bar uses the window Claude Code reports instead of guessing it from the model name, so 200k windows on Pro and Team plans show right;
+  - a new **Usage limits** block shows the 5-hour and 7-day percentages with their reset times;
+  - sub-agents end exactly when Claude Code says so;
+  - the idle notification fires as soon as the turn ends instead of after 45 s of silence.
+
+  Turn it on from the footer of the usage block or with `Claude Todos: Enable exact data from Claude Code (experimental)`, in VS Code and JetBrains. After a confirmation, it copies the mod to `~/.claude/.vscode-todos-bridge/mod/` and adds that folder to `env.CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json`. Roadmap item 25; spec `docs/specs/2026-10-06-ponte-de-dados-mod-design.md`.
+
 ### Fixed
 - **Background sub-agents no longer show as finished while they run.** When the `Agent` tool runs in the background, Claude Code answers the call right away (`status: "async_launched"`), and the panel took that answer as the end of the agent: the node moved to the history group and the stale-list hint never showed. Sub-agents now follow their lifecycle in the parent transcript — launch, resume via `SendMessage`, and the `<task-notification>` that ends each run, whether it arrives between turns or in the middle of one — and count as running only while the Claude Code process that launched or resumed them is alive: a session resumed in a new process doesn't bring back agents that died with the old one, and the panel redraws as soon as a Claude Code process exits, so orphaned agents don't stay "running" (upstream [#94872](https://github.com/anthropics/claude-code/issues/94872)). Measured on 30 days of local transcripts: 103 of 473 dispatches ran in the background, still working a median of 7.5 minutes after the panel had marked them done. Roadmap R6; spec `docs/specs/2026-10-05-subagents-background-e-janela-fable-design.md`.
 - **No "idle" notification while sub-agents are still working.** A running sub-agent now counts as session activity, so the toast waits until the background work and the main agent's wrap-up are both over — the same problem Claude Code fixed in its own `idle_prompt` hook in 2.1.288 (upstream [#93672](https://github.com/anthropics/claude-code/issues/93672)). Roadmap R6.

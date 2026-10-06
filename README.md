@@ -97,12 +97,14 @@ Esta extensão é **totalmente local**. Nada é enviado para nenhum servidor.
 
 | Arquivo | Como é acessado | Por quê |
 |---|---|---|
-| `~/.claude/settings.json` | Lido + escrito (só com sua permissão) | Adiciona dois comandos de hook em `hooks.SessionStart` e `hooks.UserPromptSubmit` e, quando você clica em **Ativar ferramentas de tasks**, a chave `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`. Outros hooks e configurações são preservados; um arquivo inválido nunca é sobrescrito. |
+| `~/.claude/settings.json` | Lido + escrito (só com sua permissão) | Adiciona dois comandos de hook em `hooks.SessionStart` e `hooks.UserPromptSubmit`; quando você clica em **Ativar ferramentas de tasks**, a chave `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`; e, quando você ativa os **Dados exatos**, a pasta do mod em `env.CLAUDE_CODE_PLUGIN_DIRS`. Outros hooks e configurações são preservados; um arquivo inválido nunca é sobrescrito. |
 | `~/.claude/.vscode-todos-bridge/sessions.json` | Escrito pelo script de hook embarcado | Registra `{cwd, sessionId, terminalPid, startedAt}` para a extensão saber qual sessão do Claude pertence a qual janela do VSCode. Limitado a 200 entradas. |
+| `~/.claude/.vscode-todos-bridge/mod/` | Escrito pela extensão (só com sua permissão) | Cópia do mod `claude-todos-bridge` do Claude Code e a data da ativação. Apagada quando você desativa os Dados exatos. |
+| `~/.claude/.vscode-todos-bridge/live/<sessionId>.json` | Escrito pelo mod, dentro do Claude Code | Por sessão: janela de contexto, limites de uso de 5h e 7 dias, fim do último turno e início e fim de cada sub-agent (tipo, descrição, modelo). Nada de custo nem do conteúdo das mensagens. Arquivos com mais de 30 dias são apagados. |
 | `~/.claude/projects/{cwd-encoded}/…` | Apenas leitura | Transcripts da sessão e dos sub-agents (`.jsonl` + `.meta.json`), gravados pelo próprio Claude Code — fonte das tasks, árvore, tempos e tokens. |
 | `~/.claude/todos/` | Não é tocado | Localização legada do Claude Code 1.x. Ignorada. |
 
-A extensão nunca modifica seus transcripts e nunca apaga nada.
+A extensão nunca modifica seus transcripts. Ela só apaga o que ela mesma criou: a cópia do mod, quando você desativa os Dados exatos, e os arquivos da ponte com mais de 30 dias.
 
 ## Requisitos
 
@@ -127,6 +129,7 @@ Para rodar a extensão em um host de desenvolvimento: abra a pasta no VSCode e p
 
 - O script de hook precisa estar acessível pelo caminho armazenado em `~/.claude/settings.json`. Se você apagar a extensão manualmente sem desinstalá-la, esses comandos de hook permanecem como no-ops — remova-os à mão ou reinstale e use `Claude Todos: Install Session Hook` novamente.
 - Se as ferramentas de tasks do Claude Code estiverem desligadas (padrão a partir da 2.1.233 nos modelos novos), a lista fica vazia e o painel mostra "Sessão ativa — aguardando tasks" mesmo com o agente trabalhando. O resto do painel não depende delas. Como reativar: [Instalação](#instalação).
+- Os **Dados exatos** dependem dos Mods do Claude Code, em early access. Se o rodapé do bloco de uso disser que a ponte não respondeu, os Mods podem estar desligados na sua conta, ou um `CLAUDE_CODE_PLUGIN_DIRS` definido no ambiente pode estar prevalecendo sobre o do `settings.json`; o painel continua com as estimativas. Desinstalar a extensão não remove a pasta do mod nem a entrada no `settings.json`: rode antes `Claude Todos: Disable exact data from Claude Code` ou remova as duas à mão.
 
 ## Contribuindo
 

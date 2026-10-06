@@ -99,12 +99,14 @@
 
 | 文件 | 访问方式 | 原因 |
 |---|---|---|
-| `~/.claude/settings.json` | 读取 + 写入（仅在你授权时） | 在 `hooks.SessionStart` 和 `hooks.UserPromptSubmit` 下添加两个钩子命令；当你点击**开启任务工具**时，还会写入 `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`。其他钩子和设置会被保留；无效的文件绝不会被覆盖。 |
+| `~/.claude/settings.json` | 读取 + 写入（仅在你授权时） | 在 `hooks.SessionStart` 和 `hooks.UserPromptSubmit` 下添加两个钩子命令；当你点击**开启任务工具**时，写入 `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`；当你开启**准确数据**时，把 mod 文件夹写入 `env.CLAUDE_CODE_PLUGIN_DIRS`。其他钩子和设置会被保留；无效的文件绝不会被覆盖。 |
 | `~/.claude/.vscode-todos-bridge/sessions.json` | 由内置的钩子脚本写入 | 记录 `{cwd, sessionId, terminalPid, startedAt}`，让扩展知道哪个 Claude 会话属于哪个 VSCode 窗口。最多保留 200 条记录。 |
+| `~/.claude/.vscode-todos-bridge/mod/` | 由扩展写入（仅在你授权时） | Claude Code mod `claude-todos-bridge` 的副本以及开启的时间。关闭准确数据时会被删除。 |
+| `~/.claude/.vscode-todos-bridge/live/<sessionId>.json` | 由 mod 在 Claude Code 内写入 | 每个会话：上下文窗口、5 小时和 7 天的用量限制、最后一轮的结束时间，以及每个子智能体的开始和结束（类型、描述、模型）。不包含费用和消息内容。超过 30 天的文件会被删除。 |
 | `~/.claude/projects/{cwd-encoded}/…` | 只读 | 由 Claude Code 自身写入的会话和子智能体对话记录（`.jsonl` + `.meta.json`）— 任务、树状结构、耗时和令牌数据的来源。 |
 | `~/.claude/todos/` | 不会被访问 | Claude Code 1.x 的旧版位置，已被忽略。 |
 
-此扩展不会修改你的对话记录，也不会删除任何内容。
+此扩展不会修改你的对话记录。它只会删除自己创建的内容：关闭准确数据时的 mod 副本，以及超过 30 天的桥接文件。
 
 ## 环境要求
 
@@ -129,6 +131,7 @@ npx vsce package # produces claude-todos-<version>.vsix
 
 - 钩子脚本必须始终可以通过 `~/.claude/settings.json` 中存储的路径访问。如果你手动删除扩展而没有卸载它，那些钩子命令会变成空操作（no-op）— 需要手动移除它们，或者重新安装并再次运行 `Claude Todos: Install Session Hook`。
 - 如果 Claude Code 的任务工具处于关闭状态（自 2.1.233 起在新模型上为默认），列表会为空，即使智能体正在工作，面板也只显示“会话进行中 — 等待任务”。面板的其余部分不依赖这些工具。如何开启：见[安装](#安装)。
+- **准确数据**依赖 Claude Code 的 Mod 功能，目前处于抢先体验阶段。如果用量区块底部显示桥接没有响应，可能是你的账户关闭了 Mod，或者环境中设置的 `CLAUDE_CODE_PLUGIN_DIRS` 覆盖了 `settings.json` 中的设置；面板会继续使用估算值。卸载扩展不会删除 mod 文件夹和 `settings.json` 中的条目：请先运行 `Claude Todos: Disable exact data from Claude Code`，或手动删除两者。
 
 ## 贡献
 
