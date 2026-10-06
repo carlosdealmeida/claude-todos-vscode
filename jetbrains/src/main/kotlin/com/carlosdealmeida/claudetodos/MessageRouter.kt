@@ -28,8 +28,11 @@ interface RouterHost {
     fun activatePanel()
     fun warn(messageKey: String)
 
-    /** Diálogo modal Sim/Não; chama [onOk] só se o usuário confirmar. O host preenche `{path}`. */
-    fun confirm(messageKey: String, onOk: () -> Unit)
+    /**
+     * Diálogo modal Sim/Não; chama [onOk] só se o usuário confirmar. O host preenche `{path}`.
+     * [okKey] rotula o botão de confirmar (Ativar, Desativar…).
+     */
+    fun confirm(messageKey: String, okKey: String = "taskTools.enable", onOk: () -> Unit)
     fun info(messageKey: String, args: Map<String, String> = emptyMap())
     fun error(messageKey: String, args: Map<String, String> = emptyMap())
 }
@@ -121,6 +124,8 @@ class MessageRouter(
                 }
                 sendToSidecar(buildJsonObject { put("cmd", "enableTaskTools"); put("id", id) }.toString())
             }
+            "installBridgeMod" -> bridgeMod(install = true)
+            "uninstallBridgeMod" -> bridgeMod(install = false)
             "openPanel" -> host.activatePanel()
             else -> Unit
         }
@@ -173,6 +178,29 @@ class MessageRouter(
         val id = "ih-${nextId.getAndIncrement()}"
         pending[id] = { ev -> onDone(ev["ev"]?.jsonPrimitive?.content == "hookInstalled") }
         sendToSidecar(buildJsonObject { put("cmd", "installHook"); put("hookScriptPath", scriptPath); put("id", id) }.toString())
+    }
+
+    // Ponte de dados (item 25): mesmo molde do enableTaskTools — confirma, chama o
+    // sidecar e avisa o resultado; o snapshot seguinte já traz o estado novo.
+    private fun bridgeMod(install: Boolean) {
+        val confirmKey = if (install) "bridgeMod.confirmInstall" else "bridgeMod.confirmUninstall"
+        val okKey = if (install) "bridgeMod.enable" else "bridgeMod.disable"
+        host.confirm(confirmKey, okKey) {
+            val id = "bm-${nextId.getAndIncrement()}"
+            pending[id] = { ev ->
+                if (ev["ev"]?.jsonPrimitive?.content == "bridgeModChanged") {
+                    host.info(if (install) "bridgeMod.installed" else "bridgeMod.uninstalled")
+                } else {
+                    host.error("bridgeMod.failed", mapOf(
+                        "error" to (ev["message"]?.jsonPrimitive?.contentOrNull ?: "unknown error"),
+                    ))
+                }
+                sendToSidecar("""{"cmd":"getSnapshot"}""")
+            }
+            sendToSidecar(buildJsonObject {
+                put("cmd", if (install) "installBridgeMod" else "uninstallBridgeMod"); put("id", id)
+            }.toString())
+        }
     }
 
     private fun parse(json: String) =

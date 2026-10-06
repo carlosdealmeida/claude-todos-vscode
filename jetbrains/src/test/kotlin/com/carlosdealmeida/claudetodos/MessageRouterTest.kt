@@ -32,7 +32,10 @@ class MessageRouterTest {
         val infos = mutableListOf<Pair<String, Map<String, String>>>()
         val errors = mutableListOf<Pair<String, Map<String, String>>>()
         var autoConfirm = true
-        override fun confirm(messageKey: String, onOk: () -> Unit) { confirms += messageKey; if (autoConfirm) onOk() }
+        val okKeys = mutableListOf<String>()
+        override fun confirm(messageKey: String, okKey: String, onOk: () -> Unit) {
+            confirms += messageKey; okKeys += okKey; if (autoConfirm) onOk()
+        }
         override fun info(messageKey: String, args: Map<String, String>) { infos += messageKey to args }
         override fun error(messageKey: String, args: Map<String, String>) { errors += messageKey to args }
     }
@@ -206,5 +209,38 @@ class MessageRouterTest {
         router.onWebviewMessage("""{"type":"enableTaskTools"}""")
         assertEquals(listOf("taskTools.confirm"), host.confirms)
         assertTrue(toSidecar.isEmpty())
+    }
+
+    @Test fun `installBridgeMod confirms with the enable label, calls the sidecar and toasts`() {
+        router.onWebviewMessage("""{"type":"installBridgeMod"}""")
+        assertEquals(listOf("bridgeMod.confirmInstall"), host.confirms)
+        assertEquals(listOf("bridgeMod.enable"), host.okKeys)
+        val cmd = parse(toSidecar.single())
+        assertEquals("installBridgeMod", cmd["cmd"]!!.jsonPrimitive.content)
+        val id = cmd["id"]!!.jsonPrimitive.content
+        router.onSidecarEvent("""{"ev":"bridgeModChanged","installed":true,"changed":true,"path":"/c/settings.json","id":"$id"}""")
+        assertEquals("bridgeMod.installed", host.infos.single().first)
+        assertEquals("getSnapshot", parse(toSidecar.last())["cmd"]!!.jsonPrimitive.content)
+    }
+
+    @Test fun `uninstallBridgeMod confirms with the disable label and reports a sidecar error`() {
+        router.onWebviewMessage("""{"type":"uninstallBridgeMod"}""")
+        assertEquals(listOf("bridgeMod.confirmUninstall"), host.confirms)
+        assertEquals(listOf("bridgeMod.disable"), host.okKeys)
+        val id = parse(toSidecar.single())["id"]!!.jsonPrimitive.content
+        router.onSidecarEvent("""{"ev":"error","message":"boom","id":"$id"}""")
+        assertEquals("bridgeMod.failed", host.errors.single().first)
+        assertEquals("boom", host.errors.single().second["error"])
+    }
+
+    @Test fun `bridge mod declined sends nothing to the sidecar`() {
+        host.autoConfirm = false
+        router.onWebviewMessage("""{"type":"installBridgeMod"}""")
+        assertTrue(toSidecar.isEmpty())
+    }
+
+    @Test fun `enableTaskTools keeps its own confirm label`() {
+        router.onWebviewMessage("""{"type":"enableTaskTools"}""")
+        assertEquals(listOf("taskTools.enable"), host.okKeys)
     }
 }
