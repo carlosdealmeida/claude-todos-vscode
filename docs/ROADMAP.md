@@ -966,8 +966,6 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   - **Instalação** (`src/services/bridgeModInstaller.ts`):
     - `install()` lê o `settings.json`, copia o mod e só então grava: uma escrita de terceiros
       nesse intervalo se perde (reler antes de gravar);
-    - `uninstall()` lança `ENOTEMPTY` se um arquivo do mod estiver aberto, depois de já ter tirado
-      a entrada do `settings.json` (tolerar a falha da pasta);
     - o memo do `status()` guarda o "não instalado" de um erro de leitura passageiro
       (`EBUSY`/`EPERM`) até o `settings.json` mudar; não memorizar quando o erro não for
       `SettingsParseError`;
