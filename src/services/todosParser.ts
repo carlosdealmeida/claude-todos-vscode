@@ -5,6 +5,7 @@ import { transcriptPath as resolveTranscriptPath, subAgentsDir as resolveSubAgen
 import { readSubAgentMeta, type SubAgentMeta } from './subAgentMeta';
 import { TranscriptActivity } from './transcriptActivity';
 import { collectAgentLifecycle, mergeLifecycles, type LifecycleEntry } from './agentLifecycle';
+import { isApiRequestLine } from './transcriptRecords';
 
 const VALID_STATUSES: TodoStatus[] = ['pending', 'in_progress', 'completed'];
 
@@ -64,6 +65,14 @@ interface TranscriptEntry {
     role?: string;
     content?: ContentBlock[] | string;
   };
+}
+
+// R7: desde a 2.1.300 o transcript também grava records api-request-blob com
+// CÓPIAS das mensagens (tool_use, tool_result, TodoWrite…), sem timestamp nem
+// toolUseResult. Só user/assistant são conversa; uma linha sem `type` (formato
+// mínimo) também conta.
+function isConversationEntry(entry: TranscriptEntry): boolean {
+  return entry.type === undefined || entry.type === 'user' || entry.type === 'assistant';
 }
 
 interface Dispatch {
@@ -473,6 +482,7 @@ export class TodosParser {
       if (!line) continue;
       let entry: TranscriptEntry;
       try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
+      if (!isConversationEntry(entry)) continue;
       const content = entry.message?.content;
       if (!Array.isArray(content)) continue;
       for (const block of content) {
@@ -510,9 +520,11 @@ export class TodosParser {
     return out;
   }
 
+  // Linhas api-request* viram '' (todo leitor pula linha vazia) em vez de sair
+  // do array: o índice da linha é o sourceLine do clique "abrir no transcript".
   private readLines(filePath: string): string[] {
     try {
-      return fs.readFileSync(filePath, 'utf-8').split('\n');
+      return fs.readFileSync(filePath, 'utf-8').split('\n').map(l => (isApiRequestLine(l) ? '' : l));
     } catch {
       return [];
     }
@@ -664,6 +676,7 @@ export class TodosParser {
       try {
         const entry = JSON.parse(line) as TranscriptEntry;
         if (skipSidechain && entry.isSidechain) continue;
+        if (!isConversationEntry(entry)) continue;
         const content = entry.message?.content;
         if (!Array.isArray(content)) continue;
         for (let j = content.length - 1; j >= 0; j--) {
@@ -704,6 +717,7 @@ export class TodosParser {
       let entry: TranscriptEntry;
       try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
       if (skipSidechain && entry.isSidechain) continue;
+      if (!isConversationEntry(entry)) continue;
       const content = entry.message?.content;
       if (!Array.isArray(content)) continue;
 

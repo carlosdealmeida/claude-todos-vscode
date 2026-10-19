@@ -117,6 +117,19 @@ describe('TodosParser', () => {
     };
   }
 
+  // R7: desde a 2.1.300 o transcript grava, depois das mensagens reais, cópias
+  // delas em records api-request-blob (forma medida no disco: type, sessionId,
+  // hash de 64 hex e message {role, content}; sem timestamp, isSidechain, uuid
+  // nem toolUseResult).
+  function apiRequestBlob(role: 'user' | 'assistant', content: object[]): object {
+    return {
+      type: 'api-request-blob',
+      sessionId: 's1',
+      hash: 'b'.repeat(64),
+      message: { role, content },
+    };
+  }
+
   function writeSubAgent(
     sessionId: string,
     cwd: string,
@@ -464,6 +477,63 @@ describe('TodosParser', () => {
       const agents = parser.listForSession('s1', CWD);
       expect(agents).toHaveLength(1);
       expect(agents[0].isMain).toBe(true);
+    });
+  });
+
+  describe('records api-request* (R7)', () => {
+    it('keeps a completed sub-agent whose dispatch and result were copied into blobs', () => {
+      const prompt = 'Audit the build config';
+      writeTranscript('s1', CWD, [
+        todoWriteEntry([{ content: 'main', activeForm: 'Main', status: 'in_progress' }]),
+        agentToolUse('tool-1', 'audit-build', prompt),
+        agentResult('tool-1', 'aaa111'),
+        apiRequestBlob('assistant', [
+          { type: 'tool_use', name: 'Agent', id: 'tool-1', input: { name: 'audit-build', prompt } },
+        ]),
+        apiRequestBlob('user', [
+          { type: 'tool_result', tool_use_id: 'tool-1', content: 'done' },
+        ]),
+      ]);
+      writeSubAgent('s1', CWD, 'aaa111', prompt, null);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents.map(a => a.agentId)).toEqual(['s1', 'aaa111']);
+      expect(agents[1].status).toBe('completed');
+    });
+
+    it('takes todosUpdatedAt from the real TodoWrite, not from its blob copy', () => {
+      const todos = [{ content: 'a', activeForm: 'A', status: 'in_progress' }];
+      writeTranscript('s1', CWD, [
+        { type: 'assistant', ...todoWriteEntry(todos, { timestamp: '2026-10-19T10:07:00.000Z' }) },
+        apiRequestBlob('assistant', [{ type: 'tool_use', name: 'TodoWrite', input: { todos } }]),
+      ]);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents[0].todosUpdatedAt).toBe(Date.parse('2026-10-19T10:07:00.000Z'));
+    });
+
+    it('keeps sourceLine on the real TaskUpdate when a blob copies it afterwards', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('c1', 'Build', 'Building'),
+        taskCreateResult('c1', '1', 'Build'),
+        { type: 'assistant', ...taskUpdateToolUse('u1', '1', 'in_progress', { timestamp: '2026-10-19T10:00:00.000Z' }) },
+        apiRequestBlob('assistant', [{ type: 'tool_use', name: 'TaskUpdate', id: 'u1', input: { taskId: '1', status: 'in_progress' } }]),
+        apiRequestBlob('user', [{ type: 'tool_result', tool_use_id: 'u1', content: 'Updated task #1 status' }]),
+      ]);
+      const todo = parser.listForSession('s1', CWD)[0].todos[0];
+      expect(todo.status).toBe('in_progress');
+      expect(todo.sourceLine).toBe(2);
+    });
+
+    // Os records de um request vêm antes das mensagens seguintes: pular essas
+    // linhas não pode deslocar o índice que o sourceLine guarda.
+    it('counts api-request lines when locating a later TaskUpdate', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('c1', 'Build', 'Building'),
+        taskCreateResult('c1', '1', 'Build'),
+        { type: 'api-request', sessionId: 's1', id: 'r1', timestamp: '2026-10-19T10:00:00.000Z', params: { model: 'claude-opus-5-5' } },
+        apiRequestBlob('user', [{ type: 'tool_result', tool_use_id: 'c1', content: 'Task #1 created successfully: Build' }]),
+        { type: 'assistant', ...taskUpdateToolUse('u1', '1', 'in_progress', { timestamp: '2026-10-19T10:01:00.000Z' }) },
+      ]);
+      expect(parser.listForSession('s1', CWD)[0].todos[0].sourceLine).toBe(4);
     });
   });
 
