@@ -230,6 +230,12 @@ describe('UsageParser', () => {
       expect(usage.context).toEqual({ tokens: 150_000, limit: 1_000_000 });
     });
 
+    it('measures a Haiku 5.5 session below 200k against the 1M window', () => {
+      writeMain([assistant('claude-haiku-5-5', { cacheRead: 81_000 })]);
+      const usage = parser.usageForSession(SID, CWD, [mainRef]);
+      expect(usage.context).toEqual({ tokens: 81_000, limit: 1_000_000 });
+    });
+
     it('leaves context undefined when the transcript has no usage', () => {
       const dir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
       fs.mkdirSync(dir, { recursive: true });
@@ -396,6 +402,9 @@ describe('contextLimitFor', () => {
   it('detects 1M for every Fable generation by family (no [1m] in the recorded id)', () => {
     expect(contextLimitFor('claude-fable-5')).toBe(1_000_000);
     expect(contextLimitFor('claude-fable-5-1')).toBe(1_000_000);
+  });
+  it('detects 1M for haiku generation 5+ (claude-haiku-5-5 has 1M since 2.1.293)', () => {
+    expect(contextLimitFor('claude-haiku-5-5')).toBe(1_000_000);
   });
   it('keeps the newest opus/sonnet on 1M and a dated haiku 4.5 on 200k', () => {
     expect(contextLimitFor('claude-opus-5-5')).toBe(1_000_000);

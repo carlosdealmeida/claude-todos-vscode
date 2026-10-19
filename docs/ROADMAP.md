@@ -235,7 +235,10 @@ de tokens do 0.3.0).
   [#99018](https://github.com/anthropics/claude-code/issues/99018) pede a janela de cada modelo no handshake do SDK — a mesma informação que nos falta.
 - **Janela exata para quem ativa a ponte (item 25, v1):** o `window` que o Claude Code informa
   substitui a estimativa por nome de modelo; a heurística segue como reserva para quem não ativa.
-- **🐛 Bug (varredura 2026-10-19) — janela do Haiku 5.5 detectada como 200k (latente aqui).** A
+- **✅ Corrigido em 2026-10-19 (aguardando release):** `haiku-(?:[5-9]|1\d)(?!\d)` entrou no
+  `ONE_M_FAMILY`, com teste no `contextLimitFor` e no `usageForSession` (81k contra 1M); o Haiku
+  4.5 segue em 200k (teste existente).
+  **🐛 Bug (varredura 2026-10-19) — janela do Haiku 5.5 detectada como 200k (latente aqui).** A
   2.1.293 lançou o `claude-haiku-5-5` com **1M** de contexto (*"now the default Haiku model…
   1M context"*), e o `ONE_M_FAMILY` ([usageParser.ts:15](../src/services/usageParser.ts#L15))
   só reconhece `opus|sonnet` 4+ e `fable`. É a mesma classe do bug do Fable: com 81k o painel
