@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { transcriptPath, subAgentsDir } from './transcriptPaths';
+import { isApiRequestLine } from './transcriptRecords';
 import type { AgentUsage, CacheStats, ContextUsage, ModelUsage, SessionUsage } from '../types';
 
 const DEFAULT_CONTEXT_LIMIT = 200_000;
@@ -95,7 +96,7 @@ export function readFileUsage(filePath: string, skipSidechain: boolean): { model
   let lastVersion: string | undefined;
   let lastUsage: RawUsage | undefined;
   for (const line of lines) {
-    if (!line) continue;
+    if (!line || isApiRequestLine(line)) continue;
     let entry: TranscriptEntry;
     try { entry = JSON.parse(line) as TranscriptEntry; } catch { continue; }
     if (skipSidechain && entry.isSidechain) continue;

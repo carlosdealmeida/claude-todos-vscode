@@ -50,8 +50,8 @@ restrito ao workspace, a lista `TodoWrite` (main agent + sub-agents) e o uso de 
 > - **🐛 Bug nosso, confirmado:** desde a 2.1.300 o transcript grava records `api-request-blob`
 >   com **cópias** das mensagens, inclusive o `tool_use` do `Agent` e o `tool_result` dele. O
 >   parser lê essas cópias como mensagens reais, e o sub-agent **some da árvore** (medido com o
->   parser real: 6 de 7 numa sessão, 6 de 49 noutra). Afeta a 0.19.0 publicada e o master. Ver
->   **R7**.
+>   parser real: 6 de 7 numa sessão, 6 de 49 noutra). Afeta a 0.19.0 publicada. Corrigido em
+>   10-19, aguardando release junto com o R6. Ver **R7**.
 > - **Sub-agents sempre em background na extensão VS Code (2.1.302):** *"Changed the desktop app
 >   and VS Code to always run the main conversation's subagents in the background"*. A correção
 >   do **R6** (status pelo ciclo de vida) ainda não saiu em release: na 0.19.0, todo sub-agent do
@@ -1629,7 +1629,18 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   anotado (#94872). [#102966](https://github.com/anthropics/claude-code/issues/102966): o painel oficial desenha duas vezes a resposta que repassa uma
   notificação. As superfícies oficiais seguem errando o estado (tabela no topo).
 
-### R7. Records `api-request*` (2.1.300) copiam mensagens para o transcript 🔥 bug nosso confirmado — 📐 prioridade máxima
+### R7. Records `api-request*` (2.1.300) copiam mensagens para o transcript ✅ CORRIGIDO (2026-10-19 · aguardando release)
+- **✅ Corrigido (2026-10-19):** os leitores do `todosParser` que reagiam às cópias
+  (`collectDispatches`, `readLastTodoWriteSnapshot`, `readTaskStream`) só aceitam `type`
+  `user`/`assistant` (ou linha sem `type`), e o `readLines` e o `readFileUsage` pulam as linhas
+  `api-request*` pelo prefixo antes do `JSON.parse` (no `readLines` a linha vira `''`, para o
+  índice do `sourceLine` não andar). Quatro testes novos no `todosParser.test.ts`, um deles de
+  caracterização do índice. Ficaram sem mudança, imunes na ordem medida (cópia sempre **depois**
+  do `tool_result` real, em par): o `scanPendingWaits`, o `detectSchema` e os timings do
+  `TodoWrite`. Os três também recebem as linhas do `readLines`, já com o `api-request*` em
+  branco; o predicado só faz diferença se o Claude Code mudar a ordem das chaves. Verificado com o parser corrigido nas cópias das duas sessões reais: o arquivo
+  original e a versão sem `api-request*` dão o mesmo resultado (8 e 8; 65 e 65 — as duas sessões
+  seguiram ativas desde a medição da manhã).
 - **Origem:** varredura 2026-10-19, pelo CHANGELOG (2.1.300: *"Changed local session transcripts
   to also record each API request's system prompt, tools and parameters, so a transcript you
   choose to share can reproduce a request exactly"*) e pelo disco. Nenhuma issue descreve o
