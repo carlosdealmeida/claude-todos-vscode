@@ -19,6 +19,12 @@ Limites de método (aprendidos na varredura 2026-09-05):
   - o script não substitui ler o CHANGELOG inteiro desde a última versão vista: na varredura
     2026-10-04 os dois achados maiores (task tools em lista de permissão na 2.1.268, agent map
     na 2.1.269) só apareceram lá.
+  - nem substitui abrir no disco todo tipo de record novo: na varredura 2026-10-19 o achado
+    maior (R7, cópias de mensagens em `api-request-blob` que o parser lia como conversa) não
+    estava em issue nenhuma, só numa linha genérica do CHANGELOG da 2.1.300.
+  - o `NOISE` não pega o redesign do desktop 2.37337.1 (10-14): dezenas de issues de sidebar,
+    grupos e rotinas no topo do ranking. Triar à mão; não vale filtrar (o mesmo cluster trouxe
+    o sumiço do indicador de contexto, que é validação do item 2).
 
 Nota de método: desde o lançamento do Fable 5 (jul/2026) o repositório é dominado por um
 cluster de billing ("usage credits required") com as maiores contagens de reação do período e
@@ -111,6 +117,26 @@ KNOWN = {
     93675, 97903, 98095,                        # R2 / item 21 (chave de settings, task store)
     98114, 94611, 95622,                        # item 23 (agent map oficial)
     99045, 99401, 99423,                        # item 25 (Mods não desenham no VS Code)
+    # varredura 2026-10-19 (duas janelas: >10-03 e >10-11)
+    102094, 102151, 102288, 102305, 102279,     # validação: desktop 2.37337.1 tirou o contexto
+    102254, 102356, 102615, 102204, 102176,     # idem
+    102103, 102362, 102623, 102133, 100090, 99678,  # idem + agentes sem tokens/tempo
+    101314, 101254, 102310, 99654, 100325,      # validação: synthetic, chat inundado, ação, picker
+    100796, 102655, 100082, 103041,             # item 20 (17º-20º casos)
+    103096, 99620, 102950, 103297, 102609,      # validação: estado de background errado
+    102690, 101614,                             # idem
+    102876, 101253, 103038, 102526,             # validação: plano/lista visível (TUI/desktop)
+    100502,                                     # item 2 (janela depende do plano)
+    102568, 101801, 99936,                      # item 21 (task store)
+    102594, 102981, 102999,                     # item 25 (banda AbovePrompt no VS Code)
+    100918, 101387, 101378, 101920,             # item 25 (pedidos de API de mods)
+    99556, 102468, 100186, 100207, 99434,       # R2 (usuários descobrindo)
+    103323, 102106, 99938, 99817, 100000,       # R3 (a fonte some)
+    102633, 102251, 103158, 102614, 103351,     # R3 (worktree, índice, pasta movida)
+    102452, 102559, 101901,                     # R4 (api-request 5x, SDK quadrático, OOM)
+    102267, 100830, 100381, 100154,             # R5 (cópias entre arquivos, piso de output)
+    102778, 102262, 102960, 102966,             # R6 (formatos de entrega da notificação)
+    101637,                                     # descartada (fechada: endpoint de terceiro)
 }
 
 # (rótulo, query) — todas com repo: e is:issue implícitos
