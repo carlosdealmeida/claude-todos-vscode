@@ -50,8 +50,8 @@ restrito ao workspace, a lista `TodoWrite` (main agent + sub-agents) e o uso de 
 > - **🐛 Bug nosso, confirmado:** desde a 2.1.300 o transcript grava records `api-request-blob`
 >   com **cópias** das mensagens, inclusive o `tool_use` do `Agent` e o `tool_result` dele. O
 >   parser lê essas cópias como mensagens reais, e o sub-agent **some da árvore** (medido com o
->   parser real: 6 de 7 numa sessão, 6 de 49 noutra). Afeta a 0.19.0 publicada. Corrigido em
->   10-19, aguardando release junto com o R6. Ver **R7**.
+>   parser real: 6 de 7 numa sessão, 6 de 49 noutra). Afetava a 0.19.0. Corrigido em 10-19 e
+>   publicado na **0.20.0**, junto com o R6. Ver **R7**.
 > - **Sub-agents sempre em background na extensão VS Code (2.1.302):** *"Changed the desktop app
 >   and VS Code to always run the main conversation's subagents in the background"*. A correção
 >   do **R6** (status pelo ciclo de vida) ainda não saiu em release: na 0.19.0, todo sub-agent do
@@ -214,7 +214,7 @@ de tokens do 0.3.0).
   relação com o contexto e ainda derruba o prompt-cache — o modelo diz "sobra bastante" e morre
   no limite. Contagem própria a partir do transcript (a nossa) segue sendo a única fonte que não
   depende de widget nem de lembrete. Superfície = desktop → não comentar; usar na divulgação.
-- **✅ Corrigido em 2026-10-05 (aguardando release): Fable = 1M, como Opus e Sonnet** (decisão
+- **✅ Corrigido em 2026-10-05 (publicado na 0.20.0): Fable = 1M, como Opus e Sonnet** (decisão
   do brainstorm, com a ressalva do Pro/Team abaixo). **Bug (varredura 2026-10-04) — janela do
   Fable detectada como 200k.** O `ONE_M_FAMILY`
   ([usageParser.ts:12](../src/services/usageParser.ts#L12)) só reconhece `opus|sonnet`, e o
@@ -235,7 +235,7 @@ de tokens do 0.3.0).
   [#99018](https://github.com/anthropics/claude-code/issues/99018) pede a janela de cada modelo no handshake do SDK — a mesma informação que nos falta.
 - **Janela exata para quem ativa a ponte (item 25, v1):** o `window` que o Claude Code informa
   substitui a estimativa por nome de modelo; a heurística segue como reserva para quem não ativa.
-- **✅ Corrigido em 2026-10-19 (aguardando release):** `haiku-(?:[5-9]|1\d)(?!\d)` entrou no
+- **✅ Corrigido em 2026-10-19 (publicado na 0.20.0):** `haiku-(?:[5-9]|1\d)(?!\d)` entrou no
   `ONE_M_FAMILY`, com teste no `contextLimitFor` e no `usageForSession` (81k contra 1M); o Haiku
   4.5 segue em 200k (teste existente).
   **🐛 Bug (varredura 2026-10-19) — janela do Haiku 5.5 detectada como 200k (latente aqui).** A
@@ -927,7 +927,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   decisão de posicionamento (R2 passo 3), não antes. Antes de qualquer UI nova de background,
   corrigir o estado dos sub-agents assíncronos (**R6**), que é a base de dados disso.
 
-### 25. Mods (function hooks) — nova superfície de extensão do Claude Code · ✅ ponte de dados v1 entregue
+### 25. Mods (function hooks) — nova superfície de extensão do Claude Code · ✅ ponte de dados v1 entregue (publicada na 0.20.0)
 - **Origem:** varredura 2026-10-04. A 2.1.287 lançou **Claude Mods** (*"plugins may now modify
   deeper behavior"*): um plugin cujo comportamento vive num módulo de hooks em TypeScript
   (`register(on, options)`, hooks `($, e, next)` que interceptam eventos do engine como
@@ -1563,7 +1563,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   auto, o output por sub-agent do painel é um piso bem abaixo do real; vale uma nota no README
   quando mexer nisso.
 
-### R6. Sub-agents em background: estado e notificação ✅ CORRIGIDO (achados 1 e 2 · 2026-10-05 · aguardando release)
+### R6. Sub-agents em background: estado e notificação ✅ CORRIGIDO (achados 1 e 2 · 2026-10-05 · publicado na 0.20.0)
 - **✅ Corrigido (2026-10-05):** status pelo ciclo de vida por `agentId` (lançamento
   `async_launched`, retomada por `SendMessage`, `<task-notification>` entregue entre turnos
   como mensagem `user` ou no meio de um turno como `attachment` `queued_command`), só para o que
@@ -1632,7 +1632,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   anotado (#94872). [#102966](https://github.com/anthropics/claude-code/issues/102966): o painel oficial desenha duas vezes a resposta que repassa uma
   notificação. As superfícies oficiais seguem errando o estado (tabela no topo).
 
-### R7. Records `api-request*` (2.1.300) copiam mensagens para o transcript ✅ CORRIGIDO (2026-10-19 · aguardando release)
+### R7. Records `api-request*` (2.1.300) copiam mensagens para o transcript ✅ CORRIGIDO (2026-10-19 · publicado na 0.20.0)
 - **✅ Corrigido (2026-10-19):** os leitores do `todosParser` que reagiam às cópias
   (`collectDispatches`, `readLastTodoWriteSnapshot`, `readTaskStream`) só aceitam `type`
   `user`/`assistant` (ou linha sem `type`), e o `readLines` e o `readFileUsage` pulam as linhas

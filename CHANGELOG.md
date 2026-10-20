@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.20.0] - 2026-10-19
 
 ### Added
 - **Exact data from Claude Code (experimental).** An optional Claude Code mod (`claude-todos-bridge`, built on the early-access Mods API) records, per session, the exact context window, the 5-hour and 7-day usage limits, and when each sub-agent and each main turn ends. The panel uses this data when it exists and keeps its own estimates otherwise:
