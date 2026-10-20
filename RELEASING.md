@@ -29,6 +29,10 @@ real 128×128 (or 256×256) PNG. See the icon brief in `media/README.md`.
 
 ## Cutting a release
 
+Requisito: Node **22.12+** (local e CI). O `@vscode/vsce` 4 faz `require()` de módulo ESM e
+quebra com `ERR_REQUIRE_ESM` em Node mais antigo, inclusive no 22.1 — o `engines: >= 22` do
+pacote não basta. Nesta máquina o Node vem do nvm-windows (`nvm use 22.23.3`).
+
 ```bash
 # 1. Bump the version
 npm version patch    # or minor, major. updates package.json + creates a tag
