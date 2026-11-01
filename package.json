@@ -247,7 +247,8 @@
     "test:watch": "vitest",
     "vscode:prepublish": "npm run build",
     "package": "vsce package",
-    "demo:record": "tsx scripts/recordDemo.mts"
+    "demo:record": "tsx scripts/recordDemo.mts",
+    "casos:painel": "tsx scripts/casosPainel.mts"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.0.0",
