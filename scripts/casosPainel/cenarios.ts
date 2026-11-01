@@ -587,13 +587,13 @@ function cenariosSegundoPlano(): Entrada[] {
           asyncLaunched('toolu_a', 'a1', 1000),
           resposta(900, 'req_1', usage(10, 120, 300, 2000)),
         ], 900),
-        ...agenteFundo('a1', 'toolu_a', 'Vigiar o build', 800),
         // a1 lança um neto em segundo plano; o lançamento aparece no texto do resultado.
         subagente('a1', 'Prompt de a1', [
           agentCall('toolu_b', 'Vigiar os testes', 'Prompt de a2', 950, { sidechain: true, agentId: 'a1' }),
           asyncLaunchedTexto('toolu_b', 'a2', 940),
           usoSub('a1', 'req_a1', usage(2, 20, 0, 200), 930),
         ], 800),
+        meta('a1', { toolUseId: 'toolu_a', agentType: 'general-purpose', description: 'Vigiar o build', spawnDepth: 1 }, 800),
         ...agenteFundo('a2', 'toolu_b', 'Vigiar os testes', 700),
       ],
     },

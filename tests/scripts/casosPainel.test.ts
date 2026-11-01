@@ -51,4 +51,12 @@ describe('gerarCasos', () => {
       expect(JSON.stringify(c.esperado)).not.toContain('sourceLine');
     }
   });
+
+  it('o caminho dos arquivos é único dentro de cada caso', () => {
+    const { painel } = gerarCasos();
+    for (const c of painel.casos) {
+      const caminhos = c.arquivos.map(a => a.caminho);
+      expect(new Set(caminhos).size, c.nome).toBe(caminhos.length);
+    }
+  });
 });
