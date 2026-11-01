@@ -101,14 +101,16 @@ export class SnapshotService {
     // resolvemos o agente main para que tokens/contexto/cache apareçam assim que
     // a sessão tem atividade. A lista visível (`agents`) continua vazia — a UI
     // mostra um estado leve de "aguardando tasks" no lugar da lista.
-    const usageAgents: AgentTodos[] = agents.length > 0 ? agents : [{
+    const synthesizedMain: AgentTodos = {
       sessionId: chosen.sessionId,
       agentId: chosen.sessionId,
       name: 'Main agent',
       isMain: true,
       todos: [],
       updatedAt: 0,
-    }];
+    };
+    // O principal sempre entra no uso. Sem lista ele não está em `agents`, e os tokens e o contexto dele sumiam.
+    const usageAgents: AgentTodos[] = agents.some(a => a.isMain) ? agents : [synthesizedMain, ...agents];
     const usage = this.withBridgeUsage(
       this.usageParser.usageForSession(chosen.sessionId, chosen.cwd, usageAgents),
       bridgeFile,
