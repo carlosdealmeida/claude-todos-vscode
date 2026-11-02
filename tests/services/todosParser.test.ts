@@ -806,6 +806,66 @@ describe('TodosParser', () => {
       expect(agents[0].todos[0].status).toBe('pending');
     });
 
+    it('drops a task deleted via TaskUpdate and keeps the others in order', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'a', 'A'),
+        taskCreateResult('tu-1', '1', 'a'),
+        taskCreateToolUse('tu-2', 'b', 'B'),
+        taskCreateResult('tu-2', '2', 'b'),
+        taskCreateToolUse('tu-3', 'c', 'C'),
+        taskCreateResult('tu-3', '3', 'c'),
+        taskUpdateToolUse('tu-4', '2', 'in_progress'),
+        taskUpdateToolUse('tu-5', '2', 'deleted'),
+      ]);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents[0].todos.map(t => t.content)).toEqual(['a', 'c']);
+    });
+
+    it('leaves the list empty when every task was deleted', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'a', 'A'),
+        taskCreateResult('tu-1', '1', 'a'),
+        taskUpdateToolUse('tu-2', '1', 'in_progress'),
+        taskUpdateToolUse('tu-3', '1', 'deleted'),
+      ]);
+      const agents = parser.listForSession('s1', CWD);
+      expect(agents[0].isMain).toBe(true);
+      expect(agents[0].todos).toEqual([]);
+    });
+
+    it('does not bring a deleted task back on a later TaskUpdate', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'a', 'A'),
+        taskCreateResult('tu-1', '1', 'a'),
+        taskUpdateToolUse('tu-2', '1', 'deleted'),
+        taskUpdateToolUse('tu-3', '1', 'in_progress'),
+      ]);
+      expect(parser.listForSession('s1', CWD)[0].todos).toEqual([]);
+    });
+
+    it('lists a task once when its id is created again after being deleted', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'old', 'Old'),
+        taskCreateResult('tu-1', '1', 'old'),
+        taskCreateToolUse('tu-2', 'b', 'B'),
+        taskCreateResult('tu-2', '2', 'b'),
+        taskUpdateToolUse('tu-3', '1', 'deleted'),
+        taskCreateToolUse('tu-4', 'new', 'New'),
+        taskCreateResult('tu-4', '1', 'new'),
+      ]);
+      expect(parser.listForSession('s1', CWD)[0].todos.map(t => t.content)).toEqual(['b', 'new']);
+    });
+
+    it('counts the deletion as the latest event of the stream', () => {
+      writeTranscript('s1', CWD, [
+        taskCreateToolUse('tu-1', 'a', 'A'),
+        taskCreateResult('tu-1', '1', 'a'),
+        taskUpdateToolUse('tu-2', '1', 'in_progress', { timestamp: '2026-06-12T10:00:00.000Z' }),
+        taskUpdateToolUse('tu-3', '1', 'deleted', { timestamp: '2026-06-12T10:02:30.000Z' }),
+      ]);
+      expect(parser.listForSession('s1', CWD)[0].todosUpdatedAt).toBe(Date.parse('2026-06-12T10:02:30.000Z'));
+    });
+
     it('treats Task* on the main thread (non-sidechain) as the main agent list', () => {
       writeTranscript('s1', CWD, [
         taskCreateToolUse('tu-1', 'main task', 'Doing main', { isSidechain: false }),

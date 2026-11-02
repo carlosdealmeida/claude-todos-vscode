@@ -737,7 +737,11 @@ export class TodosParser {
           } else if (block.name === 'TaskUpdate') {
             const taskId = block.input?.taskId;
             const status = block.input?.status;
-            if (typeof taskId === 'string' && typeof status === 'string'
+            if (typeof taskId === 'string' && status === 'deleted') {
+              // `deleted` remove a tarefa de vez: o TaskList também para de listá-la.
+              noteEvent(entry);
+              if (tasks.delete(taskId)) order.splice(order.indexOf(taskId), 1);
+            } else if (typeof taskId === 'string' && typeof status === 'string'
                 && VALID_STATUSES.includes(status as TodoStatus)) {
               noteEvent(entry);
               const t = tasks.get(taskId);
