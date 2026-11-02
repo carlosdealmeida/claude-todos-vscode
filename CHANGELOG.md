@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.20.1] - 2026-11-01
+
 ### Fixed
 - **The main agent's tokens and context no longer vanish when only sub-agents have task lists.** The snapshot synthesized the main agent for the usage calculation only when no agent had a list at all, so a session whose only lists belonged to sub-agents never counted the main agent's tokens, cache or context. It now always includes the main agent there; the visible agent list is unchanged.
 
