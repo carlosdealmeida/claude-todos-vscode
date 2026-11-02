@@ -1719,8 +1719,8 @@ na 2.1.314): segue como relato de terceiro, sem ação.
   - **Limites conhecidos:** nenhum evento de arquivo acontece quando o prazo vence, e o painel só redesenha
     com evento, então numa sessão totalmente parada o agente segue "rodando" na tela até a próxima
     mudança. Não verificado ao vivo na tela. O reconhecimento depende do texto em inglês do aviso: se a
-    Anthropic mudar a frase, o comportamento volta ao de antes (concluído), sem quebrar nada. O `$.agent`
-    da ponte não foi alterado.
+    Anthropic mudar a frase, o comportamento volta ao de antes (concluído), sem quebrar nada. O mod da
+    ponte não foi alterado; a correção fica toda no lado da extensão.
   - **Hipótese descartada na mesma passada:** desde a 2.1.304 há notificações com o prefixo `[SYSTEM
     NOTIFICATION - NOT USER INPUT]`, que o `startsWith` não lê. Medido: 53 ids nessa forma, **nenhum** é
     agente (são eventos de Monitor e shell), e 0 agentes presos. Controle: sem as linhas de notificação
