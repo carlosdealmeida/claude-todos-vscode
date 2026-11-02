@@ -25,6 +25,12 @@ Limites de método (aprendidos na varredura 2026-09-05):
   - o `NOISE` não pega o redesign do desktop 2.37337.1 (10-14): dezenas de issues de sidebar,
     grupos e rotinas no topo do ranking. Triar à mão; não vale filtrar (o mesmo cluster trouxe
     o sumiço do indicador de contexto, que é validação do item 2).
+  - mudança de texto em notificação pode ser mudança de significado: a varredura 2026-10-19 viu o
+    "waiting on its own background work" e descartou porque o prefixo ainda casava; a 2026-11-02
+    mediu que esses agentes voltam a trabalhar (R6, achado 3). Medir o que acontece depois.
+  - resultado limpo só vale com controle: "0 agentes presos" (2026-11-02) só contou depois de o
+    mesmo teste, sem as notificações, acusar 1.240. E contar record por mtime, não por versão:
+    record sem `version` no início do arquivo cai no balde errado.
 
 Nota de método: desde o lançamento do Fable 5 (jul/2026) o repositório é dominado por um
 cluster de billing ("usage credits required") com as maiores contagens de reação do período e
@@ -137,6 +143,25 @@ KNOWN = {
     102267, 100830, 100381, 100154,             # R5 (cópias entre arquivos, piso de output)
     102778, 102262, 102960, 102966,             # R6 (formatos de entrega da notificação)
     101637,                                     # descartada (fechada: endpoint de terceiro)
+    # varredura 2026-11-02 (duas janelas: >10-18 e >10-26)
+    103906, 105141, 104879, 105691,             # validação: extensão VS Code (árvore, pins, multi-root)
+    106025, 105831, 105265, 104042, 105375,     # validação: tokens por agente, contabilidade
+    104691, 106383,                             # item 20 (21º e 22º casos)
+    104885, 105734, 106178, 106255, 106432,     # validação: lista persistente (desktop/TUI), update_plan
+    104475, 103885, 106717, 106356,             # validação: contexto no desktop, sessões esperando
+    106253, 106621,                             # validação: i18n da extensão oficial
+    103856,                                     # 2.1.304 (sub-agents numa linha): pedido de reverter
+    106292, 103475, 106402, 105738,             # item 2 (compactação ociosa, janela)
+    103626, 104216, 103962, 105937,             # item 25 (sec-default, $.session.id)
+    103959, 103989, 105874, 106320, 106291,     # item 25 (arestas de desenho)
+    105934, 105919, 106198, 106737, 103593, 103771,  # item 25 (API de mods)
+    104312,                                     # R1 (console piscando nos hooks)
+    104123, 106326, 105500, 105450, 106663,     # R3 (a fonte some ou bifurca)
+    105666, 105697, 105894,                     # R3 (dois escritores, conversa fora do arquivo)
+    106728, 105484, 103567,                     # R4
+    104358, 105981, 106219,                     # R5 (requests fora do transcript)
+    105928, 104968, 104789, 106396,             # R6 (achado 3 e notificações)
+    103849, 103357, 105207, 106295, 104665,     # R6 (superfícies oficiais erram o estado)
 }
 
 # (rótulo, query) — todas com repo: e is:issue implícitos

@@ -61,6 +61,23 @@ restrito ao workspace, a lista `TodoWrite` (main agent + sub-agents) e o uso de 
 >   [#99045](https://github.com/anthropics/claude-code/issues/99045)). Atinge, em parte, o gatilho da ideia (b) do **item 25** (um mod "Claude
 >   Todos" dentro do painel oficial). Decisão de produto, ligada ao passo 3 do R2.
 
+> ## 🧭 Mudança de cenário — Claude Code 2.1.304 a 2.1.316 (varredura 2026-11-02)
+>
+> - **🐛 Bug nosso, confirmado:** um sub-agent que espera o próprio shell ou Monitor manda uma
+>   `<task-notification>` com `<status>completed</status>` e o resumo *"is waiting on its own
+>   background work"*, e **depois acorda**. Nosso ciclo de vida lê qualquer notificação como
+>   parada, e o painel mostra concluído um agente que ainda vai trabalhar. Medido: 30 de 35 agentes
+>   com esse aviso seguiram ativos depois da "parada", contra 3 de 2.030 sem o aviso. **Ainda não
+>   corrigido.** Ver **R6, achado 3**.
+> - **A extensão oficial passou a mostrar sub-agents em background como uma linha de status
+>   (2.1.304)**, com o transcript completo em `/tasks`. Fecha [#101254](https://github.com/anthropics/claude-code/issues/101254) e tira da mesa
+>   o argumento "chat inundado"; [#103856](https://github.com/anthropics/claude-code/issues/103856) já pede a opção de volta.
+> - **Compactação ociosa na extensão VS Code (2.1.314):** conversa acima de 200K parada tem o resumo
+>   usado na mensagem seguinte. Com janela de 1M isso é ~20%, e o medidor cai sem o usuário pedir
+>   ([#106292](https://github.com/anthropics/claude-code/issues/106292), [#103475](https://github.com/anthropics/claude-code/issues/103475)). Ver item 2.
+> - **Terceiro formato de lista, só no desktop:** `mcp__ccd_turn__update_plan`, que não lemos. Ver
+>   **R2**.
+
 ## Validação de mercado (já entregue pela extensão)
 
 Issues que pedem exatamente o que a extensão já faz. Não são trabalho — servem de validação e
@@ -163,6 +180,21 @@ material para README/divulgação. Comentários já postados com disclosure de a
 | [#99654](https://github.com/anthropics/claude-code/issues/99654) | aberta, `platform:vscode` | Extensão VS Code: mostrar sessões de **todos** os projetos no picker | Munição para o item 8 (o nosso é escopado ao workspace por design). |
 | [#100325](https://github.com/anthropics/claude-code/issues/100325) | aberta, `platform:vscode` | Extensão VS Code: ícone na aba para sessões trabalhando | Itens 5(a) e 14. |
 
+**Achadas na varredura 2026-11-02 (ainda sem comentário nosso):**
+
+| Issue | Estado | Título | Nota |
+|---|---|---|---|
+| [#103906](https://github.com/anthropics/claude-code/issues/103906) | aberta, `platform:vscode` | Extensão VS Code: tool calls de sub-agents misturadas às do main, sem nada que as distinga | = árvore (13). Substitui #101254 (fechada) como candidata a comentário com disclosure; confirmar antes se ainda acontece depois da 2.1.304. |
+| [#105141](https://github.com/anthropics/claude-code/issues/105141) / [#104879](https://github.com/anthropics/claude-code/issues/104879) / [#105691](https://github.com/anthropics/claude-code/issues/105691) | abertas, `platform:vscode` | Fixar sessões no picker / agrupar por projeto em multi-root / sessões filhas sob a sessão mestre | Itens 4/5, 9 e 8. As duas primeiras são candidatas a comentário. |
+| [#106025](https://github.com/anthropics/claude-code/issues/106025) / [#105831](https://github.com/anthropics/claude-code/issues/105831) / [#105265](https://github.com/anthropics/claude-code/issues/105265) | abertas | Tokens e contexto por sub-agent ao vivo (98% de 2,4 bilhões de tokens eram contexto reenviado) / devolver modelo, tokens e tool calls por agente no desktop / contexto na agent view | Itens 6a e 2. **Concorrente nos comentários:** kasrakhosravi aparece na #106025, na #105831 e na #104042, e na #106025 divulga o Steery (steery.dev), que lê as sessões localmente e mostra tokens por sessão e por ferramenta. Superfícies desktop/TUI → **não comentar**. |
+| [#104042](https://github.com/anthropics/claude-code/issues/104042) | aberta, `has repro`, 6 comentários | A aba Stats conta cada resposta uma vez por linha do transcript (~2× nos totais) | Exatamente o bug que o R5 corrigiu do nosso lado em 2026-08-11. |
+| [#105375](https://github.com/anthropics/claude-code/issues/105375) | aberta | Contador de tokens do sub-agent ignora `usage.iterations` e oscila (120k → 1,3k → 120k) | Imunes: o `contextTokens` lê a última iteration ([usageParser.ts:65](../src/services/usageParser.ts#L65)). |
+| [#104691](https://github.com/anthropics/claude-code/issues/104691) / [#106383](https://github.com/anthropics/claude-code/issues/106383) | abertas | Lista de background do desktop perdeu o modelo de cada sub-agent; troca de modelo no picker não vale para quem foi lançado com modelo explícito | 21º e 22º casos (item 20). A 2.1.305 e a 2.1.316 corrigiram dois casos vizinhos. |
+| [#104885](https://github.com/anthropics/claude-code/issues/104885) / [#105734](https://github.com/anthropics/claude-code/issues/105734) / [#106178](https://github.com/anthropics/claude-code/issues/106178) / [#106255](https://github.com/anthropics/claude-code/issues/106255) / [#106432](https://github.com/anthropics/claude-code/issues/106432) | abertas | Lista de tasks persistente no desktop e na TUI; progresso por sessão no sidebar; `update_plan` parado no passo 1 | = o painel, e a #106432 = hint de lista defasada (19). Superfícies desktop/TUI → **não comentar**; material de divulgação. |
+| [#104475](https://github.com/anthropics/claude-code/issues/104475) / [#103885](https://github.com/anthropics/claude-code/issues/103885) / [#106717](https://github.com/anthropics/claude-code/issues/106717) | abertas | Desktop: devolver o contexto ao anel | Cluster do item 2 segue vivo mesmo com #102094 fechada (10-23, 21 reações). Desktop → **não comentar**. |
+| [#106356](https://github.com/anthropics/claude-code/issues/106356) | aberta | Painel enxuto com as sessões esperando uma ação do usuário | Itens 14/22. Desktop/agent view → não comentar. |
+| [#106253](https://github.com/anthropics/claude-code/issues/106253) / [#106621](https://github.com/anthropics/claude-code/issues/106621) | abertas, `platform:vscode` | Datas em en-US fixo na extensão oficial; pedido de interface em espanhol | Item 12. **Não comentar:** pedem mudança no produto da Anthropic. |
+
 
 ---
 
@@ -250,6 +282,16 @@ de tokens do 0.3.0).
   o contexto do anel e do popover (13 issues, tabela no topo). [#100502](https://github.com/anthropics/claude-code/issues/100502) (11 reações) mostra o app
   rodando Opus 4.6 com 200k num plano em que a central de ajuda promete 500k: a janela depende
   de plano e superfície, e o nome do modelo não basta. A ponte (janela exata) é a resposta.
+
+- **Reforço (varredura 2026-11-02) — compactação ociosa:** a 2.1.314 levou para a extensão VS Code
+  a compactação de conversa parada acima de 200K (`CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS`, ~54 min,
+  segundo [#103475](https://github.com/anthropics/claude-code/issues/103475)). Numa janela de 1M é ~20%, daí [#106292](https://github.com/anthropics/claude-code/issues/106292) ("compactou a 22%") e [#106402](https://github.com/anthropics/claude-code/issues/106402) (dispara com
+  agente em background rodando). No disco: 28 `compact_boundary` com `precomputed: true` entre a
+  2.1.309 e a 2.1.314, de 208k a 855k tokens, todos com `trigger: "auto"`; a leitura de que são os
+  ociosos é inferência, porque o record não diferencia. Sem ação: o medidor lê o último usage e cai
+  na mensagem seguinte. A 2.1.311 tirou o `[1m]` dos nomes de modelo onde ele não muda nada; o disco
+  já vem sem o sufixo e o `ONE_M_FAMILY` não depende dele. [#105738](https://github.com/anthropics/claude-code/issues/105738) relata janela de 400k no Opus 5.5
+  (um caso, só com print, não verificado); aqui a ponte segue informando 1.000.000 na 2.1.314.
 
 ### 3. Visibilidade de custo: cached vs uncached ✅ ENTREGUE (0.5.0)
 - **Issue:** [#44779](https://github.com/anthropics/claude-code/issues/44779) — labels `area:cost`, `area:tui`, `area:statusline`
@@ -1128,6 +1170,26 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
     cita a ponte; o leitor guarda cache e última leitura boa em mapas paralelos; uma variável
     local `settings` convive com `this.settings` no instalador.
   - **Ferramenta:** o `shoot.sh` da skill `preview-webview` não isola o perfil do navegador.
+- **Reforço (varredura 2026-11-02):**
+  - **`cc-plugin-sec-default` pula hooks de mods de usuário** em contas Team/Enterprise e em máquinas
+    com managed settings ([#103626](https://github.com/anthropics/claude-code/issues/103626), 9 reações; [#104216](https://github.com/anthropics/claude-code/issues/104216); [#103962](https://github.com/anthropics/claude-code/issues/103962)), e desde a 2.1.304 avisa no transcript a
+    cada sessão. Os relatos citam `classic.*`, `session.append` e `prompt.compose`; a ponte usa
+    `session.start`, `agent.spawn`, `turn.complete` e `session.end`, e o `hook.js` é command hook,
+    que segue rodando (#103626). Aqui: 0 avisos, porque o sec-default não entra nesta conta.
+    **Não testado com ele ativo.** Sem ponte o painel cai na estimativa, então o pior caso é
+    degradar, não quebrar.
+  - **[#105937](https://github.com/anthropics/claude-code/issues/105937): `$.session.id()` muda** antes de a sessão estar ligada ao transcript, e a ponte usa o id no
+    `session.start`. Em `live/`: 59 de 164 arquivos sem transcript, **nenhum** com agentes. A causa
+    não foi determinada (compatível com #105937 ou com sessões sem transcript persistido). Inertes:
+    o painel lê por id de sessão e o `prune` apaga.
+  - **Corrigidos do lado deles:** o rótulo de plugin sobre os menus `/` e `@` (#102981, #102594, na
+    2.1.309), e o desenho do mod com telemetria desligada e em Bedrock/Vertex/Foundry (2.1.304),
+    relevante porque a 2.1.311 passou a ligar `DISABLE_TELEMETRY` quando a telemetria do VS Code está
+    desligada.
+  - **Sinais para a ideia (b):** [#103959](https://github.com/anthropics/claude-code/issues/103959) (painel acoplado limitado a 45%, 3 reações), [#103989](https://github.com/anthropics/claude-code/issues/103989) (largura da banda
+    limitada na extensão), [#105874](https://github.com/anthropics/claude-code/issues/105874) (`$.ui.status` desenhado duas vezes no VS Code), [#106320](https://github.com/anthropics/claude-code/issues/106320) e [#106291](https://github.com/anthropics/claude-code/issues/106291) (sem
+    banda em sessões de nuvem e Projects). Desenhar pelo mod no VS Code ainda tem arestas. Pedidos de
+    API: [#105934](https://github.com/anthropics/claude-code/issues/105934), [#105919](https://github.com/anthropics/claude-code/issues/105919), [#106198](https://github.com/anthropics/claude-code/issues/106198). Sem efeito na ponte, que não desenha nem spawna: [#106737](https://github.com/anthropics/claude-code/issues/106737), [#103593](https://github.com/anthropics/claude-code/issues/103593), [#103771](https://github.com/anthropics/claude-code/issues/103771).
 
 ---
 
@@ -1151,6 +1213,12 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 
 **Pendência (fora do escopo desta passagem):**
 - **R1a — lost-update concorrente no `sessions.json`.** A escrita atômica elimina *corrupção* (escrita parcial), mas não o *lost-update*: duas sessões iniciando quase ao mesmo tempo fazem read-modify-write e uma sobrescreve a outra → perde **uma detecção** de sessão (não corrompe). Exigiria file-lock ou append-only. Raro, impacto baixo. 🔍 a avaliar.
+
+**Reforço (varredura 2026-11-02) — a verificar:** [#104312](https://github.com/anthropics/claude-code/issues/104312): desde a extensão 2.1.306, hooks command piscam
+uma janela de console no Windows a cada `UserPromptSubmit` e `Stop`. O `hook.js` roda em
+`UserPromptSubmit` e `SessionStart` por `node`, então nos atingiria. O CHANGELOG não cita correção
+até a 2.1.316. **Não acontece nesta máquina** (conferido pelo usuário em 2026-11-02, Windows 11, extensão
+na 2.1.314): segue como relato de terceiro, sem ação.
 
 ### R2. Ferramentas de task desligadas por padrão nos modelos novos (2.1.233) 🔥 MATERIALIZADO — 📐 prioridade máxima
 - **Origem:** varredura 2026-07-25. **Onze** issues abertas entre 21 e 23/07 reportando que
@@ -1326,6 +1394,16 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   vazio da 0.19.0. O Haiku 5.5 (2.1.293) fica fora da lista de permissão da 2.1.268 e o nosso
   gate já o trata como sem ferramentas (major ≥ 5), certo.
 
+- **Reforço (varredura 2026-11-02) — terceiro formato de lista, só no desktop:** a aba Code do
+  desktop usa `mcp__ccd_turn__update_plan`, que **não lemos**. Aberto no disco: 9 chamadas numa sessão
+  (`claude-desktop`, 2.1.299, 10-18). A primeira traz a lista inteira, `{items: [{content, status}],
+  scope: "first_task"}`, e as seguintes só avançam, `{advance: true}`, então é um formato de delta,
+  diferente de `TodoWrite` e de `Task*`. Efeito: uma sessão do desktop no mesmo workspace aparece no
+  painel **sem lista**. Prioridade baixa, porque quem usa o desktop já vê a lista lá, mas é mais um
+  sinal de que a lista está virando recurso de cada superfície. Entra na decisão do passo 3.
+  Dado local: `TodoWrite` segue no disco (1.040 chamadas em 30 dias, 40 na 2.1.314) só porque
+  `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` está ligado nesta máquina; `TaskCreate` teve **0**.
+
 ### R3. Integridade do transcript — a fonte de dados está ficando menos confiável ⚠️ monitorar
 - **Origem:** varredura 2026-07-25. Cluster grande e novo de perda/corrupção do `.jsonl`:
   - **Transcript apagado:** [#79298](https://github.com/anthropics/claude-code/issues/79298)
@@ -1463,6 +1541,25 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
     o projeto do sidebar vem do `cwd` do transcript. Listamos direto do disco, imunes ao primeiro;
     o segundo também nos atinge (o slug do project dir vem do caminho), sem relato de usuário.
 
+- **Reforço (varredura 2026-11-02)** — nenhum risco novo nosso confirmado:
+  - **Medição local:** 0 linhas JSON inválidas em 431.719 (1.459 arquivos, 30 dias). A 2.1.309
+    corrigiu preview cortado no meio de um emoji que deixava o transcript inválido para o `jq`; o
+    parser já pulava linha ruim.
+  - **A fonte encolhe ou some:** [#104123](https://github.com/anthropics/claude-code/issues/104123) (retomar pelo Remote Control **sobrescreve** o `.jsonl` com a cópia do
+    servidor e perde tudo antes da última compactação; confirmado também no Linux), [#106326](https://github.com/anthropics/claude-code/issues/106326) (a passagem
+    para o desktop apagou ~23 transcripts de CLI), [#105500](https://github.com/anthropics/claude-code/issues/105500) (limpeza de 30 dias mesmo com "Archive: Never").
+  - **A fonte bifurca:** [#105450](https://github.com/anthropics/claude-code/issues/105450) (permissão abortada na extensão bifurca o transcript a partir de uma tool
+    call de 6 dias antes), [#106663](https://github.com/anthropics/claude-code/issues/106663) (`←` em prompt vazio copia a sessão inteira para um id novo; "quebra tudo
+    que usa o id de sessão").
+  - **Dois escritores:** [#105666](https://github.com/anthropics/claude-code/issues/105666): Reload Window no VS Code deixa dois `claude.exe` retomando a mesma
+    sessão, e ambos gravam. **A verificar:** como o `sessions/{pid}.json` e o `aliveSince` se
+    comportam nesse caso.
+  - **Conversa fora do arquivo:** [#105697](https://github.com/anthropics/claude-code/issues/105697) e [#105894](https://github.com/anthropics/claude-code/issues/105894): mensagens que chegam ao modelo e não ao transcript.
+  - **Lacuna menor nossa:** `readSessionTitle` só lê `ai-title`
+    ([todosParser.ts:299](../src/services/todosParser.ts#L299)) e ignora o record `custom-title` do
+    `/rename`, então uma sessão renomeada mantém o título gerado. No disco há 35 desses records, todos
+    numa sessão do desktop. **Efeito na tela não verificado.**
+
 ### R4. Performance com transcripts grandes — agora com evidência externa 🔍 a avaliar
 - **Origem:** o tema era preocupação interna sem issue; a varredura 2026-07-25 trouxe evidência
   de que o problema é real no lado oficial: [#78449](https://github.com/anthropics/claude-code/issues/78449)
@@ -1494,6 +1591,14 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
     damos `JSON.parse` em **todas** as linhas a cada refresh ([usageParser.ts:86](../src/services/usageParser.ts#L86),
     [todosParser.ts:515](../src/services/todosParser.ts#L515)), inclusive records `api-request*` de centenas de KB que só
     descartamos. Mitigação barata, junto com o R7: pular essas linhas antes do `JSON.parse`.
+
+- **Reforço (varredura 2026-11-02):** [#106728](https://github.com/anthropics/claude-code/issues/106728): o desktop regrava o histórico mantido a cada `/compact`; uma
+  sessão chegou a 4,98 GB, 85% de linhas repetidas, bem acima do teto de ~512 MB do `readFileSync`. O
+  CLI de controle da issue não repete. **Aqui mudou:** antes eram 0 arquivos com `uuid` repetido, agora
+  é 1 (1.472 de 9.118 linhas, `claude-vscode` 2.1.306), então a extensão também pode fazer isso, ainda
+  que raramente. Tokens não sofrem, porque o vencedor é por `requestId`; os demais leitores não foram
+  medidos nesse arquivo. Maior arquivo dos últimos 30 dias: 116 MB. A 2.1.304 parou de gravar o contexto
+  do classificador em cada request (#103567). [#105484](https://github.com/anthropics/claude-code/issues/105484): `/stats` trava com transcripts de 100+ MB.
 
 ### R5. Contabilidade de tokens — soma linha-a-linha infla ~2×; formato novo `usage.iterations` ✅ ENTREGUE (achados 1 e 2 · 2026-08-11 · publicado na 0.18.0)
 - **Origem:** varredura 2026-08-10 ([#84223](https://github.com/anthropics/claude-code/issues/84223),
@@ -1563,7 +1668,51 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   auto, o output por sub-agent do painel é um piso bem abaixo do real; vale uma nota no README
   quando mexer nisso.
 
-### R6. Sub-agents em background: estado e notificação ✅ CORRIGIDO (achados 1 e 2 · 2026-10-05 · publicado na 0.20.0)
+- **Reforço (varredura 2026-11-02):**
+  - **O piso de subcontagem nas versões novas acabou.** A 2.1.307 corrigiu *"subagent transcripts
+    recording placeholder token usage and an empty stop reason"*. No disco, linhas de sub-agent só com
+    snapshot: 53% na 2.1.306 (3.852 de 7.297), **0** na 2.1.309, 2.1.312 e 2.1.314, e 4 de 9.278 na
+    2.1.310. Requests sem linha final: 21 na 2.1.306, 0 na 2.1.309. O vencedor por `requestId` segue
+    certo, e transcripts antigos continuam precisando dele. A nota de "piso" no README, se entrar, vale
+    só até a 2.1.306.
+  - **O que continua invisível é outra coisa: requests fora do transcript.** [#104358](https://github.com/anthropics/claude-code/issues/104358): soma pelo transcript
+    fica **1,35 a 2,13× abaixo** do `cost-state` do próprio Claude Code (14 sessões). [#105981](https://github.com/anthropics/claude-code/issues/105981)
+    (`agent_summary` reenvia o transcript inteiro do agente a cada ~30 s, sem gravar, 5 reações).
+    [#106219](https://github.com/anthropics/claude-code/issues/106219) (sugestões de prompt). **A avaliar:** o record `cost-state` traz `totalCostUSD` e `modelUsage`
+    por modelo e está no disco (62 nas versões novas). Foi catalogado como "só metadados" em 10-04, mas
+    é o único número que inclui esses requests; serviria de referência para o painel dizer quanto do
+    custo ele enxerga. Segundo a #104358 ele não é gravado incrementalmente.
+
+### R6. Sub-agents em background: estado e notificação ✅ CORRIGIDO (achados 1 e 2 · 2026-10-05 · publicado na 0.20.0) · 🐛 achado 3 aberto (2026-11-02)
+- **🐛 Achado 3 — agente "esperando" aparece concluído (confirmado, não corrigido).** Um sub-agent que
+  inicia o próprio shell ou Monitor e encerra o turno para esperar manda uma `<task-notification>`
+  com `<status>completed</status>` e `<summary>Agent "X" is waiting on its own background work</summary>`,
+  e depois **acorda** e segue trabalhando. O `collectAgentLifecycle` trata toda notificação como parada
+  ([agentLifecycle.ts:32](../src/services/agentLifecycle.ts#L32)), e o `statusOf` vira `completed`
+  ([todosParser.ts:386](../src/services/todosParser.ts#L386)).
+  - **Medido com o módulo real, linha a linha, nos últimos 30 dias:** 2.065 agentes; 35 com o aviso (67
+    avisos, 50 deles na 2.1.312 e 2.1.314), em 10 sessões. **30 dos 35** seguiram gerando `assistant` depois da
+    "parada" (138 mensagens; do aviso até a última mensagem, mediana de 5 min, p90 337 min, máximo 579
+    min, tempo que inclui a espera). Controle: **3 de 2.030** sem o aviso. O sinal é limpo.
+  - **Efeito:** nó concluído na árvore (e recolhível), hint de lista defasada (19) desligado, e o toast
+    de ociosa pode disparar com trabalho pendente (achado 2). **O efeito na tela foi lido no código,
+    não reproduzido ao vivo.**
+  - **Correção desta nota:** a varredura 2026-10-19 viu essa mudança de texto (2.1.299) e registrou
+    "sem ação" porque o coletor só depende do prefixo. Estava errado: o prefixo continuou lendo certo,
+    mas o **significado** da notificação mudou.
+  - **Plano:** TDD no `agentLifecycle`: notificação cujo `<summary>` diz *waiting on its own* não para o
+    agente. Isso depende de texto, então precisa de teste com a linha real e do fallback já previsto
+    neste R6 (agente que nunca volta não pode ficar "rodando" para sempre: [#104789](https://github.com/anthropics/claude-code/issues/104789) relata exatamente
+    isso, a notificação do shell nunca chega). **Conferir também a ponte:** o `turn.complete` com
+    `agentId` grava `agentEnd`, então provavelmente tem o mesmo problema; não medido.
+  - **Hipótese descartada na mesma passada:** desde a 2.1.304 há notificações com o prefixo `[SYSTEM
+    NOTIFICATION - NOT USER INPUT]`, que o `startsWith` não lê. Medido: 53 ids nessa forma, **nenhum** é
+    agente (são eventos de Monitor e shell), e 0 agentes presos. Controle: sem as linhas de notificação
+    o mesmo módulo acusa 1.240 rodando. Também imunes a [#106396](https://github.com/anthropics/claude-code/issues/106396) (`<result>` com HTML escapado): só lemos o
+    `<task-id>`.
+  - **Reforços:** [#105928](https://github.com/anthropics/claude-code/issues/105928) (5 comentários; acorda o pai a cada tick, um usuário contou 283 em uma semana) e
+    [#104968](https://github.com/anthropics/claude-code/issues/104968) descrevem o mesmo aviso. A 2.1.311 só corrigiu o turno extra do main no modo auto. As superfícies
+    oficiais seguem errando o estado: [#103849](https://github.com/anthropics/claude-code/issues/103849), [#103357](https://github.com/anthropics/claude-code/issues/103357), [#105207](https://github.com/anthropics/claude-code/issues/105207), [#106295](https://github.com/anthropics/claude-code/issues/106295), [#104665](https://github.com/anthropics/claude-code/issues/104665).
 - **✅ Corrigido (2026-10-05):** status pelo ciclo de vida por `agentId` (lançamento
   `async_launched`, retomada por `SendMessage`, `<task-notification>` entregue entre turnos
   como mensagem `user` ou no meio de um turno como `attachment` `queued_command`), só para o que
@@ -1940,9 +2089,55 @@ sidebar, grupos e rotinas.
   draining`, fora do `NOISE`), bugs de agent teams (mensageria, `--resume`), webview em branco da
   extensão oficial no WSL, ditado por voz, workflows (limites de `agent()`, resume).
 
-Próxima varredura: `python docs/sweep_issues.py 2026-10-18` (duas janelas se passar de duas
-semanas) **e** ler o CHANGELOG inteiro desde a 2.1.303 **e** abrir no disco todo tipo de record
-novo.
+### Varredura 2026-11-02 (incremental, `created:>2026-10-18`, em duas janelas)
+
+Oitava passada, em **duas janelas** (`>2026-10-18` e `>2026-10-26`; 15 dias): **645** candidatos
+únicos fora do ROADMAP na união (531 + 335), **325** no núcleo de escopo. Todos os títulos do núcleo
+lidos, além dos 267 de fora do núcleo que não são de desktop e afins; 62 corpos abertos, parte deles
+cortada no início (1.300 ou 480 caracteres). Junto: o CHANGELOG da 2.1.304 à 2.1.316 lido inteiro, o
+estado das 8 issues que comentamos e das 75 registradas na passada anterior, e as verificações no
+disco: tipos de record e chaves de topo novas por versão, formas de `<task-notification>`, ferramentas
+de lista, linhas de usage de sub-agent, compactações, `uuid` repetido e arquivos da ponte, com o
+`collectAgentLifecycle` real rodado via `tsx`. Disco: 1.459 arquivos e 431.719 linhas de 30 dias,
+versão mais nova 2.1.314. Scripts no scratchpad da sessão, não versionados.
+
+**Nota de método:** o achado principal (R6, achado 3) veio do cruzamento de **issue + disco**: a
+#105928 descreve o sintoma, e a varredura anterior tinha visto a mesma mudança de texto e descartado.
+Fica como passo fixo: **mudança de texto em notificação é mudança de significado até prova em
+contrário**; medir o que o agente faz depois dela, não só se o parser ainda casa. A hipótese mais
+vistosa do dia (prefixo `[SYSTEM NOTIFICATION`) caiu na medição, e "0 presos" só valeu depois de um
+controle que provou que o teste acusaria o problema. O balde por versão também engana: records sem
+`version` no início do arquivo caem no balde errado, e `custom-title` pareceu ter sumido; contar pelo
+mtime do arquivo desfez isso. Nenhum tipo de record novo nesta passada.
+
+**Resultados:**
+- **🐛 Bug nosso confirmado (R6, achado 3):** agente "waiting on its own background work" aparece
+  concluído e depois volta a trabalhar (30 de 35 agentes, 10 sessões; controle 3 de 2.030). **Não
+  corrigido.**
+- **🐛 Lacunas menores:** `/rename` ignorado (`custom-title`, R3) e `mcp__ccd_turn__update_plan` não
+  lido (R2).
+- **✅ Melhorou do lado deles:** o placeholder de usage de sub-agent acabou na 2.1.307 (R5), e a
+  extensão oficial resume os sub-agents em background numa linha (2.1.304).
+- **A verificar:** dois processos na mesma sessão após Reload Window (#105666, R3), ponte com o
+  sec-default ativo (#103626, item 25), e `cost-state` como referência do custo real (#104358, R5).
+  O console piscando nos hooks no Windows (#104312, R1) não acontece nesta máquina.
+- **Validação nova** (tabela no topo): #104042 (Stats 2×, o nosso R5), #106025 e #105831 (tokens por
+  agente), #105375 (somos imunes), e o cluster de lista persistente no desktop e na TUI. **Concorrente:**
+  Steery comentando nas mesmas threads.
+- **Mudanças de estado:** #101254 `COMPLETED` (10-23, pela 2.1.304), logo não é mais candidata a
+  comentário. #102094 `COMPLETED` (10-23), agora com 21 reações, mas com reclamação nos comentários e
+  issues novas sobre o mesmo tema. #102594 e #102981 `COMPLETED` (10-21). #102204, #102254 e #102615
+  `DUPLICATE`; #102151 `NOT_PLANNED`. Das comentadas, #79362 e #80110 estão fechadas e travadas pelo
+  bot (10-09 e 10-11), e #78595 teve comentário novo em 10-28 (5 no total).
+- **Reforços:** itens 2, 19, 20 (21º e 22º casos), 25 e os riscos R1, R2, R3, R4, R5 e R6.
+- **Temas varridos sem nada aplicável:** sidebar, grupos, rotinas e simulador iOS do desktop (dezenas,
+  outro produto, com #104695 no topo, 39 reações), consumo de cota (#105125, #103376 e o cluster, fora
+  do `NOISE`), safeguards e classificador, Cloud sessions, Remote Control e apps móveis, Claude Tag,
+  bugs de agent teams (permissão em teammate, mensageria), workflows, ditado por voz.
+
+Próxima varredura: `python docs/sweep_issues.py 2026-11-01` (duas janelas se passar de duas
+semanas) **e** ler o CHANGELOG inteiro desde a 2.1.316 **e** abrir no disco todo tipo de record
+novo **e** medir o que muda de significado, não só de formato.
 
 Anotar novos achados abaixo:
 
