@@ -6,7 +6,7 @@ import { BridgeModInstaller, PLUGIN_DIRS_ENV, splitPluginDirs } from '../../src/
 import { ClaudeSettingsFile } from '../../src/services/claudeSettings';
 
 const FILES = {
-  '.claude-plugin/plugin.json': '{"name":"claude-todos-bridge","version":"9.9.9"}\n',
+  '.claude-plugin/plugin.json': '{"name":"todos-panel-bridge","version":"9.9.9"}\n',
   'hooks/hooks.json': '{"modules":["./register.ts"]}\n',
   'hooks/register.ts': 'export const register = () => {}\n',
   'hooks/state.ts': 'export const BRIDGE_SCHEMA = 1;\n',
@@ -24,7 +24,7 @@ describe('BridgeModInstaller', () => {
   const make = (files: Record<string, string> = FILES, now = 1_000) =>
     new BridgeModInstaller(claudeDir, new ClaudeSettingsFile(settingsPath), { files, now: () => now, delimiter: ';' });
   const settings = () => JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-  const modDir = () => path.join(claudeDir, '.vscode-todos-bridge', 'mod', 'claude-todos-bridge');
+  const modDir = () => path.join(claudeDir, '.vscode-todos-bridge', 'mod', 'todos-panel-bridge');
 
   it('installs into a missing settings.json: files, env entry and install time', () => {
     expect(make().install()).toEqual({ changed: true, path: settingsPath });
@@ -158,6 +158,92 @@ describe('BridgeModInstaller', () => {
       expect(win().uninstall().changed, variant).toBe(true);
       expect(settings(), variant).toEqual({});
     }
+  });
+
+  describe('migration from the old mod name', () => {
+    const legacyDir = () => path.join(claudeDir, '.vscode-todos-bridge', 'mod', 'claude-todos-bridge');
+    const markerPath = () => path.join(path.dirname(modDir()), 'install.json');
+    // O que a versão anterior deixou: a pasta com o nome antigo, a entrada no env e a data.
+    const plantLegacy = (pluginDirs: string = legacyDir()) => {
+      fs.mkdirSync(path.join(legacyDir(), '.claude-plugin'), { recursive: true });
+      fs.writeFileSync(path.join(legacyDir(), '.claude-plugin', 'plugin.json'), '{"name":"claude-todos-bridge"}');
+      fs.writeFileSync(markerPath(), JSON.stringify({ installedAt: 500 }));
+      fs.writeFileSync(settingsPath, JSON.stringify({ model: 'opus', env: { [PLUGIN_DIRS_ENV]: pluginDirs, FOO: '1' } }));
+    };
+
+    it('refresh swaps the old entry in place, keeping the other dirs and settings', () => {
+      plantLegacy(`D:\\mine;${legacyDir()};E:\\other`);
+      make().refresh();
+      expect(settings()).toEqual({ model: 'opus', env: { [PLUGIN_DIRS_ENV]: `D:\\mine;${modDir()};E:\\other`, FOO: '1' } });
+      expect(fs.readFileSync(path.join(modDir(), 'hooks', 'register.ts'), 'utf-8')).toBe(FILES['hooks/register.ts']);
+    });
+
+    it('refresh keeps the original install time', () => {
+      plantLegacy();
+      make(FILES, 9_000).refresh();
+      expect(make().status()).toEqual({ installed: true, installedAt: 500 });
+    });
+
+    it('keeps the old folder for sessions still open, and removes it on the next refresh', () => {
+      plantLegacy();
+      make().refresh();
+      expect(fs.existsSync(legacyDir())).toBe(true);
+      make().refresh();
+      expect(fs.existsSync(legacyDir())).toBe(false);
+      expect(fs.existsSync(modDir())).toBe(true);
+    });
+
+    it('a second refresh does not rewrite settings.json', () => {
+      plantLegacy();
+      make().refresh();
+      const old = new Date('2026-01-01T00:00:00Z');
+      fs.utimesSync(settingsPath, old, old);
+      make().refresh();
+      expect(fs.statSync(settingsPath).mtimeMs).toBe(old.getTime());
+    });
+
+    it('leaves a single entry when both the old and the new one are listed', () => {
+      plantLegacy(`${modDir()};D:\\mine;${legacyDir()}`);
+      make().refresh();
+      expect(splitPluginDirs(settings().env[PLUGIN_DIRS_ENV], ';')).toEqual([modDir(), 'D:\\mine']);
+    });
+
+    it('finds the old entry regardless of case and a trailing separator (Windows rules)', () => {
+      for (const variant of [legacyDir().toUpperCase().replace(/\\/g, '/'), `${legacyDir()}\\`]) {
+        plantLegacy(variant);
+        new BridgeModInstaller(claudeDir, new ClaudeSettingsFile(settingsPath),
+          { files: FILES, now: () => 1_000, delimiter: ';', platform: 'win32' }).refresh();
+        expect(settings().env[PLUGIN_DIRS_ENV], variant).toBe(modDir());
+      }
+    });
+
+    it('refresh creates nothing when the mod was never installed', () => {
+      make().refresh();
+      expect(fs.existsSync(settingsPath)).toBe(false);
+      expect(fs.existsSync(modDir())).toBe(false);
+    });
+
+    it('refresh on an invalid settings.json does not throw and touches nothing', () => {
+      plantLegacy();
+      fs.writeFileSync(settingsPath, '{ broken');
+      expect(() => make().refresh()).not.toThrow();
+      expect(fs.readFileSync(settingsPath, 'utf-8')).toBe('{ broken');
+      expect(fs.existsSync(legacyDir())).toBe(true);
+    });
+
+    it('install replaces the old entry, keeps the install time and reports the change', () => {
+      plantLegacy(`D:\\mine;${legacyDir()}`);
+      expect(make(FILES, 9_000).install()).toEqual({ changed: true, path: settingsPath });
+      expect(settings().env[PLUGIN_DIRS_ENV]).toBe(`D:\\mine;${modDir()}`);
+      expect(make().status().installedAt).toBe(500);
+    });
+
+    it('uninstall removes the old entry too', () => {
+      plantLegacy(`D:\\mine;${legacyDir()};${modDir()}`);
+      expect(make().uninstall().changed).toBe(true);
+      expect(settings().env[PLUGIN_DIRS_ENV]).toBe('D:\\mine');
+      expect(fs.existsSync(path.dirname(modDir()))).toBe(false);
+    });
   });
 
   it('ignores a trailing separator on POSIX too', () => {

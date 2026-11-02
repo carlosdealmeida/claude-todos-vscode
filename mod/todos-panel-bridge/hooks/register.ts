@@ -70,7 +70,7 @@ async function record(
     state = current
     await $.fs.write(file, toText(current, now))
   } catch (err) {
-    $.ui.log(`claude-todos-bridge: ${String(err)}`, { to: 'debug' })
+    $.ui.log(`todos-panel-bridge: ${String(err)}`, { to: 'debug' })
   } finally {
     release()
   }

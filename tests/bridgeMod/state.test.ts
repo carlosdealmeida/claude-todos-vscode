@@ -138,17 +138,17 @@ describe('parseBridgeFile', () => {
 
 describe('liveDirFor', () => {
   it('writes next to the mod folder the extension installed (Windows)', () => {
-    expect(liveDirFor('C:\\Users\\carlo\\.claude\\.vscode-todos-bridge\\mod\\claude-todos-bridge', {}))
+    expect(liveDirFor('C:\\Users\\carlo\\.claude\\.vscode-todos-bridge\\mod\\todos-panel-bridge', {}))
       .toBe('C:\\Users\\carlo\\.claude\\.vscode-todos-bridge\\live');
   });
 
   it('writes next to the mod folder the extension installed (POSIX, trailing slash)', () => {
-    expect(liveDirFor('/home/u/.claude/.vscode-todos-bridge/mod/claude-todos-bridge/', {}))
+    expect(liveDirFor('/home/u/.claude/.vscode-todos-bridge/mod/todos-panel-bridge/', {}))
       .toBe('/home/u/.claude/.vscode-todos-bridge/live');
   });
 
   it('falls back to CLAUDE_CONFIG_DIR, then USERPROFILE, then HOME', () => {
-    const root = '/repo/dist/mod/claude-todos-bridge';
+    const root = '/repo/dist/mod/todos-panel-bridge';
     expect(liveDirFor(root, { claudeConfigDir: '/cfg', userProfile: '/up', home: '/h' }))
       .toBe('/cfg/.vscode-todos-bridge/live');
     expect(liveDirFor(root, { userProfile: '/up', home: '/h' })).toBe('/up/.claude/.vscode-todos-bridge/live');
@@ -156,8 +156,8 @@ describe('liveDirFor', () => {
   });
 
   it('returns null when nothing is known', () => {
-    expect(liveDirFor('/repo/dist/mod/claude-todos-bridge', {})).toBeNull();
-    expect(liveDirFor('/repo/dist/mod/claude-todos-bridge', { home: '' })).toBeNull();
+    expect(liveDirFor('/repo/dist/mod/todos-panel-bridge', {})).toBeNull();
+    expect(liveDirFor('/repo/dist/mod/todos-panel-bridge', { home: '' })).toBeNull();
   });
 });
 
