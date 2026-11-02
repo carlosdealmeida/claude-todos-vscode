@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -1237,6 +1237,91 @@ describe('TodosParser', () => {
         resumeResult('toolu_SM', 'bg0001', T(20)),
       ]);
       expect(liveSince('bg0001', Date.parse(T(15)))).toBe('running');
+    });
+
+    // R6, achado 3: o agente que parou esperando o próprio shell acorda depois. Dos
+    // 58 despertares medidos em 2026-11-02, 54 vieram em até 30 min; 9 agentes nunca
+    // acordaram, e sem limite ficariam "rodando" até a sessão acabar.
+    describe('agent waiting on its own background work', () => {
+      const waitingNotification = (timestamp: string): object => ({
+        type: 'user', timestamp,
+        message: { role: 'user', content: '<task-notification>\n<task-id>bg0001</task-id>\n<tool-use-id>toolu_BG</tool-use-id>\n<status>completed</status>\n<summary>Agent "bg" is waiting on its own background work</summary>\n<note>This agent stopped with background work of its own still running.</note>\n<result>interim</result>\n</task-notification>' },
+      });
+
+      // Sessão com o aviso em T(8), o transcript do agente parado em `lastActivityMin`
+      // e o relógio em `nowMin`.
+      function setup(lastActivityMin: number, nowMin: number, extra: object[] = []): void {
+        writeBackgroundSession([waitingNotification(T(8)), ...extra]);
+        const file = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD), 's1', 'subagents', 'agent-bg0001.jsonl');
+        const mtime = new Date(Date.parse(T(lastActivityMin)));
+        fs.utimesSync(file, mtime, mtime);
+        vi.setSystemTime(Date.parse(T(nowMin)));
+      }
+
+      beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); });
+      afterEach(() => { vi.useRealTimers(); });
+
+      it('is running right after the warning', () => {
+        setup(8, 10);
+        expect(agentOf('bg0001', true).status).toBe('running');
+      });
+
+      it('is still running 29 min after the warning', () => {
+        setup(8, 37);
+        expect(agentOf('bg0001', true).status).toBe('running');
+      });
+
+      it('is completed after 31 min of silence, so it does not run forever', () => {
+        setup(8, 39);
+        expect(agentOf('bg0001', true).status).toBe('completed');
+      });
+
+      it('the silence counts from the last activity of the agent, not from the warning', () => {
+        setup(100, 120);
+        expect(agentOf('bg0001', true).status).toBe('running');
+      });
+
+      it('a warning delivered long after the agent went quiet starts the count at the warning', () => {
+        setup(-25, 10);
+        expect(agentOf('bg0001', true).status).toBe('running');
+      });
+
+      it('an agent past the limit that wakes up runs again', () => {
+        setup(8, 100);
+        expect(agentOf('bg0001', true).status).toBe('completed');
+        const file = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD), 's1', 'subagents', 'agent-bg0001.jsonl');
+        const woke = new Date(Date.parse(T(99)));
+        fs.utimesSync(file, woke, woke);
+        expect(agentOf('bg0001', true).status).toBe('running');
+      });
+
+      it('is completed when the final notification arrives', () => {
+        setup(8, 10, [taskNotification('bg0001', 'toolu_BG', T(9))]);
+        expect(agentOf('bg0001', true).status).toBe('completed');
+      });
+
+      it('is completed in a dead session', () => {
+        setup(8, 10);
+        expect(agentOf('bg0001', false).status).toBe('completed');
+      });
+
+      it('a warning from a previous process does not count in a resumed session', () => {
+        setup(8, 10);
+        expect(parser.listSessionDetail('s1', CWD, { alive: true, aliveSince: Date.parse(T(9)) }).agents
+          .find(a => a.agentId === 'bg0001')!.status).toBe('completed');
+      });
+
+      it('the bridge stop written with the warning does not complete the agent', () => {
+        setup(8, 10);
+        const bridgeStop = new Map<string, LifecycleEntry>([['bg0001', { state: 'stopped', at: Date.parse(T(8)) + 1800 }]]);
+        expect(parser.listSessionDetail('s1', CWD, { alive: true, extraLifecycle: bridgeStop }).agents
+          .find(a => a.agentId === 'bg0001')!.status).toBe('running');
+      });
+
+      it('exactly 30 min of silence ends the wait', () => {
+        setup(8, 38);
+        expect(agentOf('bg0001', true).status).toBe('completed');
+      });
     });
 
     // Ponte de dados (item 25): os agentes do arquivo do mod entram no mergeLifecycles.

@@ -64,6 +64,26 @@ function notificationMidTurn(taskId: string, min: number): string {
   });
 }
 
+// Aviso de agente que parou esperando o próprio trabalho em background (formato
+// real, medido em 2026-11-02): status completed, mas o mesmo task-id notifica de novo.
+const waitingBody = (taskId: string, summary = 'Agent "bg" is waiting on its own background work') =>
+  `<task-notification>\n<task-id>${taskId}</task-id>\n<tool-use-id>toolu_x</tool-use-id>\n<output-file>/tmp/${taskId}.output</output-file>\n<status>completed</status>\n<summary>${summary}</summary>\n<note>This agent stopped with background work of its own still running. It may resume on its own when that work completes or reports, and the same task-id notifies again if it does; the result below may be interim.</note>\n<result>interim</result>\n</task-notification>`;
+
+function waitingNotification(taskId: string, min: number): string {
+  return line({ type: 'user', timestamp: T(min), message: { role: 'user', content: waitingBody(taskId) } });
+}
+
+function waitingNotificationMidTurn(taskId: string, min: number): string {
+  return line({
+    type: 'attachment', isSidechain: false, timestamp: T(min),
+    attachment: {
+      type: 'queued_command', commandMode: 'task-notification',
+      origin: { kind: 'task-notification', producer: 'session-task' },
+      prompt: waitingBody(taskId),
+    },
+  });
+}
+
 function queuedNotification(taskId: string, min: number): string {
   return line({
     type: 'queue-operation', operation: 'enqueue', timestamp: T(min),
@@ -98,6 +118,47 @@ describe('collectAgentLifecycle', () => {
   it('a notification delivered mid-turn (attachment queued_command) stops the agent', () => {
     expect(collectAgentLifecycle([launch('bg01', 0), notificationMidTurn('bg01', 4)]).get('bg01'))
       .toEqual({ state: 'stopped', at: at(4) });
+  });
+
+  describe('agent waiting on its own background work', () => {
+    it('the notification means waiting, not stopped', () => {
+      expect(collectAgentLifecycle([launch('bg01', 0), waitingNotification('bg01', 4)]).get('bg01'))
+        .toEqual({ state: 'waiting', at: at(4) });
+    });
+
+    it('delivered mid-turn (attachment queued_command) it also means waiting', () => {
+      expect(collectAgentLifecycle([launch('bg01', 0), waitingNotificationMidTurn('bg01', 4)]).get('bg01'))
+        .toEqual({ state: 'waiting', at: at(4) });
+    });
+
+    it('a later notification from the same task-id stops the agent', () => {
+      expect(collectAgentLifecycle([launch('bg01', 0), waitingNotification('bg01', 4), notification('bg01', 9)]).get('bg01'))
+        .toEqual({ state: 'stopped', at: at(9) });
+    });
+
+    it('a final report that only quotes the phrase in its <result> stops the agent', () => {
+      const report = line({
+        type: 'user', timestamp: T(4),
+        message: { role: 'user', content: '<task-notification>\n<task-id>bg01</task-id>\n<status>completed</status>\n<summary>Agent "bg" finished</summary>\n<result>o aviso diz: is waiting on its own background work</result>\n</task-notification>' },
+      });
+      expect(collectAgentLifecycle([launch('bg01', 0), report]).get('bg01')?.state).toBe('stopped');
+    });
+
+    it('a final report that quotes a whole waiting notification in its <result> stops the agent', () => {
+      const report = line({
+        type: 'user', timestamp: T(4),
+        message: { role: 'user', content: `<task-notification>\n<task-id>bg01</task-id>\n<status>completed</status>\n<summary>Agent "bg" finished</summary>\n<result>${waitingBody('other')}</result>\n</task-notification>` },
+      });
+      expect(collectAgentLifecycle([launch('bg01', 0), report]).get('bg01')?.state).toBe('stopped');
+    });
+
+    it('an agent whose description contains the phrase and that finished stops', () => {
+      const finished = line({
+        type: 'user', timestamp: T(4),
+        message: { role: 'user', content: waitingBody('bg01', 'Agent "is waiting on its own background work" finished') },
+      });
+      expect(collectAgentLifecycle([launch('bg01', 0), finished]).get('bg01')?.state).toBe('stopped');
+    });
   });
 
   it('a queued command that only mentions a notification mid-text does not stop the agent', () => {
@@ -180,6 +241,30 @@ describe('mergeLifecycles', () => {
     const fromMain = new Map<string, LifecycleEntry>([['neto01', { state: 'running', at: at(10) }]]);
     expect(mergeLifecycles([fromMain, fromParent]).get('neto01')).toEqual({ state: 'running', at: at(10) });
     expect(mergeLifecycles([fromParent, fromMain]).get('neto01')).toEqual({ state: 'running', at: at(10) });
+  });
+
+  // A ponte grava o fim do turno na mesma fração de segundo do aviso: medido em
+  // 2026-11-02, de -10 s a +1,8 s da notificação (665 agentes). É o mesmo evento,
+  // e "o mais recente vence" apagaria o aviso em 44% das vezes.
+  describe('a stop right next to a waiting notification is the same event', () => {
+    const waiting = (ms: number) => new Map<string, LifecycleEntry>([['a1', { state: 'waiting', at: ms }]]);
+    const stopped = (ms: number) => new Map<string, LifecycleEntry>([['a1', { state: 'stopped', at: ms }]]);
+    const base = at(10);
+
+    it('a stop 2 s after the warning keeps waiting, in either map order', () => {
+      expect(mergeLifecycles([waiting(base), stopped(base + 2000)]).get('a1')).toEqual({ state: 'waiting', at: base });
+      expect(mergeLifecycles([stopped(base + 2000), waiting(base)]).get('a1')).toEqual({ state: 'waiting', at: base });
+    });
+
+    it('a stop before the warning loses to it, in either map order', () => {
+      expect(mergeLifecycles([waiting(base), stopped(base - 10_000)]).get('a1')).toEqual({ state: 'waiting', at: base });
+      expect(mergeLifecycles([stopped(base - 10_000), waiting(base)]).get('a1')).toEqual({ state: 'waiting', at: base });
+    });
+
+    it('a stop well after the warning is a real stop: the agent woke up and ended, in either map order', () => {
+      expect(mergeLifecycles([waiting(base), stopped(base + 60_000)]).get('a1')).toEqual({ state: 'stopped', at: base + 60_000 });
+      expect(mergeLifecycles([stopped(base + 60_000), waiting(base)]).get('a1')).toEqual({ state: 'stopped', at: base + 60_000 });
+    });
   });
 
   it('keeps agents that appear in only one map', () => {

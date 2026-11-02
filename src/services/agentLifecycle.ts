@@ -1,15 +1,25 @@
 // R6: ciclo de vida dos sub-agents assíncronos. Módulo PURO (sem fs): recebe as
 // linhas de UM transcript — o de quem disparou os agentes — e devolve, por
 // agentId, o último evento visto. Lançamento e retomada = rodando; a
-// <task-notification> = parado. Formatos medidos no disco em 2026-10-04
+// <task-notification> = parado, ou esperando quando o agente só parou até o
+// próprio trabalho em background voltar. Formatos medidos no disco em 2026-10-04
 // (spec docs/specs/2026-10-05-subagents-background-e-janela-fable-design.md).
 
-export type LifecycleState = 'running' | 'stopped';
+export type LifecycleState = 'running' | 'waiting' | 'stopped';
 
 export interface LifecycleEntry {
   state: LifecycleState;
   at: number; // epoch ms do record; 0 sem timestamp
 }
+
+// R6, achado 3. O agente em espera acorda sozinho, sem novo evento de ciclo de
+// vida, mas pode nunca acordar: dos 58 despertares medidos em 2026-11-02, 54 vieram
+// em até 30 min, e 9 agentes nunca voltaram. Passado esse silêncio, conta como parado.
+export const WAITING_SILENCE_MS = 30 * 60_000;
+
+// A ponte grava o fim do turno junto com o aviso de espera: medido de -10 s a
+// +1,8 s da notificação, em 665 agentes.
+const SAME_EVENT_MS = 5_000;
 
 // Pré-filtro: só linhas com uma destas marcas passam pelo JSON.parse — o
 // transcript principal pode ter dezenas de milhares de linhas.
@@ -18,6 +28,9 @@ const LAUNCH_TEXT = 'Async agent launched';
 const LAUNCH_ID = /agentId: ([\w-]+)/;
 const TASK_ID = /<task-id>([^<]+)<\/task-id>/;
 const NOTIFICATION = '<task-notification>';
+// Só o primeiro <summary> é o da notificação; o <result> pode citar outra inteira.
+const SUMMARY = /<summary>([^<]*)<\/summary>/;
+const WAITING_SUMMARY_END = 'is waiting on its own background work';
 
 interface RawEntry {
   type?: unknown;
@@ -27,11 +40,14 @@ interface RawEntry {
   message?: { content?: unknown };
 }
 
-// agentId de um texto que É uma <task-notification> (começa por ela); null
-// para qualquer outro texto, inclusive um que só a mencione no meio.
-function notifiedAgentId(text: string): string | null {
+// agentId e estado de um texto que É uma <task-notification> (começa por ela);
+// null para qualquer outro texto, inclusive um que só a mencione no meio.
+function notified(text: string): { id: string; state: LifecycleState } | null {
   if (!text.startsWith(NOTIFICATION)) return null;
-  return TASK_ID.exec(text)?.[1] ?? null;
+  const id = TASK_ID.exec(text)?.[1];
+  if (!id) return null;
+  const waiting = SUMMARY.exec(text)?.[1].endsWith(WAITING_SUMMARY_END) === true;
+  return { id, state: waiting ? 'waiting' : 'stopped' };
 }
 
 function epochOf(ts: unknown): number {
@@ -79,8 +95,8 @@ export function collectAgentLifecycle(lines: string[]): Map<string, LifecycleEnt
     if (entry.type === 'attachment') {
       const attachment = entry.attachment as { type?: unknown; prompt?: unknown } | null | undefined;
       if (attachment?.type === 'queued_command' && typeof attachment.prompt === 'string') {
-        const id = notifiedAgentId(attachment.prompt);
-        if (id) out.set(id, { state: 'stopped', at });
+        const event = notified(attachment.prompt);
+        if (event) out.set(event.id, { state: event.state, at });
       }
       continue;
     }
@@ -90,8 +106,8 @@ export function collectAgentLifecycle(lines: string[]): Map<string, LifecycleEnt
 
     // Parada entregue entre turnos: mensagem do usuário, em string.
     if (typeof content === 'string') {
-      const id = notifiedAgentId(content);
-      if (id) out.set(id, { state: 'stopped', at });
+      const event = notified(content);
+      if (event) out.set(event.id, { state: event.state, at });
       continue;
     }
     if (!Array.isArray(content)) continue;
@@ -123,15 +139,25 @@ export function collectAgentLifecycle(lines: string[]): Map<string, LifecycleEnt
   return out;
 }
 
+// Uma parada logo depois do aviso de espera é o fim do mesmo turno, não o fim do
+// agente; uma parada anterior ao aviso perde para ele de qualquer jeito.
+function stopOfSameTurn(waiting: LifecycleEntry, other: LifecycleEntry): boolean {
+  return waiting.state === 'waiting' && other.state === 'stopped'
+    && other.at - waiting.at <= SAME_EVENT_MS;
+}
+
 // Junta os mapas de transcripts diferentes (o principal e os de cada
-// sub-agent): para o mesmo agentId vence o evento mais recente; no empate,
-// o primeiro mapa.
+// sub-agent) e a ponte: para o mesmo agentId vence o evento mais recente; no
+// empate, o primeiro mapa. A exceção é o aviso de espera (stopOfSameTurn).
 export function mergeLifecycles(maps: Map<string, LifecycleEntry>[]): Map<string, LifecycleEntry> {
   const out = new Map<string, LifecycleEntry>();
   for (const map of maps) {
     for (const [id, entry] of map) {
       const current = out.get(id);
-      if (current === undefined || entry.at > current.at) out.set(id, entry);
+      if (current === undefined || stopOfSameTurn(entry, current)
+        || (!stopOfSameTurn(current, entry) && entry.at > current.at)) {
+        out.set(id, entry);
+      }
     }
   }
   return out;
