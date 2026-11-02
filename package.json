@@ -265,6 +265,7 @@
     "vitest": "^4.1.11"
   },
   "overrides": {
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "minimatch": "^11.0.4"
   }
 }
