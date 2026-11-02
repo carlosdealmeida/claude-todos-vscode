@@ -395,8 +395,23 @@ function cenariosTask(): Entrada[] {
         // id desconhecido com status válido: não muda nenhuma tarefa, mas conta como evento.
         taskUpdate('toolu_u2', '99', 'completed', 400),
         // status inválido, e taskId que não é texto: nada acontece, nem o carimbo de evento.
-        taskUpdate('toolu_u3', '1', 'deleted', 300),
+        taskUpdate('toolu_u3', '1', 'whatever', 300),
         taskUpdate('toolu_u4', 1, 'completed', 200),
+        resposta(190, 'req_1', usage(10, 80, 100, 900)),
+      ], 190)],
+    },
+    {
+      nome: 'task-update-apagada',
+      arquivos: [principal([
+        user('Fazer o trabalho', 700),
+        taskCreate('toolu_c1', A, 'Escrevendo a especificação', 600),
+        taskResult('toolu_c1', '1', A, 599, 'resultado'),
+        taskCreate('toolu_c2', B, 'Montando o gerador', 590),
+        taskResult('toolu_c2', '2', B, 589, 'resultado'),
+        taskUpdate('toolu_u1', '1', 'in_progress', 500),
+        // deleted tira a tarefa da lista e conta como evento; o update seguinte não a traz de volta.
+        taskUpdate('toolu_u2', '1', 'deleted', 400),
+        taskUpdate('toolu_u3', '1', 'completed', 300),
         resposta(190, 'req_1', usage(10, 80, 100, 900)),
       ], 190)],
     },

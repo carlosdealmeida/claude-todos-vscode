@@ -3,7 +3,7 @@ import { gerarCasos } from '../../scripts/casosPainel/cenarios';
 
 const NOMES_PAINEL = [
   'todowrite-anda', 'todowrite-volta-a-pendente', 'todowrite-some-e-volta', 'todowrite-muda-de-lugar',
-  'task-id-pelo-resultado', 'task-id-pelo-texto', 'task-update-ignorado',
+  'task-id-pelo-resultado', 'task-id-pelo-texto', 'task-update-ignorado', 'task-update-apagada',
   'troca-de-esquema',
   'ignorados',
   'subagente-com-meta', 'subagente-aninhado', 'subagente-recusado', 'subagente-sem-meta',
@@ -44,6 +44,13 @@ describe('gerarCasos', { timeout: 60_000 }, () => {
     expect(caso.esperado.agents.every((a: any) => !a.isMain)).toBe(true);
     expect(caso.esperado.agents.length).toBeGreaterThan(0);
     expect(caso.esperado.usage.byAgent[0].isMain).toBe(true);
+  });
+
+  it('o task-update-apagada deixa só a tarefa que não foi apagada', () => {
+    const { painel } = gerado;
+    const caso = painel.casos.find(c => c.nome === 'task-update-apagada')!;
+    expect(caso.esperado.agents[0].todos.map((t: any) => t.status)).toEqual(['pending']);
+    expect(caso.esperado.agents[0].todos).toHaveLength(1);
   });
 
   it('cada caso do painel produz agentes ou uso, sem sourceLine', () => {

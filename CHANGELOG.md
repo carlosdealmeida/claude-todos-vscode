@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **Tasks deleted with `TaskUpdate` now leave the panel.** A `status: "deleted"` update was ignored as an unknown status, so the task stayed on its last status and could look like it was still running while `TaskList` was already empty. The panel now removes it, matching what Claude Code reports ([#31](https://github.com/carlosdealmeida/claude-todos-vscode/issues/31)).
+
 ## [0.20.1] - 2026-11-01
 
 ### Fixed
