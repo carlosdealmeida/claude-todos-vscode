@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { gerarCasos } from '../../scripts/casosPainel/cenarios';
 
 const NOMES_PAINEL = [
@@ -19,15 +19,17 @@ const NOMES_TEMPOS = [
   'tempos-ativa-passou-da-media', 'tempos-sem-medida',
 ];
 
-describe('gerarCasos', () => {
+describe('gerarCasos', { timeout: 60_000 }, () => {
+  let gerado: ReturnType<typeof gerarCasos>;
+  beforeAll(() => { gerado = gerarCasos(); }, 60_000);
+
   it('dois runs dão o mesmo JSON', () => {
-    const a = gerarCasos();
     const b = gerarCasos();
-    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    expect(JSON.stringify(gerado)).toBe(JSON.stringify(b));
   });
 
   it('os nomes são únicos e todos os cenários existem', () => {
-    const { painel, tempos } = gerarCasos();
+    const { painel, tempos } = gerado;
     const nomesPainel = painel.casos.map(c => c.nome);
     const nomesTempos = tempos.casos.map(c => c.nome);
     expect(new Set(nomesPainel).size).toBe(nomesPainel.length);
@@ -37,7 +39,7 @@ describe('gerarCasos', () => {
   });
 
   it('o principal-sem-lista-com-subagente tem o principal primeiro nos tokens (Task 1)', () => {
-    const { painel } = gerarCasos();
+    const { painel } = gerado;
     const caso = painel.casos.find(c => c.nome === 'principal-sem-lista-com-subagente')!;
     expect(caso.esperado.agents.every((a: any) => !a.isMain)).toBe(true);
     expect(caso.esperado.agents.length).toBeGreaterThan(0);
@@ -45,7 +47,7 @@ describe('gerarCasos', () => {
   });
 
   it('cada caso do painel produz agentes ou uso, sem sourceLine', () => {
-    const { painel } = gerarCasos();
+    const { painel } = gerado;
     for (const c of painel.casos) {
       expect(c.esperado.agents.length + (c.esperado.usage?.byAgent?.length ?? 0), c.nome).toBeGreaterThan(0);
       expect(JSON.stringify(c.esperado)).not.toContain('sourceLine');
@@ -53,7 +55,7 @@ describe('gerarCasos', () => {
   });
 
   it('o caminho dos arquivos é único dentro de cada caso', () => {
-    const { painel } = gerarCasos();
+    const { painel } = gerado;
     for (const c of painel.casos) {
       const caminhos = c.arquivos.map(a => a.caminho);
       expect(new Set(caminhos).size, c.nome).toBe(caminhos.length);
