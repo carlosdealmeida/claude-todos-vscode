@@ -166,6 +166,24 @@ describe('SnapshotService', () => {
     ]);
   });
 
+  it('includes the main agent in usage when only sub-agents are listed', () => {
+    const resolver = { resolveCandidates: () => [{ cwd: '/p', sessionId: 'sess', terminalPid: null, startedAt: 1 }] };
+    const sub = { sessionId: 'sess', agentId: 'a1', name: 'Explore', isMain: false, todos: [], updatedAt: 1 };
+    const parser = {
+      transcriptMtime: () => 1000,
+      transcriptActivityAt: () => 1000,
+      readSessionTitle: () => null,
+      listForSession: () => [sub],
+      listSessionDetail: () => ({ agents: [sub], awaitingInput: null, pendingQuestions: [] }),
+    };
+    let received: any[] | undefined;
+    const usage = {
+      usageForSession: (_s: string, _c: string, agents: any[]) => { received = agents; return { byModel: [], byAgent: [] }; },
+    };
+    new SnapshotService(resolver as any, parser as any, usage as any).build();
+    expect(received!.map(a => [a.agentId, a.isMain])).toEqual([['sess', true], ['a1', false]]);
+  });
+
   it('activeCwd returns the cwd of the session that would be displayed', () => {
     const resolver = {
       resolveCandidates: () => [
