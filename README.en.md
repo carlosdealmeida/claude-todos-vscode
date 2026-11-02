@@ -99,7 +99,7 @@ This extension is **fully local**. Nothing is sent to any server.
 |---|---|---|
 | `~/.claude/settings.json` | Read + written (only with your permission) | Adds two hook commands under `hooks.SessionStart` and `hooks.UserPromptSubmit`; when you click **Enable task tools**, the `env.CLAUDE_CODE_ENABLE_TODO_TOOLS` key; and, when you turn on **Exact data**, the mod folder in `env.CLAUDE_CODE_PLUGIN_DIRS`. Other hooks and settings are preserved; an invalid file is never overwritten. |
 | `~/.claude/.vscode-todos-bridge/sessions.json` | Written by the bundled hook script | Records `{cwd, sessionId, terminalPid, startedAt}` so the extension knows which Claude session belongs to which VSCode window. Capped at 200 entries. |
-| `~/.claude/.vscode-todos-bridge/mod/` | Written by the extension (only with your permission) | A copy of the `claude-todos-bridge` Claude Code mod and the time you turned it on. Deleted when you turn Exact data off. |
+| `~/.claude/.vscode-todos-bridge/mod/` | Written by the extension (only with your permission) | A copy of the `todos-panel-bridge` Claude Code mod and the time you turned it on. Deleted when you turn Exact data off. |
 | `~/.claude/.vscode-todos-bridge/live/<sessionId>.json` | Written by the mod, inside Claude Code | Per session: context window, 5-hour and 7-day usage limits, the end of the last turn, and the start and end of each sub-agent (type, description, model). No cost and no message content. Files older than 30 days are deleted. |
 | `~/.claude/projects/{cwd-encoded}/…` | Read-only | Session and sub-agent transcripts (`.jsonl` + `.meta.json`) written by Claude Code itself — the source of tasks, tree, timings and tokens. |
 | `~/.claude/todos/` | Not touched | Legacy Claude Code 1.x location. Ignored. |

@@ -5,7 +5,10 @@ import { atomicWriteFileSync } from './atomicWrite';
 import { BRIDGE_MOD_FILES } from '../bridgeMod/modFiles.generated';
 
 export const PLUGIN_DIRS_ENV = 'CLAUDE_CODE_PLUGIN_DIRS';
-export const BRIDGE_MOD_NAME = 'claude-todos-bridge';
+export const BRIDGE_MOD_NAME = 'todos-panel-bridge';
+// Nome até a 0.20.2. O validador do Claude Code recusa plugin de terceiro que
+// começa com "claude-"; quem já tinha o mod instalado é migrado no refresh().
+const LEGACY_BRIDGE_MOD_NAME = 'claude-todos-bridge';
 
 export interface BridgeModStatus {
   installed: boolean;
@@ -44,11 +47,12 @@ function statOrNull(file: string): fs.Stats | null {
 // Instala, atualiza e desinstala o mod da ponte de dados (ROADMAP item 25; spec
 // docs/specs/2026-10-06-ponte-de-dados-mod-design.md, decisão 5). O mod viaja
 // dentro do bundle (BRIDGE_MOD_FILES); instalar grava os arquivos em
-// <claudeDir>/.vscode-todos-bridge/mod/claude-todos-bridge/ e acrescenta essa
+// <claudeDir>/.vscode-todos-bridge/mod/todos-panel-bridge/ e acrescenta essa
 // pasta ao env.CLAUDE_CODE_PLUGIN_DIRS do settings.json, que o Claude Code lê ao
 // abrir cada sessão.
 export class BridgeModInstaller {
   readonly modDir: string;
+  private readonly legacyModDir: string;
   private readonly markerPath: string;
   private readonly manifestPath: string;
   private readonly files: Readonly<Record<string, string>>;
@@ -64,6 +68,7 @@ export class BridgeModInstaller {
   ) {
     const modRoot = path.join(claudeDir, '.vscode-todos-bridge', 'mod');
     this.modDir = path.join(modRoot, BRIDGE_MOD_NAME);
+    this.legacyModDir = path.join(modRoot, LEGACY_BRIDGE_MOD_NAME);
     this.markerPath = path.join(modRoot, 'install.json');
     this.manifestPath = path.join(this.modDir, '.claude-plugin', 'plugin.json');
     this.files = opts.files ?? BRIDGE_MOD_FILES;
@@ -104,16 +109,19 @@ export class BridgeModInstaller {
     const settings = this.settings.read();
     const env = this.envOf(settings);
     const dirs = this.pluginDirsOf(env);
+    const hadEntry = dirs.some(d => samePath(d, this.modDir, this.platform));
+    const migrated = this.withoutLegacyEntry(dirs);
+    const listed = migrated.some(d => samePath(d, this.modDir, this.platform));
+    const next = listed ? migrated : [...migrated, this.modDir];
     this.writeFiles();
-    const listed = dirs.some(d => samePath(d, this.modDir, this.platform));
-    if (!listed) {
-      settings.env = { ...env, [PLUGIN_DIRS_ENV]: [...dirs, this.modDir].join(this.delimiter) };
+    if (next.length !== dirs.length || next.some((d, i) => d !== dirs[i])) {
+      settings.env = { ...env, [PLUGIN_DIRS_ENV]: next.join(this.delimiter) };
       this.settings.write(settings);
     }
     if (!listed || this.readInstalledAt() === undefined) {
       atomicWriteFileSync(this.markerPath, JSON.stringify({ installedAt: this.now() }));
     }
-    return { changed: !listed, path: this.settings.path };
+    return { changed: !hadEntry, path: this.settings.path };
   }
 
   // Tira a nossa entrada do env (a chave sai quando fica vazia, e o env também)
@@ -124,7 +132,7 @@ export class BridgeModInstaller {
     const settings = this.settings.read();
     const env = this.envOf(settings);
     const dirs = this.pluginDirsOf(env);
-    const kept = dirs.filter(d => !samePath(d, this.modDir, this.platform));
+    const kept = dirs.filter(d => !samePath(d, this.modDir, this.platform) && !samePath(d, this.legacyModDir, this.platform));
     const changed = kept.length !== dirs.length;
     if (changed) {
       const next: Record<string, unknown> = { ...env };
@@ -144,13 +152,47 @@ export class BridgeModInstaller {
     return { changed, path: this.settings.path };
   }
 
-  // Na ativação: com o mod instalado, regrava só os arquivos cujo conteúdo
-  // mudou (sessões interativas observam a pasta e recarregam o mod a cada
-  // mudança). Nunca lança.
+  // Na ativação: migra a entrada do nome antigo e, com o mod instalado, regrava
+  // só os arquivos cujo conteúdo mudou (sessões interativas observam a pasta e
+  // recarregam o mod a cada mudança). Nunca lança.
   refresh(): void {
     try {
+      if (!this.migrateLegacyEntry()) this.removeLegacyDir();
       if (this.status().installed) this.writeFiles();
     } catch { /* disco somente leitura etc.: tenta de novo na próxima ativação */ }
+  }
+
+  // Grava o mod novo antes de trocar a entrada: o settings.json nunca aponta para
+  // uma pasta que ainda não existe. A pasta antiga fica nesta rodada porque as
+  // sessões abertas ainda a usam. `true` = a entrada antiga estava lá.
+  private migrateLegacyEntry(): boolean {
+    const settings = this.settings.read();
+    const env = this.envOf(settings);
+    const dirs = this.pluginDirsOf(env);
+    if (!dirs.some(d => samePath(d, this.legacyModDir, this.platform))) return false;
+    this.statusMemo = null;
+    this.writeFiles();
+    settings.env = { ...env, [PLUGIN_DIRS_ENV]: this.withoutLegacyEntry(dirs).join(this.delimiter) };
+    this.settings.write(settings);
+    return true;
+  }
+
+  // Troca a entrada antiga pela atual na mesma posição, sem duplicar a atual.
+  private withoutLegacyEntry(dirs: string[]): string[] {
+    let placed = dirs.some(d => samePath(d, this.modDir, this.platform));
+    return dirs.flatMap(d => {
+      if (!samePath(d, this.legacyModDir, this.platform)) return [d];
+      if (placed) return [];
+      placed = true;
+      return [this.modDir];
+    });
+  }
+
+  // Presa, fica para trás sem erro: a próxima ativação tenta de novo.
+  private removeLegacyDir(): void {
+    try {
+      fs.rmSync(this.legacyModDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+    } catch { /* sobra inofensiva */ }
   }
 
   private writeFiles(): void {

@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- **The data bridge mod is now called `todos-panel-bridge`.** Claude Code's plugin validator reserves names starting with `claude-`, so the old `claude-todos-bridge` no longer passes. If you already enabled exact data, the extension switches your `CLAUDE_CODE_PLUGIN_DIRS` entry the next time it starts, with no new prompt. Your other entries, your data and the activation date stay as they were. Sessions already open keep the old mod until they close.
+
 ## [0.20.2] - 2026-11-02
 
 ### Fixed

@@ -101,7 +101,7 @@
 |---|---|---|
 | `~/.claude/settings.json` | 讀取 + 寫入（僅在你授權時） | 在 `hooks.SessionStart` 和 `hooks.UserPromptSubmit` 下新增兩個掛鉤命令；當你點擊**開啟任務工具**時，寫入 `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`；當你開啟**精確資料**時，把 mod 資料夾寫入 `env.CLAUDE_CODE_PLUGIN_DIRS`。其他掛鉤和設定會被保留；無效的檔案絕不會被覆寫。 |
 | `~/.claude/.vscode-todos-bridge/sessions.json` | 由內建的掛鉤指令碼寫入 | 記錄 `{cwd, sessionId, terminalPid, startedAt}`，讓擴充功能知道哪個 Claude 工作階段屬於哪個 VSCode 視窗。最多保留 200 筆記錄。 |
-| `~/.claude/.vscode-todos-bridge/mod/` | 由擴充功能寫入（僅在你授權時） | Claude Code mod `claude-todos-bridge` 的副本以及開啟的時間。關閉精確資料時會被刪除。 |
+| `~/.claude/.vscode-todos-bridge/mod/` | 由擴充功能寫入（僅在你授權時） | Claude Code mod `todos-panel-bridge` 的副本以及開啟的時間。關閉精確資料時會被刪除。 |
 | `~/.claude/.vscode-todos-bridge/live/<sessionId>.json` | 由 mod 在 Claude Code 內寫入 | 每個工作階段：上下文視窗、5 小時和 7 天的用量限制、最後一輪的結束時間，以及每個子智慧體的開始和結束（類型、描述、模型）。不包含費用和訊息內容。超過 30 天的檔案會被刪除。 |
 | `~/.claude/projects/{cwd-encoded}/…` | 唯讀 | 由 Claude Code 自身寫入的工作階段和子智慧體對話記錄（`.jsonl` + `.meta.json`）— 任務、樹狀結構、耗時和權杖資料的來源。 |
 | `~/.claude/todos/` | 不會被存取 | Claude Code 1.x 的舊版位置，已被忽略。 |

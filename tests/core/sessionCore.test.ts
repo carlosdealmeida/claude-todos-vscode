@@ -277,7 +277,7 @@ describe('SessionCore', () => {
     const core = make();
     expect(core.buildSnapshot()?.bridge).toBe('off');
     expect(core.installBridgeMod()).toEqual({ changed: true, path: path.join(claudeDir, 'settings.json') });
-    const modDir = path.join(claudeDir, '.vscode-todos-bridge', 'mod', 'claude-todos-bridge');
+    const modDir = path.join(claudeDir, '.vscode-todos-bridge', 'mod', 'todos-panel-bridge');
     expect(fs.existsSync(path.join(modDir, 'hooks', 'register.ts'))).toBe(true);
     expect(core.buildSnapshot()?.bridge).toBe('next-session');
     writeBridgeFile({ schema: 1, sessionId: SID, writtenAt: 1, agents: {} });

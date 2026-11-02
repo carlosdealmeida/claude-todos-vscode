@@ -41,7 +41,7 @@ export function lifecycleFromBridge(file: BridgeFile | undefined): Map<string, L
 // só a rede para um evento perdido do fs.watch.
 export const RATE_LIMITS_TTL_MS = 60_000;
 
-// Leitor dos arquivos que o mod claude-todos-bridge grava em
+// Leitor dos arquivos que o mod todos-panel-bridge grava em
 // <claudeDir>/.vscode-todos-bridge/live/ (spec 2026-10-06, decisão 6).
 // Tolerante: arquivo ausente devolve undefined; arquivo pela metade ou inválido
 // devolve a última leitura boa daquele arquivo (o $.fs do mod não grava de forma

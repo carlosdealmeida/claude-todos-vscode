@@ -39,7 +39,7 @@ npm version patch    # or minor, major. updates package.json + creates a tag
 
 # 1b. Validate the Claude Code bridge mod (CI has no `claude`; run from a normal terminal)
 npm run mod:dev
-claude plugin validate "$(pwd)/dist/mod/claude-todos-bridge"
+claude plugin validate "$(pwd)/dist/mod/todos-panel-bridge"
 
 # 2. Edit CHANGELOG.md — add a "[X.Y.Z] - YYYY-MM-DD" section above the previous one.
 $EDITOR CHANGELOG.md

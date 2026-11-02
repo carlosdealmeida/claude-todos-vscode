@@ -1,5 +1,5 @@
 // Ponte de dados (ROADMAP item 25): o contrato do arquivo que o mod
-// claude-todos-bridge grava por sessão e a lógica pura que o mantém. Roda em
+// todos-panel-bridge grava por sessão e a lógica pura que o mantém. Roda em
 // DOIS lugares: dentro do mod (ambiente do Claude Code, sem Node e sem DOM) e no
 // core da extensão, que lê o arquivo. Por isso este módulo não importa nada e
 // não usa API de Node. Spec: docs/specs/2026-10-06-ponte-de-dados-mod-design.md.

@@ -16,14 +16,14 @@ describe('bridge mod embedded in the core bundle', () => {
 
   it('ships the shared state module and the hooks verbatim', () => {
     expect(BRIDGE_MOD_FILES['hooks/state.ts']).toBe(read('src/bridgeMod/state.ts'));
-    expect(BRIDGE_MOD_FILES['hooks/register.ts']).toBe(read('mod/claude-todos-bridge/hooks/register.ts'));
+    expect(BRIDGE_MOD_FILES['hooks/register.ts']).toBe(read('mod/todos-panel-bridge/hooks/register.ts'));
     expect(JSON.parse(BRIDGE_MOD_FILES['hooks/hooks.json'])).toEqual({ modules: ['./register.ts'] });
   });
 
   it('stamps the extension version into the manifest', () => {
     const version = JSON.parse(read('package.json')).version;
     expect(BRIDGE_MOD_VERSION).toBe(version);
-    expect(JSON.parse(BRIDGE_MOD_FILES['.claude-plugin/plugin.json'])).toMatchObject({ name: 'claude-todos-bridge', version });
+    expect(JSON.parse(BRIDGE_MOD_FILES['.claude-plugin/plugin.json'])).toMatchObject({ name: 'todos-panel-bridge', version });
   });
 
   it('keeps the shared state module free of imports (it also runs inside the mod)', () => {

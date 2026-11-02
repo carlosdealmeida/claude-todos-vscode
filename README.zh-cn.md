@@ -101,7 +101,7 @@
 |---|---|---|
 | `~/.claude/settings.json` | 读取 + 写入（仅在你授权时） | 在 `hooks.SessionStart` 和 `hooks.UserPromptSubmit` 下添加两个钩子命令；当你点击**开启任务工具**时，写入 `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`；当你开启**准确数据**时，把 mod 文件夹写入 `env.CLAUDE_CODE_PLUGIN_DIRS`。其他钩子和设置会被保留；无效的文件绝不会被覆盖。 |
 | `~/.claude/.vscode-todos-bridge/sessions.json` | 由内置的钩子脚本写入 | 记录 `{cwd, sessionId, terminalPid, startedAt}`，让扩展知道哪个 Claude 会话属于哪个 VSCode 窗口。最多保留 200 条记录。 |
-| `~/.claude/.vscode-todos-bridge/mod/` | 由扩展写入（仅在你授权时） | Claude Code mod `claude-todos-bridge` 的副本以及开启的时间。关闭准确数据时会被删除。 |
+| `~/.claude/.vscode-todos-bridge/mod/` | 由扩展写入（仅在你授权时） | Claude Code mod `todos-panel-bridge` 的副本以及开启的时间。关闭准确数据时会被删除。 |
 | `~/.claude/.vscode-todos-bridge/live/<sessionId>.json` | 由 mod 在 Claude Code 内写入 | 每个会话：上下文窗口、5 小时和 7 天的用量限制、最后一轮的结束时间，以及每个子智能体的开始和结束（类型、描述、模型）。不包含费用和消息内容。超过 30 天的文件会被删除。 |
 | `~/.claude/projects/{cwd-encoded}/…` | 只读 | 由 Claude Code 自身写入的会话和子智能体对话记录（`.jsonl` + `.meta.json`）— 任务、树状结构、耗时和令牌数据的来源。 |
 | `~/.claude/todos/` | 不会被访问 | Claude Code 1.x 的旧版位置，已被忽略。 |
