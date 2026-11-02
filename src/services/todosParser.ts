@@ -4,7 +4,7 @@ import type { AgentTodos, AwaitingInput, PendingQuestion, Todo, TodoStatus } fro
 import { transcriptPath as resolveTranscriptPath, subAgentsDir as resolveSubAgentsDir } from './transcriptPaths';
 import { readSubAgentMeta, type SubAgentMeta } from './subAgentMeta';
 import { TranscriptActivity } from './transcriptActivity';
-import { collectAgentLifecycle, mergeLifecycles, type LifecycleEntry } from './agentLifecycle';
+import { collectAgentLifecycle, mergeLifecycles, WAITING_SILENCE_MS, type LifecycleEntry } from './agentLifecycle';
 import { isApiRequestLine } from './transcriptRecords';
 
 const VALID_STATUSES: TodoStatus[] = ['pending', 'in_progress', 'completed'];
@@ -386,9 +386,13 @@ export class TodosParser {
     const statusOf = (agentId: string, dispatch: Dispatch): 'running' | 'completed' => {
       if (dispatch.result === 'none') return 'running';
       const lc = lifecycle.get(agentId);
-      return sessionAlive && lc?.state === 'running' && (aliveSince === undefined || lc.at >= aliveSince)
-        ? 'running'
-        : 'completed';
+      if (!sessionAlive || !lc || lc.state === 'stopped') return 'completed';
+      if (aliveSince !== undefined && lc.at < aliveSince) return 'completed';
+      if (lc.state === 'running') return 'running';
+      // Em espera: roda até o silêncio do agente passar do limite. Ele acorda sem
+      // novo evento de ciclo de vida, então o transcript dele renova o prazo.
+      const updatedAt = infos.find(i => i.agentId === agentId)?.updatedAt ?? 0;
+      return Date.now() - Math.max(lc.at, updatedAt) < WAITING_SILENCE_MS ? 'running' : 'completed';
     };
 
     // Pass 2 — casa cada arquivo: meta.toolUseId (exato) ou prompt (legado).

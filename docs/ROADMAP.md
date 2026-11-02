@@ -67,8 +67,8 @@ restrito ao workspace, a lista `TodoWrite` (main agent + sub-agents) e o uso de 
 >   `<task-notification>` com `<status>completed</status>` e o resumo *"is waiting on its own
 >   background work"*, e **depois acorda**. Nosso ciclo de vida lê qualquer notificação como
 >   parada, e o painel mostra concluído um agente que ainda vai trabalhar. Medido: 30 de 35 agentes
->   com esse aviso seguiram ativos depois da "parada", contra 3 de 2.030 sem o aviso. **Ainda não
->   corrigido.** Ver **R6, achado 3**.
+>   com esse aviso seguiram ativos depois da "parada", contra 3 de 2.030 sem o aviso. Corrigido em
+>   11-02, **ainda não publicado**. Ver **R6, achado 3**.
 > - **A extensão oficial passou a mostrar sub-agents em background como uma linha de status
 >   (2.1.304)**, com o transcript completo em `/tasks`. Fecha [#101254](https://github.com/anthropics/claude-code/issues/101254) e tira da mesa
 >   o argumento "chat inundado"; [#103856](https://github.com/anthropics/claude-code/issues/103856) já pede a opção de volta.
@@ -1683,8 +1683,8 @@ na 2.1.314): segue como relato de terceiro, sem ação.
     é o único número que inclui esses requests; serviria de referência para o painel dizer quanto do
     custo ele enxerga. Segundo a #104358 ele não é gravado incrementalmente.
 
-### R6. Sub-agents em background: estado e notificação ✅ CORRIGIDO (achados 1 e 2 · 2026-10-05 · publicado na 0.20.0) · 🐛 achado 3 aberto (2026-11-02)
-- **🐛 Achado 3 — agente "esperando" aparece concluído (confirmado, não corrigido).** Um sub-agent que
+### R6. Sub-agents em background: estado e notificação ✅ CORRIGIDO (achados 1 e 2 · 2026-10-05 · publicado na 0.20.0) · ✅ achado 3 corrigido (2026-11-02, a publicar)
+- **✅ Achado 3 — agente "esperando" aparecia concluído (corrigido em 2026-11-02, a publicar).** Um sub-agent que
   inicia o próprio shell ou Monitor e encerra o turno para esperar manda uma `<task-notification>`
   com `<status>completed</status>` e `<summary>Agent "X" is waiting on its own background work</summary>`,
   e depois **acorda** e segue trabalhando. O `collectAgentLifecycle` trata toda notificação como parada
@@ -1700,11 +1700,27 @@ na 2.1.314): segue como relato de terceiro, sem ação.
   - **Correção desta nota:** a varredura 2026-10-19 viu essa mudança de texto (2.1.299) e registrou
     "sem ação" porque o coletor só depende do prefixo. Estava errado: o prefixo continuou lendo certo,
     mas o **significado** da notificação mudou.
-  - **Plano:** TDD no `agentLifecycle`: notificação cujo `<summary>` diz *waiting on its own* não para o
-    agente. Isso depende de texto, então precisa de teste com a linha real e do fallback já previsto
-    neste R6 (agente que nunca volta não pode ficar "rodando" para sempre: [#104789](https://github.com/anthropics/claude-code/issues/104789) relata exatamente
-    isso, a notificação do shell nunca chega). **Conferir também a ponte:** o `turn.complete` com
-    `agentId` grava `agentEnd`, então provavelmente tem o mesmo problema; não medido.
+  - **Correção:** novo estado `waiting` no `agentLifecycle`, lido do **primeiro** `<summary>` terminado em
+    *is waiting on its own background work* (o `<result>` pode citar outra notificação). O texto oficial
+    confirma a leitura: *"It may resume on its own… and the same task-id notifies again if it does"*.
+    Duas medições mudaram o desenho em relação ao plano inicial:
+    - **Limite de silêncio de 30 min, contado da última atividade do agente.** 9 dos 35 agentes nunca
+      voltam (um responde "Nothing further to do" e para; [#104789](https://github.com/anthropics/claude-code/issues/104789) relata notificação de shell que não chega), e sem
+      limite ficariam "rodando" por até 5 dias de sessão. Dos 58 despertares, 54 vêm em até 30 min. O
+      agente que acorda mais tarde volta a "rodando" sozinho, porque o transcript dele renova o prazo.
+    - **A ponte anulava a correção.** O `agentEnd` sai junto com o aviso (de -10 s a +1,8 s, 665 agentes),
+      e fica depois dele em 44% dos casos, então "o mais recente vence" apagava o aviso. O
+      `mergeLifecycles` agora trata parada até 5 s depois do aviso como o mesmo evento; uma parada mais
+      tarde segue valendo (o agente acordou e terminou).
+  - **Verificação:** TDD, com 8 testes falhando antes da correção; 16 de 16 mutações pegas; suíte com 784
+    testes. Com o `TodosParser` real e os arquivos reais da ponte, nos 9 agentes cujo último evento é o
+    aviso (7 com fim na ponte, 4 deles no mesmo instante ou depois): todos rodando logo depois do aviso, todos concluídos
+    dois dias depois.
+  - **Limites conhecidos:** nenhum evento de arquivo acontece quando o prazo vence, e o painel só redesenha
+    com evento, então numa sessão totalmente parada o agente segue "rodando" na tela até a próxima
+    mudança. Não verificado ao vivo na tela. O reconhecimento depende do texto em inglês do aviso: se a
+    Anthropic mudar a frase, o comportamento volta ao de antes (concluído), sem quebrar nada. O `$.agent`
+    da ponte não foi alterado.
   - **Hipótese descartada na mesma passada:** desde a 2.1.304 há notificações com o prefixo `[SYSTEM
     NOTIFICATION - NOT USER INPUT]`, que o `startsWith` não lê. Medido: 53 ids nessa forma, **nenhum** é
     agente (são eventos de Monitor e shell), e 0 agentes presos. Controle: sem as linhas de notificação
@@ -2112,8 +2128,8 @@ mtime do arquivo desfez isso. Nenhum tipo de record novo nesta passada.
 
 **Resultados:**
 - **🐛 Bug nosso confirmado (R6, achado 3):** agente "waiting on its own background work" aparece
-  concluído e depois volta a trabalhar (30 de 35 agentes, 10 sessões; controle 3 de 2.030). **Não
-  corrigido.**
+  concluído e depois volta a trabalhar (30 de 35 agentes, 10 sessões; controle 3 de 2.030). Corrigido
+  no mesmo dia, a publicar.
 - **🐛 Lacunas menores:** `/rename` ignorado (`custom-title`, R3) e `mcp__ccd_turn__update_plan` não
   lido (R2).
 - **✅ Melhorou do lado deles:** o placeholder de usage de sub-agent acabou na 2.1.307 (R5), e a
