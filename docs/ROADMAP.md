@@ -68,7 +68,7 @@ restrito ao workspace, a lista `TodoWrite` (main agent + sub-agents) e o uso de 
 >   background work"*, e **depois acorda**. Nosso ciclo de vida lê qualquer notificação como
 >   parada, e o painel mostra concluído um agente que ainda vai trabalhar. Medido: 30 de 35 agentes
 >   com esse aviso seguiram ativos depois da "parada", contra 3 de 2.030 sem o aviso. Corrigido em
->   11-02, **ainda não publicado**. Ver **R6, achado 3**.
+>   11-02 e publicado na **0.20.4**. Ver **R6, achado 3**.
 > - **A extensão oficial passou a mostrar sub-agents em background como uma linha de status
 >   (2.1.304)**, com o transcript completo em `/tasks`. Fecha [#101254](https://github.com/anthropics/claude-code/issues/101254) e tira da mesa
 >   o argumento "chat inundado"; [#103856](https://github.com/anthropics/claude-code/issues/103856) já pede a opção de volta.
@@ -1683,8 +1683,8 @@ na 2.1.314): segue como relato de terceiro, sem ação.
     é o único número que inclui esses requests; serviria de referência para o painel dizer quanto do
     custo ele enxerga. Segundo a #104358 ele não é gravado incrementalmente.
 
-### R6. Sub-agents em background: estado e notificação ✅ CORRIGIDO (achados 1 e 2 · 2026-10-05 · publicado na 0.20.0) · ✅ achado 3 corrigido (2026-11-02, a publicar)
-- **✅ Achado 3 — agente "esperando" aparecia concluído (corrigido em 2026-11-02, a publicar).** Um sub-agent que
+### R6. Sub-agents em background: estado e notificação ✅ CORRIGIDO (achados 1 e 2 · 2026-10-05 · publicado na 0.20.0) · ✅ achado 3 corrigido (2026-11-02 · publicado na 0.20.4)
+- **✅ Achado 3 — agente "esperando" aparecia concluído (corrigido em 2026-11-02, publicado na 0.20.4).** Um sub-agent que
   inicia o próprio shell ou Monitor e encerra o turno para esperar manda uma `<task-notification>`
   com `<status>completed</status>` e `<summary>Agent "X" is waiting on its own background work</summary>`,
   e depois **acorda** e segue trabalhando. O `collectAgentLifecycle` trata toda notificação como parada
@@ -1715,7 +1715,9 @@ na 2.1.314): segue como relato de terceiro, sem ação.
   - **Verificação:** TDD, com 8 testes falhando antes da correção; 16 de 16 mutações pegas; suíte com 784
     testes. Com o `TodosParser` real e os arquivos reais da ponte, nos 9 agentes cujo último evento é o
     aviso (7 com fim na ponte, 4 deles no mesmo instante ou depois): todos rodando logo depois do aviso, todos concluídos
-    dois dias depois.
+    dois dias depois. **Ao vivo** (2026-11-02, sub-agent real esperando o próprio `sleep 90`): o aviso
+    virou `waiting` com o fim da ponte no mesmo segundo, status `running`; ao acordar e terminar, 91 s
+    depois, `stopped` e `completed`. Lido pelo parser, não pela tela do painel.
   - **Limites conhecidos:** nenhum evento de arquivo acontece quando o prazo vence, e o painel só redesenha
     com evento, então numa sessão totalmente parada o agente segue "rodando" na tela até a próxima
     mudança. Não verificado ao vivo na tela. O reconhecimento depende do texto em inglês do aviso: se a
@@ -2129,7 +2131,7 @@ mtime do arquivo desfez isso. Nenhum tipo de record novo nesta passada.
 **Resultados:**
 - **🐛 Bug nosso confirmado (R6, achado 3):** agente "waiting on its own background work" aparece
   concluído e depois volta a trabalhar (30 de 35 agentes, 10 sessões; controle 3 de 2.030). Corrigido
-  no mesmo dia, a publicar.
+  no mesmo dia e publicado na 0.20.4.
 - **🐛 Lacunas menores:** `/rename` ignorado (`custom-title`, R3) e `mcp__ccd_turn__update_plan` não
   lido (R2).
 - **✅ Melhorou do lado deles:** o placeholder de usage de sub-agent acabou na 2.1.307 (R5), e a

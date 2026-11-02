@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.20.4] - 2026-11-02
+
 ### Fixed
 - **A sub-agent waiting on its own background work no longer shows as completed.** When a background sub-agent stops to wait for its own shell or Monitor, Claude Code sends a `completed` notification saying it "is waiting on its own background work", and the agent resumes later. The panel took that as the end of the agent. It now keeps the agent running while it waits, and marks it completed after 30 minutes of silence, because some of these agents never resume. An agent that resumes after that runs again.
 
