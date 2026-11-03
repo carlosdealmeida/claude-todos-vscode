@@ -45,18 +45,21 @@ via JCEF, demo do site):
    injeta (`vscode-high-contrast*` → `hc`, `vscode-light` → `light`, `vscode-dark` → `dark`); senão
    `<html data-theme>` (demo do site); senão a luminância de `--vscode-foreground` (JetBrains: o `ThemeShim` injeta as
    vars, mas não a classe). O limiar da luminância é 0,18, o ponto em que o contraste com branco e com preto se iguala:
-   o `#bbbbbb` do Darcula tem luminância 0,497, então um limiar de 0,5 o classificaria como claro. Um
+   o `#bbbbbb` do Darcula tem luminância 0,497, então um limiar de 0,5 o classificaria como claro. Luminância não
+   revela alto contraste, então o plugin JetBrains põe a mesma classe `vscode-high-contrast` do VS Code no `body` quando
+   o tema do IDE é de alto contraste. Um
    `MutationObserver` reavalia quando o editor troca de tema em tempo de execução. A mensagem `{ type: 'theme' }` que
    existe em `src/types.ts` nunca foi usada por nenhum host e sai.
 4. **High contrast sempre usa o Clássico.** Quem usa HC precisa do contraste que o editor garante; os temas com
    paleta própria não oferecem isso. `effectiveTheme(choice, 'hc')` devolve `classic`. A escolha salva não muda; vale
    de novo quando o editor sair do HC.
-5. **A escolha é do host, não da webview.** VS Code: setting `claudeTodos.theme` (enum) e comando
+5. **A escolha é do host, não da webview.** VS Code: setting `claudeTodos.theme` (enum, escopo de aplicação, como no
+   JetBrains: um valor de workspace venceria o que o comando grava, e a escolha pareceria não funcionar) e comando
    `Claude Todos: Choose Theme` com prévia ao vivo (QuickPick; cancelar volta ao tema salvo). JetBrains: valor em
    `PropertiesComponent` (nível de aplicação) e ação "Tema…" no título do tool window; a troca avisa todas as janelas
    de projeto abertas pelo message bus. O host manda `{ type: 'appearance', theme }` no `ready` e a cada mudança. Valor
    desconhecido (por exemplo, um tema que uma versão futura removeu) vira `classic`. No VS Code, o HTML da webview já
-   nasce com `data-ct-theme`, para a sidebar não piscar o Clássico a cada reabertura.
+   nasce com `data-ct-theme` e é regravado ao esconder a sidebar, para ela não piscar outro tema a cada reabertura.
 6. **Os temas mudam a aparência, não o que é mostrado.** Painel e Mission Control ganham elementos *adicionais* (a
    faixa de agentes e os medidores), mas a árvore de agentes, os todos, a tabela de uso, as perguntas pendentes e o
    uso do projeto continuam todos lá. Clicar num anel/LED rola até o card do agente e o expande; não esconde os
@@ -88,7 +91,8 @@ via JCEF, demo do site):
 12. **Fundo, cor de texto e fonte do tema são aplicados em `.ct-root`, a classe do `<main>` do painel.** Nunca só em
     `:root` ou `body`. O VS Code injeta `body { color: var(--vscode-editor-foreground); font-family: … }` em toda
     webview, e o site tem `.landing` com cor e tipografia próprias: em ambos, o que está no `:root` não chega ao texto
-    herdado. A regra exclui o Clássico, cujo texto herdado hoje é o `editor-foreground` e precisa continuar sendo. O
+    herdado. A mesma camada do VS Code pinta a barra de rolagem e o `<code>`, então a regra também cobre os dois. Ela
+    exclui o Clássico, cujo texto herdado hoje é o `editor-foreground` e precisa continuar sendo. O
     `<main>` é também quem rola, então as faixas do Terminal rolam junto com o conteúdo (`background-attachment: local`).
 
 ## Riscos
