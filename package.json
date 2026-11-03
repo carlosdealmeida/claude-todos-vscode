@@ -94,6 +94,10 @@
       {
         "command": "claudeTodos.uninstallBridgeMod",
         "title": "%command.uninstallBridgeMod.title%"
+      },
+      {
+        "command": "claudeTodos.pickTheme",
+        "title": "%command.pickTheme.title%"
       }
     ],
     "keybindings": [
