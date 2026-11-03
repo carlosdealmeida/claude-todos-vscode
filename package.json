@@ -232,6 +232,7 @@
             "%config.theme.papel%"
           ],
           "default": "classic",
+          "scope": "application",
           "description": "%config.theme.description%"
         },
         "claudeTodos.notifications": {

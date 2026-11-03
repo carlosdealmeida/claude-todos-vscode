@@ -14,6 +14,7 @@ import type { NotificationKind } from './services/sessionNotifier';
 import { sessionPickDescription } from './services/sessionPicker';
 import { UI_THEME_IDS, THEME_I18N, type UiThemeId } from './themes';
 import { readUiTheme } from './themeSetting';
+import { acceptTheme } from './themePick';
 
 const HOOK_EVENTS = DEFAULT_HOOK_EVENTS;
 // Retenção dos registros do bridge. Sessões saem do picker quando o transcript
@@ -319,9 +320,16 @@ async function pickTheme(push: (theme: UiThemeId) => void): Promise<void> {
   qp.onDidChangeActive(([item]) => { if (item) push(item.id); });
   qp.onDidAccept(async () => {
     accepted = true;
-    const id = qp.selectedItems[0]?.id ?? saved;
+    const selected = qp.selectedItems[0]?.id;
     qp.hide();
-    await cfg.update('theme', id, vscode.ConfigurationTarget.Global);
+    await acceptTheme({
+      selected,
+      saved,
+      write: (id) => cfg.update('theme', id, vscode.ConfigurationTarget.Global),
+      read: readUiTheme,
+      push,
+      onError: (err) => { void vscode.window.showErrorMessage(t('theme.saveFailed', { error: String(err) })); },
+    });
   });
   qp.onDidHide(() => {
     if (!accepted) push(saved);
