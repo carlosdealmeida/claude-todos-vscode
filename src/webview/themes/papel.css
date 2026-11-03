@@ -1,0 +1,66 @@
+/* Papel: calmo e espacado, um unico destaque. Tarefa concluida perde a cor
+   (--ct-done = muted) em vez de ficar verde. */
+:root[data-ct-theme="papel"] {
+  --sp-1: 0.3rem;
+  --sp-2: 0.65rem;
+  --sp-3: 1rem;
+  --radius: 10px;
+}
+
+:root[data-ct-theme="papel"][data-ct-mode="light"] {
+  --ct-bg: #faf8f3;
+  --ct-fg: #2b2925;
+  --ct-muted: #6a6459;
+  --ct-border: #e6e0d4;
+  --ct-hover: #f1ece2;
+  --ct-header-bg: #faf8f3;
+  --ct-code-bg: #f1ece2;
+  --ct-error: #a3362a;
+  --ct-link: #2f5d9e;
+  --ct-badge-bg: #e6e0d4;
+  --ct-badge-fg: #2b2925;
+  --ct-btn-bg: #2f5d9e;
+  --ct-btn-fg: #ffffff;
+  --ct-btn-hover: #284f87;
+  --ct-accent: #2f5d9e;
+  --ct-ok: #4f6b45;
+  --ct-done: #6a6459;
+  --ct-run: #2f5d9e;
+  --ct-info: #2f5d9e;
+  --ct-warn: #8a5a00;
+  --ct-danger: #a3362a;
+  --ct-agent-active: #2f5d9e;
+  --ct-tone-explore: #4f6b45;
+  --ct-tone-plan: #8a5a00;
+  --ct-tone-general: #2f5d9e;
+  --ct-tone-neutral: #6a6459;
+}
+
+:root[data-ct-theme="papel"][data-ct-mode="dark"] {
+  --ct-bg: #1f1b16;
+  --ct-fg: #e8e2d6;
+  --ct-muted: #a39b8c;
+  --ct-border: #342e26;
+  --ct-hover: #2a251e;
+  --ct-header-bg: #1f1b16;
+  --ct-code-bg: #2a251e;
+  --ct-error: #e08a7a;
+  --ct-link: #93b3e3;
+  --ct-badge-bg: #342e26;
+  --ct-badge-fg: #e8e2d6;
+  --ct-btn-bg: #93b3e3;
+  --ct-btn-fg: #1f1b16;
+  --ct-btn-hover: #a9c3ea;
+  --ct-accent: #93b3e3;
+  --ct-ok: #9fb894;
+  --ct-done: #a39b8c;
+  --ct-run: #93b3e3;
+  --ct-info: #93b3e3;
+  --ct-warn: #d9b26a;
+  --ct-danger: #e08a7a;
+  --ct-agent-active: #93b3e3;
+  --ct-tone-explore: #9fb894;
+  --ct-tone-plan: #d9b26a;
+  --ct-tone-general: #93b3e3;
+  --ct-tone-neutral: #a39b8c;
+}

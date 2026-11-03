@@ -142,7 +142,7 @@
     background: var(--ct-run);
     animation: pulse-dot 1.6s ease-in-out infinite;
   }
-  .dot.done { background: var(--ct-ok); }
+  .dot.done { background: var(--ct-done); }
   @keyframes pulse-dot {
     0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ct-run) 55%, transparent); }
     70%, 100% { box-shadow: 0 0 0 5px transparent; }
