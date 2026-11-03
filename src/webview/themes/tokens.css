@@ -70,3 +70,9 @@
 :root[data-ct-theme]:not([data-ct-theme="classic"]) .ct-root code {
   color: inherit;
 }
+
+/* Botao nao herda fonte por padrao, e .pending-item nao declara font: inherit.
+   Fica aqui e nao no componente porque la mudaria o Classico. */
+:root[data-ct-theme]:not([data-ct-theme="classic"]) .ct-root button {
+  font-family: inherit;
+}
