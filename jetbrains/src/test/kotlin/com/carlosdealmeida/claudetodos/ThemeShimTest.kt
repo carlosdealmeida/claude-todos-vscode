@@ -2,6 +2,7 @@ package com.carlosdealmeida.claudetodos
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ThemeShimTest {
@@ -24,5 +25,19 @@ class ThemeShimTest {
         val vars = ThemeShim.variables()
         assertEquals(ThemeShim.VAR_NAMES, vars.keys.toList())
         assertTrue(vars.values.all { it.isNotBlank() })
+    }
+
+    @Test fun `recognizes high contrast themes by name`() {
+        assertTrue(ThemeShim.isHighContrast("High contrast"))
+        assertTrue(ThemeShim.isHighContrast("High Contrast"))
+        assertFalse(ThemeShim.isHighContrast("Darcula"))
+        assertFalse(ThemeShim.isHighContrast("IntelliJ Light"))
+        assertFalse(ThemeShim.isHighContrast(null))
+    }
+
+    // A webview so sabe do alto contraste por esta classe, a mesma do VS Code.
+    @Test fun `toggles the high contrast class on the body`() {
+        assertEquals("document.body.classList.toggle('vscode-high-contrast', true);", ThemeShim.highContrastToggleJs(true))
+        assertEquals("document.body.classList.toggle('vscode-high-contrast', false);", ThemeShim.highContrastToggleJs(false))
     }
 }

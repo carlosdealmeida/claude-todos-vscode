@@ -5,7 +5,8 @@ package com.carlosdealmeida.claudetodos
 // para não fechar as tags prematuramente.
 // Match é case-sensitive por design: os bundles gerados (esbuild/vite) sempre emitem
 // "</style"/"</script" em minúsculas, então não há necessidade de comparar sem case.
-fun buildHtml(css: String, themeVars: String, bridgeScript: String, appJs: String): String {
+fun buildHtml(css: String, themeVars: String, bridgeScript: String, appJs: String, bodyClass: String = ""): String {
+    val bodyAttr = if (bodyClass.isEmpty()) "" else " class=\"$bodyClass\""
     val safeCss = css.replace("</style", "<\\/style")
     val safeTheme = themeVars.replace("</style", "<\\/style")
     val safeBridge = bridgeScript.replace("</script", "<\\/script")
@@ -19,7 +20,7 @@ fun buildHtml(css: String, themeVars: String, bridgeScript: String, appJs: Strin
           <style>$safeCss</style>
           <title>Claude Todos</title>
         </head>
-        <body>
+        <body$bodyAttr>
           <div id="app"></div>
           <script>$safeBridge</script>
           <script type="module">$safeApp</script>

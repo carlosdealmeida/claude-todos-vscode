@@ -29,7 +29,8 @@ class WebviewPanel(parentDisposable: Disposable) {
         """.trimIndent()
         val css = readResource("claudetodos/index.css")
         val appJs = readResource("claudetodos/main.js")
-        browser.loadHTML(buildHtml(css, ThemeShim.cssVariables(), bridgeScript, appJs))
+        val bodyClass = if (ThemeShim.currentThemeIsHighContrast()) ThemeShim.HIGH_CONTRAST_CLASS else ""
+        browser.loadHTML(buildHtml(css, ThemeShim.cssVariables(), bridgeScript, appJs, bodyClass))
     }
 
     fun post(json: String) {
@@ -43,7 +44,8 @@ class WebviewPanel(parentDisposable: Disposable) {
         val js = ThemeShim.variables().entries.joinToString("") { (name, value) ->
             "document.documentElement.style.setProperty('--vscode-$name', ${jsSingleQuoted(value)});"
         }
-        browser.cefBrowser.executeJavaScript(js, browser.cefBrowser.url, 0)
+        val hc = ThemeShim.highContrastToggleJs(ThemeShim.currentThemeIsHighContrast())
+        browser.cefBrowser.executeJavaScript(js + hc, browser.cefBrowser.url, 0)
     }
 
     private fun readResource(path: String): String =

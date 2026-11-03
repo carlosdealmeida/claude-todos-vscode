@@ -18,6 +18,13 @@ class WebviewHtmlTest {
         assertTrue(html.indexOf(":root{--x:1}") < html.indexOf(".a{}"))
     }
 
+    @Test fun `body takes the class only when there is one`() {
+        val plain = buildHtml(css = "", themeVars = "", bridgeScript = "", appJs = "")
+        assertContains(plain, "<body>")
+        val hc = buildHtml(css = "", themeVars = "", bridgeScript = "", appJs = "", bodyClass = "vscode-high-contrast")
+        assertContains(hc, "<body class=\"vscode-high-contrast\">")
+    }
+
     @Test fun `escapes closing tags inside inlined content`() {
         val html = buildHtml(css = "a{content:'</style>'}", themeVars = "", bridgeScript = "", appJs = "x='</script>'")
         assertContains(html, "<\\/style>'")   // css inlinado não fecha a tag <style>
