@@ -192,8 +192,8 @@
     font-weight: 600;
   }
   .ctx-badge.ok {
-    color: var(--ct-ok);
-    background: color-mix(in srgb, var(--ct-ok) 15%, transparent);
+    color: var(--ct-meter-ok-text);
+    background: color-mix(in srgb, var(--ct-meter-ok-text) 15%, transparent);
   }
   .ctx-badge.warn {
     color: var(--ct-warn);

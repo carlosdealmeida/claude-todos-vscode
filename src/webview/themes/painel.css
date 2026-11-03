@@ -2,19 +2,22 @@
    qualquer tema do editor, em light e dark.
    - azul vivo em texto (--vscode-textLink-foreground) = o que esta rodando agora.
      --ct-run tambem pinta texto (TodoItem), e o focusBorder de alguns temas nao
-     foi feito para isso; ele fica so de reserva (o ThemeShim nao define textLink).
+     foi feito para isso. O ThemeShim nao define textLink, e o focusBorder dele e a
+     cor de foco do IDE: a reserva e charts-blue, a mesma do --ct-run do Classico.
    - azul vivo em borda e tinta de fundo (--vscode-focusBorder)
    - azul forte (--vscode-button-background) = consumo / preenchimentos
    - verde/laranja/vermelho ficam reservados a sucesso/alerta/erro. */
 :root[data-ct-theme="painel"] {
-  --ct-run: var(--vscode-textLink-foreground, var(--vscode-focusBorder));
-  --ct-link: var(--vscode-textLink-foreground, var(--vscode-focusBorder));
-  --ct-tone-explore: var(--vscode-textLink-foreground, var(--vscode-focusBorder));
-  --ct-tone-plan: var(--vscode-textLink-foreground, var(--vscode-focusBorder));
-  --ct-tone-general: var(--vscode-textLink-foreground, var(--vscode-focusBorder));
+  --ct-run: var(--vscode-textLink-foreground, var(--vscode-charts-blue));
+  --ct-link: var(--vscode-textLink-foreground, var(--vscode-charts-blue));
+  --ct-tone-explore: var(--vscode-textLink-foreground, var(--vscode-charts-blue));
+  --ct-tone-plan: var(--vscode-textLink-foreground, var(--vscode-charts-blue));
+  --ct-tone-general: var(--vscode-textLink-foreground, var(--vscode-charts-blue));
   --ct-accent: var(--vscode-focusBorder);
   --ct-agent-active: var(--vscode-focusBorder);
   --ct-info: var(--vscode-button-background);
+  --ct-meter-ok: var(--vscode-button-background);
+  --ct-meter-ok-text: var(--ct-run);
   --ct-track: color-mix(in srgb, var(--vscode-foreground) 14%, transparent);
   --ct-header-bg: color-mix(in srgb, var(--vscode-focusBorder) 7%, transparent);
   --ct-hover: color-mix(in srgb, var(--vscode-focusBorder) 12%, transparent);

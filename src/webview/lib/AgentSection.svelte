@@ -42,14 +42,24 @@
   let title = $derived(agent.name);
 
   let sectionEl = $state<HTMLElement | null>(null);
+  // Card recolhido ainda vai crescer: rolar agora mediria so o cabecalho e deixaria
+  // as tarefas fora da tela. Nesse caso a rolagem espera o fim do slide.
+  let scrollWhenOpen = false;
+  function scrollToCard(): void {
+    sectionEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
   // Zerar o pedido e obrigatorio: este effect roda de novo a cada snapshot,
   // porque a prop `agent` muda de identidade. Com o pedido ainda de pe, o card
   // reabriria e a tela rolaria a cada atualizacao.
   $effect(() => {
     if (todosStore.focus !== agent.agentId) return;
     todosStore.focus = null;
-    expanded = true;
-    sectionEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (expanded) {
+      scrollToCard();
+    } else {
+      scrollWhenOpen = true;
+      expanded = true;
+    }
   });
 </script>
 
@@ -98,7 +108,7 @@
         {/if}
       </div>
     {/if}
-    <ul class="list" transition:slide={{ duration: 180 }}>
+    <ul class="list" transition:slide={{ duration: 180 }} onintroend={() => { if (scrollWhenOpen) { scrollWhenOpen = false; scrollToCard(); } }}>
       {#each agent.todos as todo, i (i)}
         <TodoItem {todo} completedMs={durations[i]} sessionId={agent.sessionId} agentId={agent.agentId} />
       {/each}

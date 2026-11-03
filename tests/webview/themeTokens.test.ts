@@ -26,6 +26,17 @@ describe('componentes so usam tokens --ct-*', () => {
   });
 });
 
+describe('tema Painel', () => {
+  // O ThemeShim nao define textLink, e focusBorder vem do foco do IDE: no Darcula
+  // e no IntelliJ Light da 1,64:1 sobre o fundo, ilegivel para a task em andamento.
+  it('token que pinta texto nao cai em focusBorder', () => {
+    const css = fs.readFileSync(path.join(THEMES, 'painel.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const textTokens = [...css.matchAll(/--(ct-(?:run|link|tone-[\w-]+))\s*:\s*([^;]+);/g)];
+    expect(textTokens.length).toBeGreaterThanOrEqual(5);
+    for (const [, name, value] of textTokens) expect(value, name).not.toContain('focusBorder');
+  });
+});
+
 describe('arquivos de tema', () => {
   it('so declaram custom properties nos seletores permitidos', () => {
     const themeFiles = fs.readdirSync(THEMES).filter((f) => f.endsWith('.css') && !['tokens.css', 'index.css'].includes(f));

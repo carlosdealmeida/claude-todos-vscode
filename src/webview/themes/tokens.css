@@ -32,6 +32,10 @@
   --ct-link: var(--vscode-textLink-foreground, var(--ct-accent));
   --ct-ok: var(--vscode-charts-green, var(--vscode-testing-iconPassed, #4caf50));
   --ct-done: var(--ct-ok);
+  /* Barra de uso em nivel normal, e o selo dela. Tema que separa consumo de sucesso
+     redefine os dois; o resto acompanha --ct-ok. */
+  --ct-meter-ok: var(--ct-ok);
+  --ct-meter-ok-text: var(--ct-ok);
   --ct-run: var(--vscode-charts-blue, var(--vscode-progressBar-background, #0e70c0));
   --ct-info: var(--vscode-charts-blue);
   --ct-warn: var(--vscode-charts-yellow);

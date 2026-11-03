@@ -267,12 +267,6 @@ export function statusGlyph(status: TodoStatus): string {
   return status === 'completed' ? '[x]' : status === 'in_progress' ? '[~]' : '[ ]';
 }
 
-// Barra em texto, para temas com meter: 'ascii'. pct em 0..1.
-export function asciiBar(pct: number, width: number): string {
-  const filled = Math.round(Math.min(1, Math.max(0, pct)) * width);
-  return '█'.repeat(filled) + '░'.repeat(width - filled);
-}
-
 // Comprimento do arco do anel de progresso. Minimo de 4px: um agente sem nada
 // concluido ainda precisa de um traco que mostre onde o anel comeca.
 export function ringDash(done: number, total: number, circumference: number): number {

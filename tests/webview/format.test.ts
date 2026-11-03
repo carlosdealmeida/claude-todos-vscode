@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey, statusGlyph, asciiBar, ringDash } from '../../src/webview/format';
+import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey, statusGlyph, ringDash } from '../../src/webview/format';
 import type { Todo, TodoStatus, AgentUsage, PendingQuestion } from '../../src/types';
 
 describe('ringDash', () => {
@@ -10,13 +10,6 @@ describe('ringDash', () => {
     expect(ringDash(0, 0, C)).toBe(4);
   });
   it('nunca passa do circulo', () => { expect(ringDash(5, 4, C)).toBeCloseTo(C, 3); });
-});
-
-describe('asciiBar', () => {
-  it.each([
-    [0, 10, '░░░░░░░░░░'], [1, 10, '██████████'], [0.5, 10, '█████░░░░░'],
-    [0.71, 18, '█████████████░░░░░'], [1.4, 4, '████'], [-1, 4, '░░░░'],
-  ])('asciiBar(%d, %d)', (pct, width, out) => { expect(asciiBar(pct, width)).toBe(out); });
 });
 
 describe('statusGlyph', () => {
