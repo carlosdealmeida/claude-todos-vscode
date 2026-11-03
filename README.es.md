@@ -81,6 +81,7 @@ La clave `env` de `settings.json` se aplica a toda sesión de Claude Code, en cu
 | Claude Todos: Choose Session | `Ctrl+Alt+S` / `Cmd+Alt+S` |
 | Claude Todos: Refresh | — |
 | Claude Todos: Install Session Hook | — |
+| Claude Todos: Choose Theme | — |
 
 ## Configuración
 
@@ -89,8 +90,20 @@ La clave `env` de `settings.json` se aplica a toda sesión de Claude Code, en cu
 | `claudeTodos.claudeDir` | `""` (detección automática vía `os.homedir()`) | Sobrescribe la ubicación de `~/.claude`. |
 | `claudeTodos.autoInstallHook` | `true` | Muestra el aviso de primer arranque pidiendo instalar los hooks. |
 | `claudeTodos.language` | `auto` | Idioma de la UI del panel (`auto` \| `en` \| `pt-br` \| `es` \| `zh-cn` \| `zh-tw`). |
+| `claudeTodos.theme` | `classic` | Tema del panel (`classic` \| `papel`). En alto contraste siempre usa Clásico. |
 | `claudeTodos.notifications` | `true` | Toast cuando la sesión queda inactiva o completa todas las tareas (ventana sin foco). |
 | `claudeTodos.activeFolder` | `""` | Multi-root: carpeta del workspace a seguir; vacío = seguir la sesión más activa. |
+
+### Temas
+
+El panel tiene dos temas, cada uno en claro y oscuro, según tu editor:
+
+- **Clásico** (predeterminado): sigue el tema del editor, como siempre.
+- **Papel**: tranquilo y espaciado, con un solo color de acento.
+
+En VS Code, ejecuta `Claude Todos: Choose Theme` para ver la vista previa en vivo (Esc cancela) o usa el ajuste `claudeTodos.theme`. En JetBrains, usa el botón Tema… en el título del panel. En alto contraste el panel siempre usa Clásico.
+
+<img src="screenshots/theme-papel-dark.png" width="320" alt="Panel con el tema Papel, oscuro"> <img src="screenshots/theme-papel-light.png" width="320" alt="Panel con el tema Papel, claro">
 
 ## Privacidad y flujo de datos
 

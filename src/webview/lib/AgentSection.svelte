@@ -101,14 +101,14 @@
 <style>
   .agent {
     margin-bottom: var(--sp-2);
-    border: 1px solid var(--vscode-panel-border);
+    border: 1px solid var(--ct-border);
     border-radius: var(--radius);
     overflow: hidden;
     transition: box-shadow 150ms ease;
   }
   /* Faixa de accent à esquerda do card ativo (sem deslocar o conteúdo). Cor quente
      para distinguir do azul da task em carregamento. */
-  .agent.active { box-shadow: inset 2px 0 0 var(--card-accent); }
+  .agent.active { box-shadow: inset 2px 0 0 var(--ct-agent-active); }
   .agent.hist { opacity: 0.5; }
   .header {
     width: 100%;
@@ -116,14 +116,14 @@
     align-items: center;
     gap: var(--sp-2);
     padding: var(--sp-2) var(--sp-3);
-    background: var(--vscode-sideBarSectionHeader-background, transparent);
+    background: var(--ct-header-bg);
     border: none;
     color: inherit;
     font: inherit;
     cursor: pointer;
     text-align: left;
   }
-  .header:hover { background: var(--vscode-list-hoverBackground); }
+  .header:hover { background: var(--ct-hover); }
   .chevron {
     display: inline-flex;
     align-items: center;
@@ -139,12 +139,12 @@
     flex: none;
   }
   .dot.active {
-    background: var(--run);
+    background: var(--ct-run);
     animation: pulse-dot 1.6s ease-in-out infinite;
   }
-  .dot.done { background: var(--ok); }
+  .dot.done { background: var(--ct-done); }
   @keyframes pulse-dot {
-    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--run) 55%, transparent); }
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ct-run) 55%, transparent); }
     70%, 100% { box-shadow: 0 0 0 5px transparent; }
   }
   .title { flex: 1; font-weight: 600; letter-spacing: 0.1px; }
@@ -154,7 +154,7 @@
     align-items: center;
     gap: var(--sp-1);
   }
-  .frac { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .frac { color: var(--ct-muted); font-variant-numeric: tabular-nums; }
   .type-badge {
     flex: none;
     font-size: 0.72em;
@@ -168,28 +168,28 @@
     background: color-mix(in srgb, var(--tone) 13%, transparent);
     border: 1px solid color-mix(in srgb, var(--tone) 40%, transparent);
   }
-  .tone-explore { --tone: var(--vscode-charts-green); }
-  .tone-plan { --tone: var(--vscode-charts-yellow); }
-  .tone-general { --tone: var(--vscode-charts-blue); }
-  .tone-neutral { --tone: var(--vscode-descriptionForeground); }
+  .tone-explore { --tone: var(--ct-tone-explore); }
+  .tone-plan { --tone: var(--ct-tone-plan); }
+  .tone-general { --tone: var(--ct-tone-general); }
+  .tone-neutral { --tone: var(--ct-tone-neutral); }
   .model-badge {
     flex: none;
     font-size: 0.68em;
     padding: 1px 6px;
     border-radius: 8px;
-    border: 1px solid var(--vscode-panel-border);
-    color: var(--vscode-descriptionForeground);
+    border: 1px solid var(--ct-border);
+    color: var(--ct-muted);
     white-space: nowrap;
   }
   .tokens {
     flex: none;
     font-size: 0.8em;
-    color: var(--muted);
+    color: var(--ct-muted);
     font-variant-numeric: tabular-nums;
   }
   .badge {
-    background: color-mix(in srgb, var(--run) 22%, var(--vscode-badge-background));
-    color: var(--vscode-badge-foreground);
+    background: color-mix(in srgb, var(--ct-run) 22%, var(--ct-badge-bg));
+    color: var(--ct-badge-fg);
     padding: 1px 7px;
     border-radius: 10px;
     font-size: 0.82em;
@@ -204,7 +204,7 @@
     padding: 2px var(--sp-3) var(--sp-1);
     font-size: 0.78em;
     font-style: italic;
-    color: var(--muted);
+    color: var(--ct-muted);
     cursor: help;
   }
   .timing {
@@ -223,14 +223,14 @@
     gap: 2px;
     padding: var(--sp-2);
     border-radius: 5px;
-    background: color-mix(in srgb, var(--vscode-foreground) 5%, transparent);
+    background: color-mix(in srgb, var(--ct-fg) 5%, transparent);
   }
   .stat-label {
     display: inline-flex;
     align-items: center;
     gap: 4px;
     font-size: 0.78em;
-    color: var(--muted);
+    color: var(--ct-muted);
   }
   .stat-value {
     font-size: 1.15em;
@@ -240,7 +240,7 @@
   .stat-cap {
     font-size: 0.72em;
     font-style: italic;
-    color: var(--muted);
+    color: var(--ct-muted);
     opacity: 0.75;
   }
   .list {

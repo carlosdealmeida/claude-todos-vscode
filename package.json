@@ -94,6 +94,10 @@
       {
         "command": "claudeTodos.uninstallBridgeMod",
         "title": "%command.uninstallBridgeMod.title%"
+      },
+      {
+        "command": "claudeTodos.pickTheme",
+        "title": "%command.pickTheme.title%"
       }
     ],
     "keybindings": [
@@ -217,6 +221,20 @@
           "default": "auto",
           "description": "%config.language.description%"
         },
+        "claudeTodos.theme": {
+          "type": "string",
+          "enum": [
+            "classic",
+            "papel"
+          ],
+          "enumDescriptions": [
+            "%config.theme.classic%",
+            "%config.theme.papel%"
+          ],
+          "default": "classic",
+          "scope": "application",
+          "description": "%config.theme.description%"
+        },
         "claudeTodos.notifications": {
           "type": "boolean",
           "default": true,
@@ -248,7 +266,8 @@
     "vscode:prepublish": "npm run build",
     "package": "vsce package",
     "demo:record": "tsx scripts/recordDemo.mts",
-    "casos:painel": "tsx scripts/casosPainel.mts"
+    "casos:painel": "tsx scripts/casosPainel.mts",
+    "shots": "tsx scripts/themeShots/run.mts"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.0.0",
@@ -257,6 +276,7 @@
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^4.0.0",
     "esbuild": "^0.28.1",
+    "playwright": "^1.56.1",
     "svelte": "^5.55.9",
     "svelte-check": "^4.7.3",
     "tsx": "^4.19.2",

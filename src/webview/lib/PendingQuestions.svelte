@@ -25,8 +25,8 @@
 
 <style>
   .pending {
-    border: 1px solid var(--vscode-panel-border);
-    border-left: 2px solid var(--vscode-charts-yellow);
+    border: 1px solid var(--ct-border);
+    border-left: 2px solid var(--ct-warn);
     border-radius: 5px;
     padding: var(--sp-1);
     margin-bottom: var(--sp-2);
@@ -55,8 +55,8 @@
     max-width: 45%;
     padding: 0 4px;
     border-radius: 3px;
-    background: var(--vscode-badge-background);
-    color: var(--vscode-badge-foreground);
+    background: var(--ct-badge-bg);
+    color: var(--ct-badge-fg);
     font-size: 0.9em;
     overflow: hidden;
     text-overflow: ellipsis;

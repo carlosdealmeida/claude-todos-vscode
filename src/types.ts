@@ -1,4 +1,5 @@
 import type { Locale } from './i18n/locale';
+import type { UiThemeId } from './themes';
 
 export type TodoStatus = 'pending' | 'in_progress' | 'completed';
 
@@ -136,7 +137,7 @@ export interface BridgeRecord {
 
 export type ExtensionMessage =
   | { type: 'snapshot'; snapshot: SessionSnapshot | null }
-  | { type: 'theme'; theme: 'dark' | 'light' | 'high-contrast' }
+  | { type: 'appearance'; theme: UiThemeId }
   | { type: 'locale'; locale: Locale }
   | { type: 'error'; message: string }
   | { type: 'projectUsage'; usage: ProjectUsage | null };

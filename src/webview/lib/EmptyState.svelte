@@ -20,13 +20,13 @@
   .empty {
     padding: 2rem 1rem;
     text-align: center;
-    color: var(--vscode-descriptionForeground);
+    color: var(--ct-muted);
   }
   h3 { font-size: 1rem; margin-bottom: 0.5rem; }
   code {
-    background: var(--vscode-textBlockQuote-background);
+    background: var(--ct-code-bg);
     padding: 1px 5px;
     border-radius: 3px;
-    font-family: var(--vscode-editor-font-family);
+    font-family: var(--ct-mono);
   }
 </style>

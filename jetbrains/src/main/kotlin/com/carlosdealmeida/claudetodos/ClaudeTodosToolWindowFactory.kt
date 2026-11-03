@@ -120,7 +120,25 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
             sendToWebview = { json -> SwingUtilities.invokeLater { panel.post(json) } },
             locale = locale,
             host = host,
+            theme = { ThemeChoice.load() },
         )
+
+        val themeAction = object : com.intellij.openapi.project.DumbAwareAction(
+            NotifyMessages.get(locale, "theme.action"), null, com.intellij.icons.AllIcons.Actions.Colors,
+        ) {
+            override fun actionPerformed(e: com.intellij.openapi.actionSystem.AnActionEvent) {
+                val current = ThemeChoice.load()
+                val labels = ThemeChoice.IDS.map { id ->
+                    (if (id == current) "● " else "   ") + NotifyMessages.get(locale, "theme.$id")
+                }
+                com.intellij.openapi.ui.popup.JBPopupFactory.getInstance()
+                    .createPopupChooserBuilder(labels)
+                    .setItemChosenCallback { label -> ThemeChoice.save(ThemeChoice.IDS[labels.indexOf(label)]) }
+                    .createPopup()
+                    .showInBestPositionFor(e.dataContext)
+            }
+        }
+        toolWindow.setTitleActions(listOf(themeAction))
 
         val observeTimer = javax.swing.Timer(10_000) { router.observe() }.apply { start() }
         com.intellij.openapi.util.Disposer.register(toolWindow.disposable) { observeTimer.stop() }
@@ -176,6 +194,8 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
             .subscribe(LafManagerListener.TOPIC, LafManagerListener {
                 SwingUtilities.invokeLater { panel.updateThemeVars() }
             })
+        ApplicationManager.getApplication().messageBus.connect(toolWindow.disposable)
+            .subscribe(ThemeChoiceListener.TOPIC, ThemeChoiceListener { id -> router.pushAppearance(id) })
 
         toolWindow.contentManager.addContent(factory.createContent(panel.component, "", false))
     }

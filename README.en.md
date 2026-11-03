@@ -80,6 +80,7 @@ The `env` key in `settings.json` applies to every Claude Code session, on any mo
 | Claude Todos: Choose Session | `Ctrl+Alt+S` / `Cmd+Alt+S` |
 | Claude Todos: Refresh | — |
 | Claude Todos: Install Session Hook | — |
+| Claude Todos: Choose Theme | — |
 
 ## Settings
 
@@ -88,8 +89,20 @@ The `env` key in `settings.json` applies to every Claude Code session, on any mo
 | `claudeTodos.claudeDir` | `""` (auto-detect from `os.homedir()`) | Override the `~/.claude` location. |
 | `claudeTodos.autoInstallHook` | `true` | Show the first-run prompt asking to install the hooks. |
 | `claudeTodos.language` | `auto` | Panel UI language (`auto` \| `en` \| `pt-br` \| `es` \| `zh-cn` \| `zh-tw`). |
+| `claudeTodos.theme` | `classic` | Panel theme (`classic` \| `papel`). High contrast always uses Classic. |
 | `claudeTodos.notifications` | `true` | Toast when the session goes idle or completes all tasks (window unfocused). |
 | `claudeTodos.activeFolder` | `""` | Multi-root: workspace folder to track; empty = follow the most active session. |
+
+### Themes
+
+The panel has two themes, each in light and dark to match your editor:
+
+- **Classic** (default): follows your editor theme, as it always has.
+- **Paper**: calm and spaced, with a single accent color.
+
+In VS Code, run `Claude Todos: Choose Theme` for a live preview (Esc cancels) or use the `claudeTodos.theme` setting. In JetBrains, use the Theme… button on the panel title. High contrast always uses Classic.
+
+<img src="screenshots/theme-papel-dark.png" width="320" alt="Panel in the Paper theme, dark"> <img src="screenshots/theme-papel-light.png" width="320" alt="Panel in the Paper theme, light">
 
 ## Privacy and data flow
 

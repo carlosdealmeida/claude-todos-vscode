@@ -40,15 +40,25 @@ class MessageRouterTest {
         override fun error(messageKey: String, args: Map<String, String>) { errors += messageKey to args }
     }
     private val host = FakeHost()
-    private val router = MessageRouter(toSidecar::add, toWebview::add, locale = "pt-br", host = host)
+    private val router = MessageRouter(toSidecar::add, toWebview::add, locale = "pt-br", host = host, theme = { "papel" })
 
     private fun parse(s: String) = Json.parseToJsonElement(s).jsonObject
 
-    @Test fun `ready pushes locale and requests a snapshot`() {
+    @Test fun `ready pushes locale and appearance, then requests a snapshot`() {
         router.onWebviewMessage("""{"type":"ready"}""")
-        assertEquals("locale", parse(toWebview.single())["type"]!!.jsonPrimitive.content)
-        assertEquals("pt-br", parse(toWebview.single())["locale"]!!.jsonPrimitive.content)
+        assertEquals(2, toWebview.size)
+        assertEquals("locale", parse(toWebview[0])["type"]!!.jsonPrimitive.content)
+        assertEquals("pt-br", parse(toWebview[0])["locale"]!!.jsonPrimitive.content)
+        assertEquals("appearance", parse(toWebview[1])["type"]!!.jsonPrimitive.content)
+        assertEquals("papel", parse(toWebview[1])["theme"]!!.jsonPrimitive.content)
         assertEquals("getSnapshot", parse(toSidecar.single())["cmd"]!!.jsonPrimitive.content)
+    }
+
+    @Test fun `pushAppearance sends the chosen theme to the webview`() {
+        router.pushAppearance("classic")
+        assertEquals("appearance", parse(toWebview.single())["type"]!!.jsonPrimitive.content)
+        assertEquals("classic", parse(toWebview.single())["theme"]!!.jsonPrimitive.content)
+        assertTrue(toSidecar.isEmpty())
     }
 
     @Test fun `refresh maps to getSnapshot`() {

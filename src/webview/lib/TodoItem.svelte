@@ -61,7 +61,7 @@
     line-height: 1.4;
     transition: background 120ms ease;
   }
-  .todo:hover { background: var(--vscode-list-hoverBackground); }
+  .todo:hover { background: var(--ct-hover); }
   /* Botão invisível que envolve o conteúdo quando a task é clicável — herda o
      layout do li e só acrescenta o cursor. */
   .hit {
@@ -80,7 +80,7 @@
     cursor: pointer;
   }
   .todo.in-progress {
-    background: color-mix(in srgb, var(--run) 15%, transparent);
+    background: color-mix(in srgb, var(--ct-run) 15%, transparent);
   }
   /* Faixa de destaque pulsante no item ativo (desligada por reduced-motion). */
   .todo.in-progress::before {
@@ -91,7 +91,7 @@
     bottom: 3px;
     width: 3px;
     border-radius: 3px;
-    background: var(--run);
+    background: var(--ct-run);
     animation: pulse-bar 1.8s ease-in-out infinite;
   }
   @keyframes pulse-bar {
@@ -109,10 +109,10 @@
     font-size: 0.82em;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
-    color: var(--muted);
+    color: var(--ct-muted);
   }
   .duration.live {
-    color: var(--run);
+    color: var(--ct-run);
     font-weight: 600;
   }
   .completed .label {
@@ -121,6 +121,6 @@
   }
   .in-progress .label {
     font-weight: 600;
-    color: var(--run, var(--vscode-foreground));
+    color: var(--ct-run);
   }
 </style>

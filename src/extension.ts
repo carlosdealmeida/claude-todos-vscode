@@ -12,6 +12,9 @@ import { pickWorkspaceCwds } from './services/workspaceFolders';
 import { SessionCore } from './core/sessionCore';
 import type { NotificationKind } from './services/sessionNotifier';
 import { sessionPickDescription } from './services/sessionPicker';
+import { UI_THEME_IDS, THEME_I18N, type UiThemeId } from './themes';
+import { readUiTheme } from './themeSetting';
+import { acceptTheme } from './themePick';
 
 const HOOK_EVENTS = DEFAULT_HOOK_EVENTS;
 // Retenção dos registros do bridge. Sessões saem do picker quando o transcript
@@ -235,6 +238,10 @@ export function activate(context: vscode.ExtensionContext): void {
         viewProvider.pushLocale();
         panelProvider.pushLocale();
       }
+      if (e.affectsConfiguration('claudeTodos.theme')) {
+        viewProvider.pushAppearance();
+        panelProvider.pushAppearance();
+      }
       if (e.affectsConfiguration('claudeTodos.activeFolder')) {
         viewProvider.pushSnapshot();
         panelProvider.pushSnapshot();
@@ -264,6 +271,12 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('claudeTodos.uninstallBridgeMod', () => {
       void setBridgeMod(false);
     }),
+    vscode.commands.registerCommand('claudeTodos.pickTheme', () =>
+      pickTheme((theme) => {
+        viewProvider.pushAppearance(theme);
+        panelProvider.pushAppearance(theme);
+      }),
+    ),
   );
 
   void maybePromptInstallHook(context, hookInstaller, hookCommand);
@@ -285,6 +298,44 @@ async function openTodoSource(target: { filePath: string; line: number } | null)
     selection: new vscode.Range(pos, pos),
     preview: true,
   });
+}
+
+async function pickTheme(push: (theme: UiThemeId) => void): Promise<void> {
+  const t = createT(resolveLocale());
+  const cfg = vscode.workspace.getConfiguration('claudeTodos');
+  const saved = readUiTheme();
+  type Item = vscode.QuickPickItem & { id: UiThemeId };
+  const qp = vscode.window.createQuickPick<Item>();
+  qp.placeholder = t('theme.pick.placeholder');
+  qp.title = t('theme.hcNote');
+  qp.items = UI_THEME_IDS.map((id) => ({
+    id,
+    label: t(THEME_I18N[id].name),
+    description: id === saved ? t('theme.current') : undefined,
+    detail: t(THEME_I18N[id].desc),
+  }));
+  qp.activeItems = qp.items.filter((i) => i.id === saved);
+  let accepted = false;
+  // Previa ao vivo: so o painel muda; a setting so e gravada no accept.
+  qp.onDidChangeActive(([item]) => { if (item) push(item.id); });
+  qp.onDidAccept(async () => {
+    accepted = true;
+    const selected = qp.selectedItems[0]?.id;
+    qp.hide();
+    await acceptTheme({
+      selected,
+      saved,
+      write: (id) => cfg.update('theme', id, vscode.ConfigurationTarget.Global),
+      read: readUiTheme,
+      push,
+      onError: (err) => { void vscode.window.showErrorMessage(t('theme.saveFailed', { error: String(err) })); },
+    });
+  });
+  qp.onDidHide(() => {
+    if (!accepted) push(saved);
+    qp.dispose();
+  });
+  qp.show();
 }
 
 export function deactivate(): void {}

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { randomBytes } from 'crypto';
+import { readUiTheme } from '../themeSetting';
 
 export function buildWebviewHtml(
   webview: vscode.Webview,
@@ -13,8 +14,9 @@ export function buildWebviewHtml(
   );
   const nonce = generateNonce();
 
+  // readUiTheme devolve so ids do registro: seguro de interpolar.
   return /* html */ `<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-ct-theme="${readUiTheme()}">
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"

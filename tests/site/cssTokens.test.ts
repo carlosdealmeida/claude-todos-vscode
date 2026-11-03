@@ -5,11 +5,11 @@ import * as path from 'node:path';
 // Regressao do achado C1 da revisao final da branch: o site monta
 // src/webview/App.svelte diretamente (nao usa main.ts nem index.html, os
 // entrypoints da extensao), entao nada garantia que src/webview/app.css —
-// dono de 9 tokens (--sp-1, --sp-2, --sp-3, --radius, --accent, --ok, --run,
-// --muted, --card-accent) e do bloco prefers-reduced-motion — fosse
-// carregado pelo site. O defeito passou por typecheck, svelte-check, build e
-// inspecao visual "monta com cores" (as vars --vscode-* funcionam sozinhas,
-// o que mascara a ausencia das outras 9). Este teste falha se algum nome
+// dono do bloco prefers-reduced-motion e, pelo @import de themes/, dos tokens
+// --ct-*, --sp-* e --radius — fosse carregado pelo site. O defeito original
+// passou por typecheck, svelte-check, build e inspecao visual "monta com
+// cores", porque as vars --vscode-* mascaravam a ausencia dos tokens que
+// app.css definia na epoca. Este teste falha se algum nome
 // usado em src/webview/ deixar de resolver pela combinacao de fontes que o
 // site carrega.
 //

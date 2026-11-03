@@ -14,3 +14,5 @@ docs/superpowers/
 
 # Gerado por scripts/buildBridgeMod.mjs (mod da ponte embutido no core)
 src/bridgeMod/*.generated.ts
+shots/**
+dist-shots/**

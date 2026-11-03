@@ -1,5 +1,6 @@
 package com.carlosdealmeida.claudetodos
 
+import com.intellij.ide.ui.LafManager
 import java.awt.Color
 import java.awt.Font
 import javax.swing.UIManager
@@ -61,6 +62,18 @@ object ThemeShim {
         val body = variables().entries.joinToString("\n") { (name, value) -> "  --vscode-$name: $value;" }
         return ":root{\n$body\n}"
     }
+
+    const val HIGH_CONTRAST_CLASS = "vscode-high-contrast"
+
+    /** O Swing não expõe "alto contraste" como cor; o que distingue o tema é o nome. */
+    fun isHighContrast(themeName: String?): Boolean =
+        themeName?.contains("high contrast", ignoreCase = true) == true
+
+    fun currentThemeIsHighContrast(): Boolean =
+        isHighContrast(LafManager.getInstance().currentUIThemeLookAndFeel?.name)
+
+    fun highContrastToggleJs(on: Boolean): String =
+        "document.body.classList.toggle('$HIGH_CONTRAST_CLASS', $on);"
 
     private fun isDark(bg: Color?): Boolean {
         if (bg == null) return true
