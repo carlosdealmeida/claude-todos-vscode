@@ -89,20 +89,26 @@ A chave `env` do `settings.json` vale para toda sessão do Claude Code, em qualq
 | `claudeTodos.claudeDir` | `""` (detecção automática via `os.homedir()`) | Sobrescreve a localização de `~/.claude`. |
 | `claudeTodos.autoInstallHook` | `true` | Mostra o aviso de primeira execução pedindo para instalar os hooks. |
 | `claudeTodos.language` | `auto` | Idioma da UI do painel (`auto` \| `en` \| `pt-br` \| `es` \| `zh-cn` \| `zh-tw`). |
-| `claudeTodos.theme` | `classic` | Tema do painel (`classic` \| `papel`). Em alto contraste, usa sempre o Clássico. |
+| `claudeTodos.theme` | `classic` | Tema do painel (`classic` \| `papel` \| `painel` \| `terminal`). Em alto contraste, usa sempre o Clássico. |
 | `claudeTodos.notifications` | `true` | Toast quando a sessão fica ociosa ou completa todas as tasks (janela sem foco). |
 | `claudeTodos.activeFolder` | `""` | Multi-root: pasta do workspace a acompanhar; vazio = seguir a sessão mais ativa. |
 
 ### Temas
 
-O painel tem dois temas, cada um em claro e escuro, de acordo com o seu editor:
+O painel tem quatro temas, cada um em claro e escuro, de acordo com o seu editor:
 
 - **Clássico** (padrão): segue o tema do editor, como sempre foi.
 - **Papel**: calmo e espaçado, com uma única cor de destaque.
+- **Painel**: o azul do seu editor por função, forte para o consumo e vivo para o que está rodando agora, com uma faixa de agentes em anéis. Clicar num anel abre o card do agente.
+- **Terminal**: monoespaçado, com status em texto e barras ASCII.
 
 No VS Code, rode `Claude Todos: Choose Theme` para ver a prévia ao vivo (Esc cancela) ou use a configuração `claudeTodos.theme`. No JetBrains, use o botão Tema… no título do painel. Em alto contraste, o painel usa sempre o Clássico.
 
 <img src="screenshots/theme-papel-dark.png" width="320" alt="Painel no tema Papel, escuro"> <img src="screenshots/theme-papel-light.png" width="320" alt="Painel no tema Papel, claro">
+
+<img src="screenshots/theme-painel-dark.png" width="320" alt="Tema Painel, escuro"> <img src="screenshots/theme-painel-light.png" width="320" alt="Tema Painel, claro">
+
+<img src="screenshots/theme-terminal-dark.png" width="320" alt="Tema Terminal, escuro"> <img src="screenshots/theme-terminal-light.png" width="320" alt="Tema Terminal, claro">
 
 ## Privacidade e fluxo de dados
 

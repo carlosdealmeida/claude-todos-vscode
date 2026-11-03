@@ -91,20 +91,26 @@
 | `claudeTodos.claudeDir` | `""`（通过 `os.homedir()` 自动检测） | 覆盖 `~/.claude` 的位置。 |
 | `claudeTodos.autoInstallHook` | `true` | 显示首次运行时询问是否安装钩子的提示。 |
 | `claudeTodos.language` | `auto` | 面板界面语言（`auto` \| `en` \| `pt-br` \| `es` \| `zh-cn` \| `zh-tw`）。 |
-| `claudeTodos.theme` | `classic` | 面板主题（`classic` \| `papel`）。高对比度下始终使用经典主题。 |
+| `claudeTodos.theme` | `classic` | 面板主题（`classic` \| `papel` \| `painel` \| `terminal`）。高对比度下始终使用经典主题。 |
 | `claudeTodos.notifications` | `true` | 会话空闲或所有任务完成时弹出提示（窗口未获得焦点时）。 |
 | `claudeTodos.activeFolder` | `""` | 多根工作区：要跟踪的工作区文件夹；留空 = 跟随最活跃的会话。 |
 
 ### 主题
 
-面板有两种主题，每种都有浅色和深色，跟随你的编辑器：
+面板有四种主题，每种都有浅色和深色，跟随你的编辑器：
 
 - **经典**（默认）：跟随编辑器主题，与以往相同。
 - **纸张**：安静宽松，只有一种强调色。
+- **面板**：按用途使用编辑器的蓝色，实色表示用量，亮色表示正在运行，并有一排智能体圆环。点击圆环可打开该智能体的卡片。
+- **终端**：等宽字体，文本状态和 ASCII 进度条。
 
 在 VS Code 中，运行 `Claude Todos: Choose Theme` 可实时预览（按 Esc 取消），也可以使用 `claudeTodos.theme` 设置。在 JetBrains 中，使用面板标题上的“主题…”按钮。高对比度下始终使用经典主题。
 
 <img src="screenshots/theme-papel-dark.png" width="320" alt="纸张主题的面板，深色"> <img src="screenshots/theme-papel-light.png" width="320" alt="纸张主题的面板，浅色">
+
+<img src="screenshots/theme-painel-dark.png" width="320" alt="面板主题，深色"> <img src="screenshots/theme-painel-light.png" width="320" alt="面板主题，浅色">
+
+<img src="screenshots/theme-terminal-dark.png" width="320" alt="终端主题，深色"> <img src="screenshots/theme-terminal-light.png" width="320" alt="终端主题，浅色">
 
 ## 隐私与数据流
 
