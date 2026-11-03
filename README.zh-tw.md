@@ -82,6 +82,7 @@
 | Claude Todos: Choose Session | `Ctrl+Alt+S` / `Cmd+Alt+S` |
 | Claude Todos: Refresh | — |
 | Claude Todos: Install Session Hook | — |
+| Claude Todos: Choose Theme | — |
 
 ## 設定
 
@@ -90,8 +91,20 @@
 | `claudeTodos.claudeDir` | `""`（透過 `os.homedir()` 自動偵測） | 覆寫 `~/.claude` 的位置。 |
 | `claudeTodos.autoInstallHook` | `true` | 顯示首次執行時詢問是否安裝掛鉤的提示。 |
 | `claudeTodos.language` | `auto` | 面板介面語言（`auto` \| `en` \| `pt-br` \| `es` \| `zh-cn` \| `zh-tw`）。 |
+| `claudeTodos.theme` | `classic` | 面板主題（`classic` \| `papel`）。高對比度下一律使用經典主題。 |
 | `claudeTodos.notifications` | `true` | 工作階段閒置或完成所有任務時彈出提示（視窗未取得焦點時）。 |
 | `claudeTodos.activeFolder` | `""` | 多根工作區：要追蹤的工作區資料夾；留空 = 跟隨最活躍的工作階段。 |
+
+### 主題
+
+面板有兩種主題，每種都有淺色和深色，跟隨你的編輯器：
+
+- **經典**（預設）：跟隨編輯器主題，與以往相同。
+- **紙張**：安靜寬鬆，只有一種強調色。
+
+在 VS Code 中，執行 `Claude Todos: Choose Theme` 可即時預覽（按 Esc 取消），也可以使用 `claudeTodos.theme` 設定。在 JetBrains 中，使用面板標題上的「主題…」按鈕。高對比度下一律使用經典主題。
+
+<img src="screenshots/theme-papel-dark.png" width="320" alt="紙張主題的面板，深色"> <img src="screenshots/theme-papel-light.png" width="320" alt="紙張主題的面板，淺色">
 
 ## 隱私與資料流
 
