@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { AgentTodos } from '../../types';
-  import { ringDash } from '../format';
+  import { agentIcon, ringDash } from '../format';
   import { todosStore } from '../stores.svelte';
   import { isHistory } from '../tree';
+  import Icon from './Icon.svelte';
 
   let { agents }: { agents: AgentTodos[] } = $props();
   const R = 18;
@@ -28,10 +29,13 @@
         title={it.a.name}
         aria-label={todosStore.t('agentStrip.label', { name: it.a.name, done: it.done, total: it.total })}
       >
-        <svg viewBox="0 0 44 44" aria-hidden="true">
-          <circle cx="22" cy="22" r={R} class="track" />
-          <circle cx="22" cy="22" r={R} class="arc" stroke-dasharray="{ringDash(it.done, it.total, C)} {C}" />
-        </svg>
+        <span class="ring">
+          <svg viewBox="0 0 44 44" aria-hidden="true">
+            <circle cx="22" cy="22" r={R} class="track" />
+            <circle cx="22" cy="22" r={R} class="arc" stroke-dasharray="{ringDash(it.done, it.total, C)} {C}" />
+          </svg>
+          <span class="type" data-agent-icon={agentIcon(it.a)}><Icon name={agentIcon(it.a)} size={16} /></span>
+        </span>
         {#if it.running}<span class="live" aria-hidden="true"></span>{/if}
         <span class="name">{it.a.name}</span>
         <span class="frac">{it.done}/{it.total}</span>
@@ -46,7 +50,9 @@
   .ring-btn:hover { background: var(--ct-hover); }
   .ring-btn:focus-visible { outline: 1px solid var(--ct-accent); }
   .ring-btn.running { color: var(--ct-fg); }
-  svg { width: 2.6rem; height: 2.6rem; transform: rotate(-90deg); }
+  .ring { position: relative; display: block; width: 2.6rem; height: 2.6rem; }
+  svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .type { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
   .track { fill: none; stroke: var(--ct-track); stroke-width: 3; }
   .arc { fill: none; stroke: var(--ct-run); stroke-width: 3; stroke-linecap: round; }
   .live { position: absolute; top: calc(var(--sp-2) + 1.9rem); left: calc(50% + 0.75rem); width: 9px; height: 9px; border-radius: 50%; background: var(--ct-run); box-shadow: 0 0 0 2px var(--ct-surface); }

@@ -177,6 +177,20 @@ export function agentTypeTone(agentType: string): AgentTypeTone {
   return 'neutral';
 }
 
+export type AgentIconName = 'star' | 'search' | 'list' | 'bolt' | 'person';
+
+// Icone do agente no centro do anel. Parte do mesmo tom do badge, para os dois
+// nunca discordarem sobre o tipo; o Main tem icone proprio.
+export function agentIcon(agent: { isMain?: boolean; agentType?: string }): AgentIconName {
+  if (agent.isMain) return 'star';
+  switch (agentTypeTone(agent.agentType ?? '')) {
+    case 'explore': return 'search';
+    case 'plan': return 'list';
+    case 'general': return 'bolt';
+    case 'neutral': return 'person';
+  }
+}
+
 export const STALE_LIST_THRESHOLD_MS = 5 * 60_000;
 
 // Idade (ms) da lista do main quando ela está "defasada": o main não emite um

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey, statusGlyph, ringDash } from '../../src/webview/format';
+import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey, statusGlyph, ringDash, agentIcon } from '../../src/webview/format';
 import type { Todo, TodoStatus, AgentUsage, PendingQuestion } from '../../src/types';
 
 describe('ringDash', () => {
@@ -260,6 +260,21 @@ describe('agentTotalTokens', () => {
   it('sums a single-model agent', () => {
     const one: AgentUsage[] = [{ agentId: 'x', name: 'x', isMain: false, models: [{ model: 'claude-haiku-4-5', input: 7, output: 3, cache: 90 }] }];
     expect(agentTotalTokens(one, 'x')).toBe(100);
+  });
+});
+
+describe('agentIcon', () => {
+  it.each([
+    ['Explore', 'search'], ['Plan', 'list'], ['general-purpose', 'bolt'], ['revisor-custom', 'person'],
+  ] as const)('%s -> %s', (agentType, icon) => {
+    expect(agentIcon({ isMain: false, agentType })).toBe(icon);
+  });
+  it('o Main tem icone proprio, mesmo com tipo', () => {
+    expect(agentIcon({ isMain: true })).toBe('star');
+    expect(agentIcon({ isMain: true, agentType: 'Plan' })).toBe('star');
+  });
+  it('sub-agent sem tipo conhecido cai no neutro, como o badge', () => {
+    expect(agentIcon({ isMain: false })).toBe('person');
   });
 });
 

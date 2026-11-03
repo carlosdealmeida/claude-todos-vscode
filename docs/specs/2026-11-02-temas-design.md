@@ -22,7 +22,7 @@ via JCEF, demo do site):
 |---|---|---|---|
 | `classic` | Clássico | herda do editor | o painel de hoje, **padrão**, pixel a pixel igual |
 | `papel` | Papel | própria (creme / sépia) | calmo, espaçado, um único destaque, concluído perde cor em vez de ficar verde |
-| `painel` | Painel | **derivada do editor** | azul por função (forte = consumo, vivo = rodando agora); verde/laranja/vermelho reservados a sucesso/alerta/erro; faixa de agentes em anéis |
+| `painel` | Painel | **derivada do editor** | azul por função (forte = consumo, vivo = rodando agora); verde/laranja/vermelho reservados a sucesso/alerta/erro; faixa de agentes em anéis, com o ícone do tipo do agente no centro |
 | `terminal` | Terminal | própria (fósforo âmbar / formulário contínuo) | monoespaçado, status em texto `[x] [~] [ ]`, barras ASCII |
 | `mission` | Mission Control | própria (azul-noite / cinza painel técnico) | denso, medidores no topo, agentes como linhas com LED e barra segmentada |
 

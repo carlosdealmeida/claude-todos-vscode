@@ -24,6 +24,31 @@ async function ringShowsWholeCard(context: BrowserContext, open: Open): Promise<
   return fits.inView ? [] : ['painel: clique no anel deixou o card aberto fora da tela'];
 }
 
+// O centro do anel mostra o tipo do agente. Caso full: um de cada tipo.
+async function ringHasTypeIcon(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'painel', 'full', 'dark');
+  const rings = await page.locator('.ring-btn').evaluateAll((els) => els.map((el) => {
+    const icon = el.querySelector('[data-agent-icon]');
+    const svg = el.querySelector('svg.ico')?.getBoundingClientRect();
+    const ring = el.querySelector('svg[viewBox="0 0 44 44"]')!.getBoundingClientRect();
+    return {
+      name: el.querySelector('.name')!.textContent,
+      icon: icon?.getAttribute('data-agent-icon') ?? null,
+      offX: svg ? Math.abs(svg.x + svg.width / 2 - (ring.x + ring.width / 2)) : 99,
+      offY: svg ? Math.abs(svg.y + svg.height / 2 - (ring.y + ring.height / 2)) : 99,
+    };
+  }));
+  await page.close();
+  const want: Record<string, string> = { 'Main agent': 'star', 'explorador-b': 'search', 'explorador-c': 'list', 'explorador-a': 'person' };
+  const failures = Object.entries(want)
+    .filter(([name, icon]) => rings.find((r) => r.name === name)?.icon !== icon)
+    .map(([name, icon]) => `painel: anel de ${name} sem o icone ${icon}`);
+  for (const r of rings) {
+    if (r.offX > 1 || r.offY > 1) failures.push(`painel: icone de ${r.name} fora do centro do anel`);
+  }
+  return failures;
+}
+
 // Azul forte = consumo; verde fica para sucesso.
 async function panelUsageIsBlue(context: BrowserContext, open: Open): Promise<string[]> {
   const failures: string[] = [];
@@ -78,7 +103,7 @@ async function asciiBarKeepsProportion(context: BrowserContext, open: Open): Pro
 export async function behaviorChecks(context: BrowserContext, themes: readonly string[], open: Open): Promise<string[]> {
   const failures: string[] = [];
   if (themes.includes('painel')) {
-    failures.push(...await ringShowsWholeCard(context, open), ...await panelUsageIsBlue(context, open));
+    failures.push(...await ringShowsWholeCard(context, open), ...await ringHasTypeIcon(context, open), ...await panelUsageIsBlue(context, open));
   }
   if (themes.includes('terminal')) failures.push(...await asciiBarKeepsProportion(context, open));
   return failures;
