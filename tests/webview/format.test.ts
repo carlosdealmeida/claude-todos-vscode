@@ -2,6 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey, statusGlyph, asciiBar, ringDash } from '../../src/webview/format';
 import type { Todo, TodoStatus, AgentUsage, PendingQuestion } from '../../src/types';
 
+describe('asciiBar', () => {
+  it.each([
+    [0, 10, '░░░░░░░░░░'], [1, 10, '██████████'], [0.5, 10, '█████░░░░░'],
+    [0.71, 18, '█████████████░░░░░'], [1.4, 4, '████'], [-1, 4, '░░░░'],
+  ])('asciiBar(%d, %d)', (pct, width, out) => { expect(asciiBar(pct, width)).toBe(out); });
+});
+
 describe('statusGlyph', () => {
   it.each([['completed', '[x]'], ['in_progress', '[~]'], ['pending', '[ ]']] as const)('%s -> %s', (s, g) => {
     expect(statusGlyph(s)).toBe(g);

@@ -12,6 +12,7 @@
   --ct-fg: var(--vscode-foreground);
   --ct-muted: var(--vscode-descriptionForeground);
   --ct-border: var(--vscode-panel-border);
+  --ct-track: var(--ct-border);
   --ct-hover: var(--vscode-list-hoverBackground);
   --ct-header-bg: var(--vscode-sideBarSectionHeader-background, transparent);
   --ct-code-bg: var(--vscode-textBlockQuote-background);
