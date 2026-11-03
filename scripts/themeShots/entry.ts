@@ -32,8 +32,7 @@ const bridge: WebviewBridge = {
     }
     if (msg.type !== 'ready') return;
     send({ type: 'locale', locale: 'pt-br' });
-    // Antes da Task 5 a mensagem 'appearance' nao existe: o store ignora.
-    send({ type: 'appearance', theme } as unknown as ExtensionMessage);
+    send({ type: 'appearance', theme: theme as never });
     if (shotCase === 'error') send({ type: 'error', message: 'sidecar terminated' });
     else send({ type: 'snapshot', snapshot: caseSnapshot(shotCase, shot) });
   },

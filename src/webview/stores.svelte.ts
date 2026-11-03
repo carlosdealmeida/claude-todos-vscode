@@ -1,7 +1,9 @@
 import type { SessionSnapshot, ExtensionMessage, WebviewMessage, ProjectUsage } from '../types';
 import { createT } from '../i18n/t';
 import type { Locale } from '../i18n/locale';
+import { effectiveTheme, parseUiTheme, type ColorMode, type UiThemeId } from '../themes';
 import { createBridge } from './bridge';
+import { applyAppearance, observeMode } from './themes/mode';
 
 const bridge = createBridge();
 
@@ -13,9 +15,19 @@ class TodosStore {
   t = $derived(createT(this.locale));
   projectUsage = $state<ProjectUsage | null | undefined>(undefined);
   projectUsageLoading = $state(false);
+  // Tema inicial do HTML, quando o host o escreveu: a sidebar do VS Code recria
+  // a webview a cada reabertura e nao pode piscar o Classico ate o `ready`.
+  uiTheme = $state<UiThemeId>(parseUiTheme(document.documentElement.dataset.ctTheme));
+  mode = $state<ColorMode>('dark');
+  activeTheme = $derived(effectiveTheme(this.uiTheme, this.mode));
 
   constructor() {
     bridge.onMessage((msg) => this.handle(msg));
+    // Antes do App montar e do primeiro snapshot, para nao piscar.
+    observeMode(document, (mode) => {
+      this.mode = mode;
+      applyAppearance(document.documentElement, this.uiTheme, mode);
+    });
     this.post({ type: 'ready' });
   }
 
@@ -37,6 +49,12 @@ class TodosStore {
         // renderizado com fonte japonesa/simplificada). Cobre os dois hosts
         // (VS Code e JetBrains) pois ambos carregam este mesmo bundle webview.
         document.documentElement.lang = msg.locale;
+        break;
+      case 'appearance':
+        // parse de novo: um host antigo ou um valor salvo de versao futura
+        // nunca deixa o painel sem tema.
+        this.uiTheme = parseUiTheme(msg.theme);
+        applyAppearance(document.documentElement, this.uiTheme, this.mode);
         break;
       case 'projectUsage':
         this.projectUsage = msg.usage;
