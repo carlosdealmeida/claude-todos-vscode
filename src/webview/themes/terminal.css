@@ -1,0 +1,69 @@
+/* Terminal: fosforo ambar (dark) e formulario continuo (light).
+   Fonte = a fonte de codigo do proprio usuario (CSP nao permite fonte externa). */
+:root[data-ct-theme="terminal"] {
+  /* --ct-mono = --vscode-editor-font-family (tokens.css); tema nao cita --vscode-* direto. */
+  --ct-font: var(--ct-mono);
+  --radius: 0px;
+}
+
+:root[data-ct-theme="terminal"][data-ct-mode="dark"] {
+  --ct-bg: #0d0c0a;
+  --ct-fg: #ffb000;
+  --ct-muted: #c48b22;
+  --ct-border: #3a3020;
+  --ct-hover: #1c1810;
+  --ct-header-bg: #14120d;
+  --ct-code-bg: #1c1810;
+  --ct-error: #ff6b5e;
+  --ct-link: #ffd27a;
+  --ct-badge-bg: #3a3020;
+  --ct-badge-fg: #ffd27a;
+  --ct-btn-bg: #ffb000;
+  --ct-btn-fg: #0d0c0a;
+  --ct-btn-hover: #ffc233;
+  --ct-accent: #ffd27a;
+  --ct-ok: #ffb000;
+  --ct-done: #c48b22;
+  --ct-run: #ffd27a;
+  --ct-info: #ffd27a;
+  --ct-warn: #ff9a3d;
+  --ct-danger: #ff6b5e;
+  --ct-agent-active: #ffd27a;
+  --ct-track: #2a2416;
+  --ct-tone-explore: #ffb000;
+  --ct-tone-plan: #ff9a3d;
+  --ct-tone-general: #ffd27a;
+  --ct-tone-neutral: #c48b22;
+}
+
+:root[data-ct-theme="terminal"][data-ct-mode="light"] {
+  --ct-bg: #f4efe1;
+  --ct-bg-alt: #e3ecd9;
+  --ct-bg-image: repeating-linear-gradient(#f4efe1 0 3rem, #e3ecd9 3rem 6rem);
+  --ct-fg: #22201c;
+  --ct-muted: #5c564a;
+  --ct-border: #cfc6ad;
+  --ct-hover: #ebe4d0;
+  --ct-header-bg: #ebe4d0;
+  --ct-code-bg: #ebe4d0;
+  --ct-error: #a3362a;
+  --ct-link: #1d3f8a;
+  --ct-badge-bg: #22201c;
+  --ct-badge-fg: #f4efe1;
+  --ct-btn-bg: #22201c;
+  --ct-btn-fg: #f4efe1;
+  --ct-btn-hover: #3a372f;
+  --ct-accent: #1d3f8a;
+  --ct-ok: #2f6b2a;
+  --ct-done: #5c564a;
+  --ct-run: #1d3f8a;
+  --ct-info: #1d3f8a;
+  --ct-warn: #8a5a00;
+  --ct-danger: #a3362a;
+  --ct-agent-active: #1d3f8a;
+  --ct-track: #d8cfb6;
+  --ct-tone-explore: #2f6b2a;
+  --ct-tone-plan: #8a5a00;
+  --ct-tone-general: #1d3f8a;
+  --ct-tone-neutral: #5c564a;
+}

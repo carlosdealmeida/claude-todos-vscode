@@ -25,9 +25,11 @@ window.crop = async function (b64) {
   g.drawImage(img, 0, 0);
   const d = g.getImageData(0, 0, img.width, img.height).data;
   const at = (x, y) => (y * img.width + x) * 4;
-  const bg = at(0, img.height - 1);
   let last = 0;
+  // Linha vazia e a de uma cor so, e nao a da cor do fundo: as faixas do Terminal
+  // claro alternam de cor ate o fim da imagem.
   outer: for (let y = img.height - 1; y >= 0; y--) {
+    const bg = at(0, y);
     for (let x = 0; x < img.width; x++) {
       const i = at(x, y);
       if (d[i] !== d[bg] || d[i + 1] !== d[bg + 1] || d[i + 2] !== d[bg + 2]) { last = y; break outer; }

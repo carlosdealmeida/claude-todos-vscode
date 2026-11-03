@@ -5,7 +5,7 @@ import { relativeLuminance } from '../../src/webview/themes/mode';
 
 // Temas com paleta propria. Painel e Classico derivam do editor: o contraste
 // e o do tema do usuario, fora do alcance deste teste.
-const OWN_PALETTE = ['papel'];
+const OWN_PALETTE = ['papel', 'terminal'];
 const THEMES = path.join(__dirname, '..', '..', 'src', 'webview', 'themes');
 
 function declarations(body: string): Record<string, string> {
@@ -28,6 +28,8 @@ function ratio(a: string, b: string): number {
 const FLOORS: [string, number][] = [
   ['ct-fg', 7], ['ct-muted', 4.5], ['ct-link', 4.5],
   ['ct-run', 3], ['ct-ok', 3], ['ct-done', 3], ['ct-warn', 3], ['ct-danger', 3], ['ct-accent', 3],
+  // Texto, e nao so sinal: mensagem de erro e o rotulo do tipo de agente.
+  ['ct-error', 4.5], ['ct-tone-explore', 4.5], ['ct-tone-plan', 4.5], ['ct-tone-general', 4.5], ['ct-tone-neutral', 4.5],
 ];
 
 // Tokens que, no Classico, vem direto do editor. Um tema com paleta propria que
@@ -62,6 +64,9 @@ describe.each(OWN_PALETTE)('contraste do tema %s', (id) => {
     }
     it('botao: texto sobre o fundo do botao >= 4.5:1', () => {
       expect(ratio(t['ct-btn-fg'], t['ct-btn-bg'])).toBeGreaterThanOrEqual(4.5);
+    });
+    it('badge: texto sobre o fundo do badge >= 4.5:1', () => {
+      expect(ratio(t['ct-badge-fg'], t['ct-badge-bg'])).toBeGreaterThanOrEqual(4.5);
     });
   });
 });

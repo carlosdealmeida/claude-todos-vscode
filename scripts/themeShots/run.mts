@@ -13,6 +13,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { LEAK_SENTINEL, SHOT_CASES, shotTime, type ShotScript } from './cases.ts';
+import { behaviorChecks } from './checks.mts';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
 const args = process.argv.slice(2);
@@ -50,16 +51,20 @@ const context = await browser.newContext({ viewport: { width: 360, height: 1800 
 // Antes do goto: clock.svelte.ts le Date.now() no load do modulo.
 await context.clock.setFixedTime(shotTime(script));
 const failures: string[] = [];
+async function open(ctx: typeof context, theme: string, shotCase: string, mode: string) {
+  const page = await ctx.newPage();
+  await page.goto(`${indexUrl}?mode=${mode}&theme=${theme}&case=${shotCase}`);
+  await page.waitForSelector('body[data-ready="1"] main');
+  await page.waitForFunction(() => !document.querySelector('main .loading'));
+  return page;
+}
 for (const theme of themes) {
   for (const shotCase of cases) {
     for (const mode of modes) {
       const file = `${theme}-${shotCase}-${mode}.png`;
       const base = path.join(ROOT, 'shots', 'baseline', file);
       if (!compare && !update && fs.existsSync(base)) continue;
-      const page = await context.newPage();
-      await page.goto(`${indexUrl}?mode=${mode}&theme=${theme}&case=${shotCase}`);
-      await page.waitForSelector('body[data-ready="1"] main');
-      await page.waitForFunction(() => !document.querySelector('main .loading'));
+      const page = await open(context, theme, shotCase, mode);
       if (shotCase === 'project') await page.locator('main .project .header').click();
       await page.evaluate(() => document.fonts.ready);
       // transition:slide usa a Web Animations API, que o reducedMotion nao zera.
@@ -104,6 +109,7 @@ for (const theme of themes) {
     }
   }
 }
+if (compare) failures.push(...await behaviorChecks(context, themes, open));
 await browser.close();
 if (failures.length) {
   console.error(failures.join('\n'));

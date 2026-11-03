@@ -58,11 +58,14 @@ export class SnapshotService {
     // roda em laço por sessão candidata e não pode reabrir o arquivo a cada volta.
     const cachedNames = this.names?.entries() ?? {};
     const out: SessionSummary[] = [];
-    for (const record of this.resolver.resolveCandidates()) {
+    const seen = new Set<string>();
+    for (const record of this.resolver.resolveCandidates(live)) {
+      if (seen.has(record.sessionId)) continue;
       // Atividade de conversa, não mtime (#87900): metadados anexados depois não
       // reordenam o picker nem trocam a sessão escolhida.
       const updatedAt = this.parser.transcriptActivityAt(record.sessionId, record.cwd);
       if (updatedAt === null) continue;
+      seen.add(record.sessionId);
       out.push({
         sessionId: record.sessionId,
         cwd: record.cwd,

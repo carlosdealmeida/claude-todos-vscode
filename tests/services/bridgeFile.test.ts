@@ -92,6 +92,15 @@ describe('BridgeFile', () => {
     expect(list.map(r => r.sessionId)).toEqual(['new', 'mid', 'old']);
   });
 
+  it('allForCwd inclui os worktrees do Claude Code dentro da pasta, e nada mais', () => {
+    bridge.append({ cwd: '/p', sessionId: 'raiz', terminalPid: 1, startedAt: 1000 });
+    bridge.append({ cwd: path.join('/p', '.claude', 'worktrees', 'x'), sessionId: 'wt', terminalPid: 2, startedAt: 2000 });
+    bridge.append({ cwd: path.join('/p', '.claude', 'worktrees-velhos', 'x'), sessionId: 'vizinha', terminalPid: 3, startedAt: 3000 });
+    bridge.append({ cwd: path.join('/p', 'sub'), sessionId: 'subpasta', terminalPid: 4, startedAt: 4000 });
+    bridge.append({ cwd: path.join('/q', '.claude', 'worktrees', 'x'), sessionId: 'outro-repo', terminalPid: 5, startedAt: 5000 });
+    expect(bridge.allForCwd('/p').map(r => r.sessionId)).toEqual(['wt', 'raiz']);
+  });
+
   it('matches cwd case-insensitively on win32', () => {
     if (process.platform !== 'win32') return;
     bridge.append({ cwd: 'c:\\foo\\bar', sessionId: 's1', terminalPid: 1, startedAt: 1000 });

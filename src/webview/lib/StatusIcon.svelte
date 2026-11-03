@@ -1,11 +1,14 @@
 <script lang="ts">
   import type { TodoStatus } from '../../types';
+  import { statusGlyph } from '../format';
   import { todosStore } from '../stores.svelte';
 
   let { status }: { status: TodoStatus } = $props();
 </script>
 
-{#if status === 'completed'}
+{#if todosStore.traits.glyphs === 'text'}
+  <span class="glyph {status === 'in_progress' ? 'in-progress' : status}" aria-label={todosStore.t(status === 'completed' ? 'status.completed' : status === 'in_progress' ? 'status.inProgress' : 'status.pending')}>{statusGlyph(status)}</span>
+{:else if status === 'completed'}
   <svg class="icon completed" viewBox="0 0 16 16" aria-label={todosStore.t('status.completed')}>
     <path d="M3.5 8.5L7 12l6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>
@@ -26,4 +29,6 @@
   .completed { color: var(--ct-done); }
   .in-progress { color: var(--ct-run); }
   .pending { color: var(--ct-muted); }
+  .glyph { flex-shrink: 0; font-family: var(--ct-mono); white-space: pre; font-size: 0.95em; }
+  .glyph.in-progress { font-weight: 700; }
 </style>

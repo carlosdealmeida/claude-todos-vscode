@@ -9,9 +9,13 @@
 
   --ct-bg: transparent;
   --ct-bg-image: none;
+  /* Contorno que recorta o ponto do anel. Nao usa --vscode-sideBar-background:
+     nem o theme.css do site nem o ThemeShim a definem. */
+  --ct-surface: var(--ct-bg);
   --ct-fg: var(--vscode-foreground);
   --ct-muted: var(--vscode-descriptionForeground);
   --ct-border: var(--vscode-panel-border);
+  --ct-track: var(--ct-border);
   --ct-hover: var(--vscode-list-hoverBackground);
   --ct-header-bg: var(--vscode-sideBarSectionHeader-background, transparent);
   --ct-code-bg: var(--vscode-textBlockQuote-background);
@@ -28,6 +32,10 @@
   --ct-link: var(--vscode-textLink-foreground, var(--ct-accent));
   --ct-ok: var(--vscode-charts-green, var(--vscode-testing-iconPassed, #4caf50));
   --ct-done: var(--ct-ok);
+  /* Barra de uso em nivel normal, e o selo dela. Tema que separa consumo de sucesso
+     redefine os dois; o resto acompanha --ct-ok. */
+  --ct-meter-ok: var(--ct-ok);
+  --ct-meter-ok-text: var(--ct-ok);
   --ct-run: var(--vscode-charts-blue, var(--vscode-progressBar-background, #0e70c0));
   --ct-info: var(--vscode-charts-blue);
   --ct-warn: var(--vscode-charts-yellow);
@@ -68,4 +76,10 @@
 
 :root[data-ct-theme]:not([data-ct-theme="classic"]) .ct-root code {
   color: inherit;
+}
+
+/* Botao nao herda fonte por padrao, e .pending-item nao declara font: inherit.
+   Fica aqui e nao no componente porque la mudaria o Classico. */
+:root[data-ct-theme]:not([data-ct-theme="classic"]) .ct-root button {
+  font-family: inherit;
 }

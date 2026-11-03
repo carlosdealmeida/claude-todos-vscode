@@ -1,4 +1,4 @@
-import type { Todo, AgentUsage, PendingQuestion, BridgeStatus } from '../types';
+import type { Todo, TodoStatus, AgentUsage, PendingQuestion, BridgeStatus } from '../types';
 import type { MessageKey } from '../i18n/messages';
 import type { Locale } from '../i18n/locale';
 
@@ -177,6 +177,20 @@ export function agentTypeTone(agentType: string): AgentTypeTone {
   return 'neutral';
 }
 
+export type AgentIconName = 'star' | 'search' | 'list' | 'bolt' | 'person';
+
+// Icone do agente no centro do anel. Parte do mesmo tom do badge, para os dois
+// nunca discordarem sobre o tipo; o Main tem icone proprio.
+export function agentIcon(agent: { isMain?: boolean; agentType?: string }): AgentIconName {
+  if (agent.isMain) return 'star';
+  switch (agentTypeTone(agent.agentType ?? '')) {
+    case 'explore': return 'search';
+    case 'plan': return 'list';
+    case 'general': return 'bolt';
+    case 'neutral': return 'person';
+  }
+}
+
 export const STALE_LIST_THRESHOLD_MS = 5 * 60_000;
 
 // Idade (ms) da lista do main quando ela está "defasada": o main não emite um
@@ -260,4 +274,16 @@ export function bridgeTextKey(status: BridgeStatus): MessageKey {
     case 'next-session': return 'usage.bridge.nextSession';
     case 'silent': return 'usage.bridge.silent';
   }
+}
+
+// Status em texto, para temas com glyphs: 'text'.
+export function statusGlyph(status: TodoStatus): string {
+  return status === 'completed' ? '[x]' : status === 'in_progress' ? '[~]' : '[ ]';
+}
+
+// Comprimento do arco do anel de progresso. Minimo de 4px: um agente sem nada
+// concluido ainda precisa de um traco que mostre onde o anel comeca.
+export function ringDash(done: number, total: number, circumference: number): number {
+  if (total <= 0 || done <= 0) return 4;
+  return Math.max(4, Math.min(1, done / total) * circumference);
 }

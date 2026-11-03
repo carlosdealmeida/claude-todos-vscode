@@ -40,9 +40,30 @@
   let durations = $derived(completedTaskDurations(agent.todos));
 
   let title = $derived(agent.name);
+
+  let sectionEl = $state<HTMLElement | null>(null);
+  // Card recolhido ainda vai crescer: rolar agora mediria so o cabecalho e deixaria
+  // as tarefas fora da tela. Nesse caso a rolagem espera o fim do slide.
+  let scrollWhenOpen = false;
+  function scrollToCard(): void {
+    sectionEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  // Zerar o pedido e obrigatorio: este effect roda de novo a cada snapshot,
+  // porque a prop `agent` muda de identidade. Com o pedido ainda de pe, o card
+  // reabriria e a tela rolaria a cada atualizacao.
+  $effect(() => {
+    if (todosStore.focus !== agent.agentId) return;
+    todosStore.focus = null;
+    if (expanded) {
+      scrollToCard();
+    } else {
+      scrollWhenOpen = true;
+      expanded = true;
+    }
+  });
 </script>
 
-<section class="agent" class:hist={history} class:active={visualState === 'active'}>
+<section bind:this={sectionEl} class="agent" class:hist={history} class:active={visualState === 'active'}>
   <button class="header" onclick={() => expanded = !expanded} aria-expanded={expanded}>
     <span class="chevron" class:open={expanded}><Icon name="chevron" size={12} /></span>
     {#if visualState !== 'idle'}<span class="dot" class:active={visualState === 'active'} class:done={visualState === 'done'}></span>{/if}
@@ -87,7 +108,7 @@
         {/if}
       </div>
     {/if}
-    <ul class="list" transition:slide={{ duration: 180 }}>
+    <ul class="list" transition:slide={{ duration: 180 }} onintroend={() => { if (scrollWhenOpen) { scrollWhenOpen = false; scrollToCard(); } }}>
       {#each agent.todos as todo, i (i)}
         <TodoItem {todo} completedMs={durations[i]} sessionId={agent.sessionId} agentId={agent.agentId} />
       {/each}
@@ -113,8 +134,11 @@
   .header {
     width: 100%;
     display: flex;
+    /* Em painel estreito o que nao cabe desce de linha: o overflow do card cortaria
+       justamente o contador, que e o ultimo da fila. */
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--sp-2);
+    gap: var(--sp-1) var(--sp-2);
     padding: var(--sp-2) var(--sp-3);
     background: var(--ct-header-bg);
     border: none;
@@ -149,6 +173,7 @@
   }
   .title { flex: 1; font-weight: 600; letter-spacing: 0.1px; }
   .counts {
+    margin-left: auto;
     font-size: 0.85em;
     display: flex;
     align-items: center;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { UI_THEME_IDS, DEFAULT_UI_THEME, parseUiTheme, effectiveTheme, THEME_I18N } from '../src/themes';
+import { UI_THEME_IDS, DEFAULT_UI_THEME, parseUiTheme, effectiveTheme, THEME_I18N, THEME_TRAITS } from '../src/themes';
 import { messages } from '../src/i18n/messages';
 import pkg from '../package.json';
 
@@ -39,5 +39,17 @@ describe('registro de temas', () => {
     const prop = (pkg as any).contributes.configuration.properties['claudeTodos.theme'];
     expect(prop.enum).toEqual([...UI_THEME_IDS]);
     expect(prop.default).toBe(DEFAULT_UI_THEME);
+  });
+});
+
+describe('traços', () => {
+  it('classic e papel nao ligam nenhum traco: sao so tokens', () => {
+    for (const id of ['classic', 'papel'] as const) {
+      expect(THEME_TRAITS[id]).toEqual({ glyphs: 'svg', meter: 'bar', agentStrip: 'none' });
+    }
+  });
+  it('terminal usa texto e barra ASCII; painel usa aneis', () => {
+    expect(THEME_TRAITS.terminal).toEqual({ glyphs: 'text', meter: 'ascii', agentStrip: 'none' });
+    expect(THEME_TRAITS.painel).toEqual({ glyphs: 'svg', meter: 'bar', agentStrip: 'rings' });
   });
 });

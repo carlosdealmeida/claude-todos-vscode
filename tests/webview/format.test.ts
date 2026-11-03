@@ -1,6 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey } from '../../src/webview/format';
+import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey, statusGlyph, ringDash, agentIcon } from '../../src/webview/format';
 import type { Todo, TodoStatus, AgentUsage, PendingQuestion } from '../../src/types';
+
+describe('ringDash', () => {
+  const C = 2 * Math.PI * 18;
+  it('proporcional ao concluido', () => { expect(ringDash(1, 4, C)).toBeCloseTo(C / 4, 3); });
+  it('zero tarefas ou zero concluidas mostra um traco minimo visivel', () => {
+    expect(ringDash(0, 3, C)).toBe(4);
+    expect(ringDash(0, 0, C)).toBe(4);
+  });
+  it('nunca passa do circulo', () => { expect(ringDash(5, 4, C)).toBeCloseTo(C, 3); });
+});
+
+describe('statusGlyph', () => {
+  it.each([['completed', '[x]'], ['in_progress', '[~]'], ['pending', '[ ]']] as const)('%s -> %s', (s, g) => {
+    expect(statusGlyph(s)).toBe(g);
+  });
+});
 
 function todo(status: TodoStatus, startedAt?: number, completedAt?: number): Todo {
   const t: Todo = { content: status, activeForm: status, status };
@@ -244,6 +260,21 @@ describe('agentTotalTokens', () => {
   it('sums a single-model agent', () => {
     const one: AgentUsage[] = [{ agentId: 'x', name: 'x', isMain: false, models: [{ model: 'claude-haiku-4-5', input: 7, output: 3, cache: 90 }] }];
     expect(agentTotalTokens(one, 'x')).toBe(100);
+  });
+});
+
+describe('agentIcon', () => {
+  it.each([
+    ['Explore', 'search'], ['Plan', 'list'], ['general-purpose', 'bolt'], ['revisor-custom', 'person'],
+  ] as const)('%s -> %s', (agentType, icon) => {
+    expect(agentIcon({ isMain: false, agentType })).toBe(icon);
+  });
+  it('o Main tem icone proprio, mesmo com tipo', () => {
+    expect(agentIcon({ isMain: true })).toBe('star');
+    expect(agentIcon({ isMain: true, agentType: 'Plan' })).toBe('star');
+  });
+  it('sub-agent sem tipo conhecido cai no neutro, como o badge', () => {
+    expect(agentIcon({ isMain: false })).toBe('person');
   });
 });
 

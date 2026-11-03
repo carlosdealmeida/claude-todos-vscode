@@ -225,11 +225,15 @@
           "type": "string",
           "enum": [
             "classic",
-            "papel"
+            "papel",
+            "painel",
+            "terminal"
           ],
           "enumDescriptions": [
             "%config.theme.classic%",
-            "%config.theme.papel%"
+            "%config.theme.papel%",
+            "%config.theme.painel%",
+            "%config.theme.terminal%"
           ],
           "default": "classic",
           "scope": "application",

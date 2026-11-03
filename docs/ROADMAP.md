@@ -1192,7 +1192,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
     API: [#105934](https://github.com/anthropics/claude-code/issues/105934), [#105919](https://github.com/anthropics/claude-code/issues/105919), [#106198](https://github.com/anthropics/claude-code/issues/106198). Sem efeito na ponte, que não desenha nem spawna: [#106737](https://github.com/anthropics/claude-code/issues/106737), [#103593](https://github.com/anthropics/claude-code/issues/103593), [#103771](https://github.com/anthropics/claude-code/issues/103771).
 
 
-### 26. Temas do painel 🚧 fase 1 na v0.21.0, fases 2 e 3 pendentes
+### 26. Temas do painel 🚧 fase 1 na v0.21.0, fase 2 pronta no branch `feat/temas`, fase 3 pendente
 
 Cinco temas selecionáveis, cada um em claro e escuro, nos três hosts: Clássico (padrão, sem nenhuma
 mudança visual), Papel, Painel, Terminal e Mission Control. Sai em três versões: v0.21.0 (fundação,

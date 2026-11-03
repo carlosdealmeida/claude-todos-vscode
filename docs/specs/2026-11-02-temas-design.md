@@ -22,7 +22,7 @@ via JCEF, demo do site):
 |---|---|---|---|
 | `classic` | Clássico | herda do editor | o painel de hoje, **padrão**, pixel a pixel igual |
 | `papel` | Papel | própria (creme / sépia) | calmo, espaçado, um único destaque, concluído perde cor em vez de ficar verde |
-| `painel` | Painel | **derivada do editor** | azul por função (forte = consumo, vivo = rodando agora); verde/laranja/vermelho reservados a sucesso/alerta/erro; faixa de agentes em anéis |
+| `painel` | Painel | **derivada do editor** | azul por função (forte = consumo, vivo = rodando agora); verde/laranja/vermelho reservados a sucesso/alerta/erro; faixa de agentes em anéis, com o ícone do tipo do agente no centro |
 | `terminal` | Terminal | própria (fósforo âmbar / formulário contínuo) | monoespaçado, status em texto `[x] [~] [ ]`, barras ASCII |
 | `mission` | Mission Control | própria (azul-noite / cinza painel técnico) | denso, medidores no topo, agentes como linhas com LED e barra segmentada |
 
@@ -68,11 +68,13 @@ via JCEF, demo do site):
 7. **Traços por tema (`ThemeTraits`), só os que CSS não resolve.** Quatro: `glyphs` (`svg` | `text`), `meter`
    (`bar` | `ascii`), `agentStrip` (`none` | `rings` | `leds`), `usageSummary` (`none` | `gauges`). Cada traço entra
    na fase do primeiro tema que precisa dele, não antes.
-8. **O Painel deriva as cores do editor.** "Azul vivo" em texto = `--vscode-textLink-foreground`, com
-   `--vscode-focusBorder` de reserva, porque a cor de "rodando agora" também pinta texto e o `focusBorder` de alguns
-   temas não foi feito para isso; em bordas e tintas de fundo, `--vscode-focusBorder`. "Azul forte" =
-   `--vscode-button-background`; trilhas = `color-mix` do foreground com o fundo. Assim ele funciona com qualquer tema
-   do editor (Dracula, One Dark, Light Modern) sem paleta própria, e o light não precisa de hex à parte.
+8. **O Painel deriva as cores do editor.** "Azul vivo" em texto = `--vscode-textLink-foreground`, porque a cor de
+   "rodando agora" também pinta texto e o `focusBorder` de alguns temas não foi feito para isso. A reserva é
+   `--vscode-charts-blue`: o `ThemeShim` não define `textLink`, e o `focusBorder` dele é a cor de foco do IDE, com 1,64:1
+   sobre o fundo no Darcula e no IntelliJ Light. Em bordas e tintas de fundo, `--vscode-focusBorder`. "Azul forte" =
+   `--vscode-button-background`, que pinta as barras de uso em nível normal por `--ct-meter-ok`; trilhas = `color-mix` do
+   foreground com o fundo. Assim ele funciona com qualquer tema do editor (Dracula, One Dark, Light Modern) sem paleta
+   própria, e o light não precisa de hex à parte.
 9. **Contraste é testado, não julgado no olho.** Para os temas com paleta própria, um teste lê os tokens de cada bloco
    e exige WCAG 2.x: texto principal ≥ 7:1, texto secundário ≥ 4.5:1, cores de status sobre o fundo ≥ 3:1. Se um par
    falha, quem muda é a cor, nunca o piso (a mesma regra de `tests/site/landingContrast.test.ts`). Outro teste exige

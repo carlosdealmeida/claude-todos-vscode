@@ -2,6 +2,7 @@
   import type { SessionUsage, ModelUsage, BridgeStatus } from '../../types';
   import { formatCompact, shortModel, contextLevel, cacheLevel, limitLabelKey, formatResetTime, bridgeTextKey } from '../format';
   import { todosStore } from '../stores.svelte';
+  import Meter from './Meter.svelte';
 
   let { usage, bridge }: { usage: SessionUsage; bridge?: BridgeStatus } = $props();
   // Ponte de dados (item 25): limites de uso da conta, quando a ponte os tem.
@@ -43,7 +44,7 @@
 
     {#if ctx}
       <div class="ctx-bar-row">
-        <div class="ctx-bar" aria-hidden="true"><div class="ctx-fill {ctxLevel}" style="width: {Math.round(ctxPct * 100)}%"></div></div>
+        <Meter percent={ctxPct * 100} level={ctxLevel} />
         <span class="ctx-count" title={ctx.source === 'mod' ? todosStore.t('usage.ctxExactTitle') : undefined}>{formatCompact(ctx.tokens)}/{formatCompact(ctx.limit)}</span>
       </div>
     {/if}
@@ -61,7 +62,7 @@
           {@const level = contextLevel(limit.percentUsed / 100)}
           <div class="limit-row">
             <span class="limit-name">{key ? todosStore.t(key) : limit.kind}</span>
-            <div class="ctx-bar" aria-hidden="true"><div class="ctx-fill {level}" style="width: {Math.min(100, Math.max(0, Math.round(limit.percentUsed)))}%"></div></div>
+            <Meter percent={limit.percentUsed} {level} />
             <span class="limit-pct">{Math.round(limit.percentUsed)}%</span>
             <span class="limit-reset">{todosStore.t('usage.limitResets', { time: formatResetTime(limit.resetsAt, Date.now(), todosStore.locale) })}</span>
           </div>
@@ -191,8 +192,8 @@
     font-weight: 600;
   }
   .ctx-badge.ok {
-    color: var(--ct-ok);
-    background: color-mix(in srgb, var(--ct-ok) 15%, transparent);
+    color: var(--ct-meter-ok-text);
+    background: color-mix(in srgb, var(--ct-meter-ok-text) 15%, transparent);
   }
   .ctx-badge.warn {
     color: var(--ct-warn);
@@ -208,17 +209,6 @@
     gap: 0.4rem;
     margin-bottom: 0.3rem;
   }
-  .ctx-bar {
-    flex: 1;
-    height: 4px;
-    background: var(--ct-border);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .ctx-fill { height: 100%; transition: width 200ms ease; }
-  .ctx-fill.ok { background: var(--ct-ok); }
-  .ctx-fill.warn { background: var(--ct-warn); }
-  .ctx-fill.danger { background: var(--ct-danger); }
   .ctx-count {
     font-size: 0.8em;
     color: var(--ct-muted);

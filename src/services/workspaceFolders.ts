@@ -1,6 +1,20 @@
+import * as path from 'path';
+
 export interface WorkspaceFolderLike {
   name: string;
   fsPath: string;
+}
+
+// Sessão desta pasta: a própria pasta ou um worktree do Claude Code dentro dela.
+// O transcript de quem entra num worktree muda de projeto, e a janela aberta na
+// raiz do repo ainda é o lugar onde a pessoa acompanha essa sessão.
+export function belongsToWorkspace(cwd: string, workspaceCwd: string): boolean {
+  // path.normalize unifica separadores ('C:/x' vs 'c:\x') — hosts como o
+  // IntelliJ mandam basePath com '/', o hook grava a cwd nativa do SO.
+  const norm = (p: string) => (process.platform === 'win32' ? path.normalize(p).toLowerCase() : p);
+  const session = norm(cwd);
+  return session === norm(workspaceCwd)
+    || session.startsWith(norm(path.join(workspaceCwd, '.claude', 'worktrees')) + path.sep);
 }
 
 // Aplica o setting `claudeTodos.activeFolder` à lista de pastas do workspace:

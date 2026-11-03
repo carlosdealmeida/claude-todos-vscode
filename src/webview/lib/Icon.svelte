@@ -1,7 +1,8 @@
 <script lang="ts">
   // Conjunto de ícones SVG inline (mesmo padrão do StatusIcon): herdam a cor via
   // currentColor, então combinam com o tema do VSCode. Substituem os emoji.
-  type IconName = 'clock' | 'hourglass' | 'chevron' | 'refresh' | 'pin' | 'dot';
+  import type { AgentIconName } from '../format';
+  type IconName = 'clock' | 'hourglass' | 'chevron' | 'refresh' | 'pin' | 'dot' | AgentIconName;
   let { name, size = 14 }: { name: IconName; size?: number } = $props();
 </script>
 
@@ -31,6 +32,18 @@
     <path d="M5.5 2.5h5l-1 4 1.5 1.5h-6l1.5-1.5-1-4Z" fill="currentColor" stroke="none" />
   {:else if name === 'dot'}
     <circle cx="8" cy="8" r="3.25" fill="currentColor" stroke="none" />
+  {:else if name === 'star'}
+    <path d="M8 2.5l1.7 3.5 3.8.55-2.75 2.65.65 3.8L8 11.2l-3.4 1.8.65-3.8L2.5 6.55l3.8-.55L8 2.5Z" />
+  {:else if name === 'search'}
+    <circle cx="7" cy="7" r="4.25" />
+    <path d="M10.2 10.2L13.5 13.5" />
+  {:else if name === 'list'}
+    <path d="M3 4h10M3 8h10M3 12h6.5" />
+  {:else if name === 'bolt'}
+    <path d="M9 2L4 9h3.75L7 14l5-7H8.25L9 2Z" />
+  {:else if name === 'person'}
+    <circle cx="8" cy="5.25" r="2.75" />
+    <path d="M3.25 13.5c.5-2.5 2.4-3.75 4.75-3.75s4.25 1.25 4.75 3.75" />
   {/if}
 </svg>
 
