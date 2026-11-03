@@ -235,6 +235,10 @@ export function activate(context: vscode.ExtensionContext): void {
         viewProvider.pushLocale();
         panelProvider.pushLocale();
       }
+      if (e.affectsConfiguration('claudeTodos.theme')) {
+        viewProvider.pushAppearance();
+        panelProvider.pushAppearance();
+      }
       if (e.affectsConfiguration('claudeTodos.activeFolder')) {
         viewProvider.pushSnapshot();
         panelProvider.pushSnapshot();

@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { buildWebviewHtml } from '../webview/html';
 import type { SessionSnapshot, ExtensionMessage, WebviewMessage, ProjectUsage } from '../types';
 import { resolveLocale } from '../localeResolver';
+import { readUiTheme } from '../themeSetting';
+import type { UiThemeId } from '../themes';
 
 export class TodosPanelProvider {
   private panel: vscode.WebviewPanel | null = null;
@@ -31,6 +33,7 @@ export class TodosPanelProvider {
     this.panel.webview.onDidReceiveMessage((msg: WebviewMessage) => {
       if (msg.type === 'ready') {
         this.pushLocale();
+        this.pushAppearance();
         this.pushSnapshot();
       }
       this.onWebviewMessage(msg);
@@ -47,6 +50,13 @@ export class TodosPanelProvider {
   pushLocale(): void {
     if (!this.panel) return;
     const msg: ExtensionMessage = { type: 'locale', locale: resolveLocale() };
+    this.panel.webview.postMessage(msg);
+  }
+
+  // theme opcional: o QuickPick manda o tema em previa, sem gravar a setting.
+  pushAppearance(theme: UiThemeId = readUiTheme()): void {
+    if (!this.panel) return;
+    const msg: ExtensionMessage = { type: 'appearance', theme };
     this.panel.webview.postMessage(msg);
   }
 
