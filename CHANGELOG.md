@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - **Pending questions in the Paper theme now use the theme's font.** They were falling back to the browser's default font.
 - **Sessions in a Claude Code worktree now show up in the window opened at the repo root.** A session running in `.claude/worktrees/<name>`, or one that moved there midway, was missing from the panel and the session picker. A session that is still running in a worktree can now be picked automatically, like any other live session; pin a session to keep the panel on it.
+- **Agent cards no longer cut off their counters in a narrow sidebar.** In every theme, the token count and the `3/3` task count could disappear past the card's edge. They now wrap to the next line.
 
 ## [0.21.0] - 2026-11-03
 

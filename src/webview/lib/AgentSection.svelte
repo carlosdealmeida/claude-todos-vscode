@@ -134,8 +134,11 @@
   .header {
     width: 100%;
     display: flex;
+    /* Em painel estreito o que nao cabe desce de linha: o overflow do card cortaria
+       justamente o contador, que e o ultimo da fila. */
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--sp-2);
+    gap: var(--sp-1) var(--sp-2);
     padding: var(--sp-2) var(--sp-3);
     background: var(--ct-header-bg);
     border: none;
@@ -170,6 +173,7 @@
   }
   .title { flex: 1; font-weight: 600; letter-spacing: 0.1px; }
   .counts {
+    margin-left: auto;
     font-size: 0.85em;
     display: flex;
     align-items: center;

@@ -100,8 +100,27 @@ async function asciiBarKeepsProportion(context: BrowserContext, open: Open): Pro
   return failures;
 }
 
+// Nenhum tema esconde informacao: em painel estreito, o que nao cabe no cabecalho do
+// card desce de linha, em vez de ser cortado pelo overflow do card.
+async function cardHeaderFits(context: BrowserContext, theme: string, open: Open): Promise<string[]> {
+  const failures: string[] = [];
+  for (const width of [360, 300, 270, 240, 200]) {
+    const page = await open(context, theme, 'full', 'dark');
+    await page.evaluate((w) => { document.body.style.width = `${w}px`; }, width);
+    const clipped = await page.locator('section.agent > button.header').evaluateAll((els) => els.flatMap((h) => {
+      const right = h.closest('section')!.getBoundingClientRect().right;
+      const over = [...h.children].filter((c) => c.getBoundingClientRect().right > right + 0.5);
+      return over.map((c) => `${h.querySelector('.title')!.textContent}/${c.className.split(' ')[0]}`);
+    }));
+    await page.close();
+    if (clipped.length) failures.push(`${theme}/${width}px: cortado no cabecalho do card: ${clipped.join(', ')}`);
+  }
+  return failures;
+}
+
 export async function behaviorChecks(context: BrowserContext, themes: readonly string[], open: Open): Promise<string[]> {
   const failures: string[] = [];
+  for (const theme of themes) failures.push(...await cardHeaderFits(context, theme, open));
   if (themes.includes('painel')) {
     failures.push(...await ringShowsWholeCard(context, open), ...await ringHasTypeIcon(context, open), ...await panelUsageIsBlue(context, open));
   }
