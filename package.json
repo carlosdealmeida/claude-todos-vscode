@@ -217,6 +217,19 @@
           "default": "auto",
           "description": "%config.language.description%"
         },
+        "claudeTodos.theme": {
+          "type": "string",
+          "enum": [
+            "classic",
+            "papel"
+          ],
+          "enumDescriptions": [
+            "%config.theme.classic%",
+            "%config.theme.papel%"
+          ],
+          "default": "classic",
+          "description": "%config.theme.description%"
+        },
         "claudeTodos.notifications": {
           "type": "boolean",
           "default": true,
