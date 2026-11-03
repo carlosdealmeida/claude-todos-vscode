@@ -25,6 +25,7 @@
         class="ring-btn"
         class:running={it.running}
         onclick={() => todosStore.focusAgent(it.a.agentId)}
+        title={it.a.name}
         aria-label={todosStore.t('agentStrip.label', { name: it.a.name, done: it.done, total: it.total })}
       >
         <svg viewBox="0 0 44 44" aria-hidden="true">
@@ -49,6 +50,8 @@
   .track { fill: none; stroke: var(--ct-track); stroke-width: 3; }
   .arc { fill: none; stroke: var(--ct-run); stroke-width: 3; stroke-linecap: round; }
   .live { position: absolute; top: calc(var(--sp-2) + 1.9rem); left: calc(50% + 0.75rem); width: 9px; height: 9px; border-radius: 50%; background: var(--ct-run); box-shadow: 0 0 0 2px var(--ct-surface); }
-  .name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Duas linhas: nomes com o mesmo comeco (explorador-a, explorador-b) truncados
+     numa so ficariam iguais, e o anel e o unico jeito de achar o agente aqui. */
+  .name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; max-width: 100%; overflow: hidden; overflow-wrap: anywhere; line-height: 1.2; text-align: center; }
   .frac { font-variant-numeric: tabular-nums; font-size: 0.85em; }
 </style>
