@@ -1,7 +1,7 @@
 import type { SessionSnapshot, ExtensionMessage, WebviewMessage, ProjectUsage } from '../types';
 import { createT } from '../i18n/t';
 import type { Locale } from '../i18n/locale';
-import { effectiveTheme, parseUiTheme, type ColorMode, type UiThemeId } from '../themes';
+import { effectiveTheme, parseUiTheme, THEME_TRAITS, type ColorMode, type UiThemeId } from '../themes';
 import { createBridge } from './bridge';
 import { applyAppearance, observeMode } from './themes/mode';
 
@@ -20,6 +20,7 @@ class TodosStore {
   uiTheme = $state<UiThemeId>(parseUiTheme(document.documentElement.dataset.ctTheme));
   mode = $state<ColorMode>('dark');
   activeTheme = $derived(effectiveTheme(this.uiTheme, this.mode));
+  traits = $derived(THEME_TRAITS[this.activeTheme]);
 
   constructor() {
     bridge.onMessage((msg) => this.handle(msg));

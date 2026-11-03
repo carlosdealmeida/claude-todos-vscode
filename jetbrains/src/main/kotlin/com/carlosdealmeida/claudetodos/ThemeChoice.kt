@@ -8,7 +8,7 @@ import com.intellij.util.messages.Topic
 object ThemeChoice {
     const val KEY = "claudeTodos.theme"
     const val DEFAULT = "classic"
-    val IDS: List<String> = listOf("classic", "papel")
+    val IDS: List<String> = listOf("classic", "papel", "painel", "terminal")
 
     fun parse(value: String?): String = if (value != null && value in IDS) value else DEFAULT
 

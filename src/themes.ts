@@ -3,7 +3,7 @@
 // uma copia manual, travada pelo ThemeChoiceTest contra o package.json.
 import type { MessageKey } from './i18n/messages';
 
-export const UI_THEME_IDS = ['classic', 'papel'] as const;
+export const UI_THEME_IDS = ['classic', 'papel', 'painel', 'terminal'] as const;
 export type UiThemeId = (typeof UI_THEME_IDS)[number];
 export const DEFAULT_UI_THEME: UiThemeId = 'classic';
 
@@ -23,4 +23,21 @@ export function effectiveTheme(choice: UiThemeId, mode: ColorMode): UiThemeId {
 export const THEME_I18N: Record<UiThemeId, { name: MessageKey; desc: MessageKey }> = {
   classic: { name: 'theme.classic', desc: 'theme.classic.desc' },
   papel: { name: 'theme.papel', desc: 'theme.papel.desc' },
+  painel: { name: 'theme.painel', desc: 'theme.painel.desc' },
+  terminal: { name: 'theme.terminal', desc: 'theme.terminal.desc' },
+};
+
+// So o que CSS nao resolve. O resto de um tema e token.
+export interface ThemeTraits {
+  glyphs: 'svg' | 'text';
+  meter: 'bar' | 'ascii';
+  agentStrip: 'none' | 'rings';
+}
+
+const PLAIN: ThemeTraits = { glyphs: 'svg', meter: 'bar', agentStrip: 'none' };
+export const THEME_TRAITS: Record<UiThemeId, ThemeTraits> = {
+  classic: PLAIN,
+  papel: PLAIN,
+  painel: { ...PLAIN, agentStrip: 'rings' },
+  terminal: { glyphs: 'text', meter: 'ascii', agentStrip: 'none' },
 };

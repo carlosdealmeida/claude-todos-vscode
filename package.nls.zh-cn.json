@@ -21,6 +21,8 @@
   "config.theme.description": "面板主题。高对比度下始终使用经典主题。",
   "config.theme.classic": "跟随编辑器主题（默认）",
   "config.theme.papel": "安静宽松，只有一种强调色",
+  "config.theme.painel": "按用途使用编辑器的蓝色：实色 = 用量，亮色 = 正在运行",
+  "config.theme.terminal": "等宽字体、文本状态和 ASCII 进度条",
   "config.notifications.description": "当被跟踪的会话在活动后进入空闲，或完成所有任务时显示通知（仅在 VS Code 窗口未聚焦时）。",
   "config.activeFolder.description": "仅多根工作区：要跟踪的工作区文件夹名称（或绝对路径）。留空 = 跟随所有文件夹中最活跃的会话。",
   "walkthrough.title": "开始使用 Claude Todos",

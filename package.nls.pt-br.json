@@ -21,6 +21,8 @@
   "config.theme.description": "Tema do painel. Em alto contraste, usa sempre o Clássico.",
   "config.theme.classic": "Segue o tema do editor (padrão)",
   "config.theme.papel": "Calmo e espaçado, uma única cor de destaque",
+  "config.theme.painel": "Azul do editor por função: forte = consumo, vivo = rodando agora",
+  "config.theme.terminal": "Monoespaçado, status em texto e barras ASCII",
   "config.notifications.description": "Notifica quando a sessão acompanhada fica ociosa após um período de atividade, ou completa todas as tasks (somente com a janela do VS Code sem foco).",
   "config.activeFolder.description": "Somente multi-root: nome (ou caminho absoluto) da pasta do workspace a acompanhar. Vazio = seguir a sessão mais ativa entre todas as pastas.",
   "walkthrough.title": "Comece com o Claude Todos",
