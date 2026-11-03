@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { buildWebviewHtml } from '../webview/html';
+import { refreshHtmlOnHide } from './refreshHtmlOnHide';
 import type { SessionSnapshot, ExtensionMessage, WebviewMessage, ProjectUsage } from '../types';
 import { resolveLocale } from '../localeResolver';
 import { readUiTheme } from '../themeSetting';
@@ -22,6 +23,7 @@ export class TodosViewProvider implements vscode.WebviewViewProvider {
       localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, 'dist')],
     };
     view.webview.html = buildWebviewHtml(view.webview, this.extensionUri);
+    refreshHtmlOnHide(view, () => buildWebviewHtml(view.webview, this.extensionUri));
     view.webview.onDidReceiveMessage((msg: WebviewMessage) => {
       if (msg.type === 'ready') {
         this.pushLocale();
