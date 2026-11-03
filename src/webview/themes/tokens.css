@@ -9,6 +9,9 @@
 
   --ct-bg: transparent;
   --ct-bg-image: none;
+  /* Contorno que recorta o ponto do anel. Nao usa --vscode-sideBar-background:
+     nem o theme.css do site nem o ThemeShim a definem. */
+  --ct-surface: var(--ct-bg);
   --ct-fg: var(--vscode-foreground);
   --ct-muted: var(--vscode-descriptionForeground);
   --ct-border: var(--vscode-panel-border);

@@ -21,6 +21,9 @@ class TodosStore {
   mode = $state<ColorMode>('dark');
   activeTheme = $derived(effectiveTheme(this.uiTheme, this.mode));
   traits = $derived(THEME_TRAITS[this.activeTheme]);
+  // Pedido de foco vindo da faixa de agentes. O card atendido zera o pedido,
+  // entao um segundo clique no mesmo agente funciona de novo.
+  focus = $state<string | null>(null);
 
   constructor() {
     bridge.onMessage((msg) => this.handle(msg));
@@ -30,6 +33,10 @@ class TodosStore {
       applyAppearance(document.documentElement, this.uiTheme, mode);
     });
     this.post({ type: 'ready' });
+  }
+
+  focusAgent(agentId: string): void {
+    this.focus = agentId;
   }
 
   private handle(msg: ExtensionMessage): void {

@@ -40,9 +40,20 @@
   let durations = $derived(completedTaskDurations(agent.todos));
 
   let title = $derived(agent.name);
+
+  let sectionEl = $state<HTMLElement | null>(null);
+  // Zerar o pedido e obrigatorio: este effect roda de novo a cada snapshot,
+  // porque a prop `agent` muda de identidade. Com o pedido ainda de pe, o card
+  // reabriria e a tela rolaria a cada atualizacao.
+  $effect(() => {
+    if (todosStore.focus !== agent.agentId) return;
+    todosStore.focus = null;
+    expanded = true;
+    sectionEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
 </script>
 
-<section class="agent" class:hist={history} class:active={visualState === 'active'}>
+<section bind:this={sectionEl} class="agent" class:hist={history} class:active={visualState === 'active'}>
   <button class="header" onclick={() => expanded = !expanded} aria-expanded={expanded}>
     <span class="chevron" class:open={expanded}><Icon name="chevron" size={12} /></span>
     {#if visualState !== 'idle'}<span class="dot" class:active={visualState === 'active'} class:done={visualState === 'done'}></span>{/if}

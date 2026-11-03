@@ -5,6 +5,7 @@
   import ProjectUsageSection from './lib/ProjectUsageSection.svelte';
   import Icon from './lib/Icon.svelte';
   import AgentTree from './lib/AgentTree.svelte';
+  import AgentStrip from './lib/AgentStrip.svelte';
   import PendingQuestions from './lib/PendingQuestions.svelte';
   import { buildTree, isHistory } from './tree';
 
@@ -45,6 +46,9 @@
     {/if}
     <ProjectUsageSection />
     {#if snapshot.agents.length > 0}
+      {#if todosStore.traits.agentStrip === 'rings'}
+        <AgentStrip agents={snapshot.agents} />
+      {/if}
       <div class="agents">
         {#each buildTree(snapshot.agents) as root (root.agent.agentId)}
           <AgentTree node={root} usage={snapshot.usage} history={isHistory(root.agent)} {hasRunningSubAgent} {mainModel} />

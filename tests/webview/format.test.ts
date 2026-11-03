@@ -2,6 +2,16 @@ import { describe, it, expect } from 'vitest';
 import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey, statusGlyph, asciiBar, ringDash } from '../../src/webview/format';
 import type { Todo, TodoStatus, AgentUsage, PendingQuestion } from '../../src/types';
 
+describe('ringDash', () => {
+  const C = 2 * Math.PI * 18;
+  it('proporcional ao concluido', () => { expect(ringDash(1, 4, C)).toBeCloseTo(C / 4, 3); });
+  it('zero tarefas ou zero concluidas mostra um traco minimo visivel', () => {
+    expect(ringDash(0, 3, C)).toBe(4);
+    expect(ringDash(0, 0, C)).toBe(4);
+  });
+  it('nunca passa do circulo', () => { expect(ringDash(5, 4, C)).toBeCloseTo(C, 3); });
+});
+
 describe('asciiBar', () => {
   it.each([
     [0, 10, '░░░░░░░░░░'], [1, 10, '██████████'], [0.5, 10, '█████░░░░░'],

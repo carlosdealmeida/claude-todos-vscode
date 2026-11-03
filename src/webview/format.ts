@@ -272,3 +272,10 @@ export function asciiBar(pct: number, width: number): string {
   const filled = Math.round(Math.min(1, Math.max(0, pct)) * width);
   return '█'.repeat(filled) + '░'.repeat(width - filled);
 }
+
+// Comprimento do arco do anel de progresso. Minimo de 4px: um agente sem nada
+// concluido ainda precisa de um traco que mostre onde o anel comeca.
+export function ringDash(done: number, total: number, circumference: number): number {
+  if (total <= 0 || done <= 0) return 4;
+  return Math.max(4, Math.min(1, done / total) * circumference);
+}
