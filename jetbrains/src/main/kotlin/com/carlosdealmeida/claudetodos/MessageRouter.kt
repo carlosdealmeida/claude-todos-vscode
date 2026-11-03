@@ -53,10 +53,15 @@ class MessageRouter(
     private val sendToWebview: (String) -> Unit,
     private val locale: String,
     private val host: RouterHost,
+    private val theme: () -> String,
 ) {
     // Acessados de múltiplas threads (CEF/pool/EDT) — estruturas thread-safe
     private val nextId = AtomicInteger(0)
     private val pending = ConcurrentHashMap<String, (JsonObject) -> Unit>()
+
+    fun pushAppearance(id: String) {
+        sendToWebview(buildJsonObject { put("type", "appearance"); put("theme", id) }.toString())
+    }
 
     fun onWebviewMessage(json: String) {
         val msg = parse(json) ?: return
@@ -65,6 +70,7 @@ class MessageRouter(
                 sendToWebview(buildJsonObject {
                     put("type", "locale"); put("locale", locale)
                 }.toString())
+                pushAppearance(theme())
                 sendToSidecar("""{"cmd":"getSnapshot"}""")
             }
             "refresh" -> sendToSidecar("""{"cmd":"getSnapshot"}""")

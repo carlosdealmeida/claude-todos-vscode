@@ -14,6 +14,7 @@ object NotifyMessages {
         "bridgeMod.installed", "bridgeMod.uninstalled", "bridgeMod.failed",
         "todo.sourceMissing", "picker.auto", "picker.alive",
         "time.now", "time.minutesAgo", "time.hoursAgo", "time.daysAgo",
+        "theme.action", "theme.classic", "theme.papel",
     )
 
     // Expostos para o teste de paridade: get() faz fallback para en e por isso
@@ -55,6 +56,9 @@ object NotifyMessages {
             "time.minutesAgo" to "{n} min ago",
             "time.hoursAgo" to "{n} h ago",
             "time.daysAgo" to "{n} d ago",
+            "theme.action" to "Theme…",
+            "theme.classic" to "Classic",
+            "theme.papel" to "Paper",
         ),
         "pt-br" to mapOf(
             "notify.idle" to "\"{title}\" — aguardando você",
@@ -89,6 +93,9 @@ object NotifyMessages {
             "time.minutesAgo" to "há {n} min",
             "time.hoursAgo" to "há {n} h",
             "time.daysAgo" to "há {n} d",
+            "theme.action" to "Tema…",
+            "theme.classic" to "Clássico",
+            "theme.papel" to "Papel",
         ),
         "es" to mapOf(
             "notify.idle" to "\"{title}\" — esperándote",
@@ -123,6 +130,9 @@ object NotifyMessages {
             "time.minutesAgo" to "hace {n} min",
             "time.hoursAgo" to "hace {n} h",
             "time.daysAgo" to "hace {n} d",
+            "theme.action" to "Tema…",
+            "theme.classic" to "Clásico",
+            "theme.papel" to "Papel",
         ),
         "zh-cn" to mapOf(
             "notify.idle" to "“{title}” — 正在等待你",
@@ -157,6 +167,9 @@ object NotifyMessages {
             "time.minutesAgo" to "{n} 分钟前",
             "time.hoursAgo" to "{n} 小时前",
             "time.daysAgo" to "{n} 天前",
+            "theme.action" to "主题…",
+            "theme.classic" to "经典",
+            "theme.papel" to "纸张",
         ),
         "zh-tw" to mapOf(
             "notify.idle" to "「{title}」 — 正在等待你",
@@ -191,6 +204,9 @@ object NotifyMessages {
             "time.minutesAgo" to "{n} 分鐘前",
             "time.hoursAgo" to "{n} 小時前",
             "time.daysAgo" to "{n} 天前",
+            "theme.action" to "主題…",
+            "theme.classic" to "經典",
+            "theme.papel" to "紙張",
         ),
     )
 
