@@ -17,7 +17,7 @@
   let mainModel = $derived(snapshot?.usage?.byAgent.find(a => a.isMain)?.currentModel);
 </script>
 
-<main>
+<main class="ct-root">
   {#if todosStore.loading}
     <div class="loading">{todosStore.t('app.loading')}</div>
   {:else if todosStore.error}
@@ -87,7 +87,7 @@
     flex: 1;
     min-width: 0;
     background: transparent;
-    border: 1px solid var(--vscode-panel-border);
+    border: 1px solid var(--ct-border);
     border-radius: 5px;
     color: inherit;
     font: inherit;
@@ -96,8 +96,8 @@
     transition: background 120ms ease, border-color 120ms ease;
   }
   .session-btn:hover {
-    background: var(--vscode-list-hoverBackground);
-    border-color: var(--accent);
+    background: var(--ct-hover);
+    border-color: var(--ct-accent);
   }
   .session-title {
     overflow: hidden;
@@ -105,25 +105,25 @@
     white-space: nowrap;
   }
   .pin, .caret { flex: none; display: inline-flex; }
-  .pin { color: var(--accent); }
+  .pin { color: var(--ct-accent); }
   .caret { opacity: 0.65; transform: rotate(90deg); }
   .awaiting {
     padding: 1.25rem 1rem;
     text-align: center;
-    color: var(--vscode-descriptionForeground);
+    color: var(--ct-muted);
   }
   .awaiting-title { font-size: 0.9rem; margin-bottom: 0.35rem; }
   .awaiting-sub { font-size: 0.8rem; opacity: 0.85; }
   .awaiting code {
-    background: var(--vscode-textBlockQuote-background);
+    background: var(--ct-code-bg);
     padding: 1px 5px;
     border-radius: 3px;
-    font-family: var(--vscode-editor-font-family);
+    font-family: var(--ct-mono);
   }
   .primary {
     margin-top: 0.6rem;
-    background: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
+    background: var(--ct-btn-bg);
+    color: var(--ct-btn-fg);
     border: 1px solid transparent;
     border-radius: 5px;
     padding: 0.35rem 0.8rem;
@@ -131,7 +131,7 @@
     cursor: pointer;
   }
   .primary:hover {
-    background: var(--vscode-button-hoverBackground, var(--vscode-button-background));
+    background: var(--ct-btn-hover);
     filter: brightness(1.08);
   }
   .awaiting-hint { font-size: 0.72rem; opacity: 0.7; margin-top: 0.45rem; }
@@ -140,18 +140,18 @@
     align-items: center;
     justify-content: center;
     background: transparent;
-    border: 1px solid var(--vscode-panel-border);
+    border: 1px solid var(--ct-border);
     color: inherit;
     padding: 0.25rem 0.4rem;
     border-radius: 5px;
     cursor: pointer;
     transition: background 120ms ease, border-color 120ms ease;
   }
-  .ghost:hover { background: var(--vscode-list-hoverBackground); border-color: var(--accent); }
+  .ghost:hover { background: var(--ct-hover); border-color: var(--ct-accent); }
   .loading, .error {
     padding: 1rem;
     text-align: center;
-    color: var(--vscode-descriptionForeground);
+    color: var(--ct-muted);
   }
-  .error { color: var(--vscode-errorForeground); }
+  .error { color: var(--ct-error); }
 </style>

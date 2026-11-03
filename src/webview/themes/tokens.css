@@ -1,0 +1,65 @@
+/* Tokens semanticos do painel. Este :root E o tema Classico: tudo derivado do
+   tema do editor (VS Code nativo, ThemeShim no JetBrains, theme.css no site).
+   Os outros temas so redefinem estes nomes (ver papel.css etc.).
+   Cada fallback aqui e o mesmo que o componente usava antes da migracao. */
+:root {
+  --ct-font: var(--vscode-font-family);
+  --ct-font-size: var(--vscode-font-size);
+  --ct-mono: var(--vscode-editor-font-family);
+
+  --ct-bg: transparent;
+  --ct-bg-image: none;
+  --ct-fg: var(--vscode-foreground);
+  --ct-muted: var(--vscode-descriptionForeground);
+  --ct-border: var(--vscode-panel-border);
+  --ct-hover: var(--vscode-list-hoverBackground);
+  --ct-header-bg: var(--vscode-sideBarSectionHeader-background, transparent);
+  --ct-code-bg: var(--vscode-textBlockQuote-background);
+  --ct-error: var(--vscode-errorForeground);
+
+  --ct-badge-bg: var(--vscode-badge-background);
+  --ct-badge-fg: var(--vscode-badge-foreground);
+  --ct-btn-bg: var(--vscode-button-background);
+  --ct-btn-fg: var(--vscode-button-foreground);
+  --ct-btn-hover: var(--vscode-button-hoverBackground, var(--vscode-button-background));
+
+  --ct-accent: var(--vscode-focusBorder, var(--vscode-progressBar-background, #0e70c0));
+  /* O ThemeShim nao define textLink: no JetBrains este fallback e o que vale. */
+  --ct-link: var(--vscode-textLink-foreground, var(--ct-accent));
+  --ct-ok: var(--vscode-charts-green, var(--vscode-testing-iconPassed, #4caf50));
+  --ct-done: var(--ct-ok);
+  --ct-run: var(--vscode-charts-blue, var(--vscode-progressBar-background, #0e70c0));
+  --ct-info: var(--vscode-charts-blue);
+  --ct-warn: var(--vscode-charts-yellow);
+  --ct-danger: var(--vscode-charts-red);
+  /* Quente (ambar) para nao se confundir com o azul da task em andamento. */
+  --ct-agent-active: var(--vscode-charts-orange, #cc8400);
+
+  --ct-tone-explore: var(--vscode-charts-green);
+  --ct-tone-plan: var(--vscode-charts-yellow);
+  --ct-tone-general: var(--vscode-charts-blue);
+  --ct-tone-neutral: var(--vscode-descriptionForeground);
+
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --radius: 6px;
+
+  font-family: var(--ct-font);
+  font-size: var(--ct-font-size);
+  color: var(--ct-fg);
+  background: transparent;
+}
+
+/* Fundo, texto e fonte de um tema. No <main> e nao no :root/body porque o VS
+   Code injeta body { color; font-family } em toda webview e o site tem
+   .landing: nos dois, o :root nao chega ao texto herdado. O Classico fica de
+   fora porque o texto herdado dele hoje e o editor-foreground e nao pode mudar.
+   local: o <main> e quem rola, e as faixas do Terminal rolam com o conteudo. */
+:root[data-ct-theme]:not([data-ct-theme="classic"]) .ct-root {
+  background-color: var(--ct-bg);
+  background-image: var(--ct-bg-image);
+  background-attachment: local;
+  color: var(--ct-fg);
+  font-family: var(--ct-font);
+}

@@ -23,7 +23,7 @@
 
 <style>
   .icon { width: 1rem; height: 1rem; flex-shrink: 0; }
-  .completed { color: var(--ok, var(--vscode-testing-iconPassed, #4caf50)); }
-  .in-progress { color: var(--run, var(--vscode-progressBar-background, #0e70c0)); }
-  .pending { color: var(--muted, var(--vscode-foreground)); }
+  .completed { color: var(--ct-done); }
+  .in-progress { color: var(--ct-run); }
+  .pending { color: var(--ct-muted); }
 </style>

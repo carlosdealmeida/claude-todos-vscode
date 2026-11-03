@@ -50,7 +50,7 @@
   .kids.railed {
     margin-left: var(--sp-2);
     padding-left: var(--sp-2);
-    border-left: 1px solid var(--vscode-panel-border);
+    border-left: 1px solid var(--ct-border);
   }
   .branch.railed {
     position: relative;
@@ -62,7 +62,7 @@
     top: 16px;
     width: calc(var(--sp-2) - 2px);
     height: 1px;
-    background: var(--vscode-panel-border);
+    background: var(--ct-border);
   }
   .history-divider {
     display: flex;
@@ -71,7 +71,7 @@
     text-transform: uppercase;
     font-size: 0.7em;
     letter-spacing: 0.5px;
-    color: var(--muted);
+    color: var(--ct-muted);
     margin: var(--sp-2) var(--sp-1) var(--sp-1);
   }
   .history-divider::before,
@@ -79,6 +79,6 @@
     content: '';
     flex: 1;
     height: 1px;
-    background: var(--vscode-panel-border);
+    background: var(--ct-border);
   }
 </style>

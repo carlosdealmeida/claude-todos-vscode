@@ -142,7 +142,7 @@
 
 <style>
   .usage {
-    border: 1px solid var(--vscode-panel-border);
+    border: 1px solid var(--ct-border);
     border-radius: var(--radius);
     margin: 0 var(--sp-1) var(--sp-2);
     padding: 0.4rem var(--sp-2);
@@ -158,11 +158,11 @@
     text-transform: uppercase;
     font-size: 0.8em;
     letter-spacing: 0.5px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--ct-muted);
   }
   .toggle {
     background: transparent;
-    border: 1px solid var(--vscode-panel-border);
+    border: 1px solid var(--ct-border);
     color: inherit;
     font: inherit;
     font-size: 0.9em;
@@ -170,17 +170,17 @@
     border-radius: 4px;
     cursor: pointer;
   }
-  .toggle:hover { background: var(--vscode-list-hoverBackground); }
+  .toggle:hover { background: var(--ct-hover); }
   table { width: 100%; border-collapse: collapse; }
   th, td { text-align: right; padding: 0.15rem 0.3rem; white-space: nowrap; }
   th.name, td.name { text-align: left; }
   thead th {
     font-weight: 600;
-    color: var(--vscode-descriptionForeground);
-    border-bottom: 1px solid var(--vscode-panel-border);
+    color: var(--ct-muted);
+    border-bottom: 1px solid var(--ct-border);
   }
   tfoot td {
-    border-top: 1px solid var(--vscode-panel-border);
+    border-top: 1px solid var(--ct-border);
     font-weight: 600;
   }
   .ctx-badge {
@@ -191,16 +191,16 @@
     font-weight: 600;
   }
   .ctx-badge.ok {
-    color: var(--vscode-charts-green);
-    background: color-mix(in srgb, var(--vscode-charts-green) 15%, transparent);
+    color: var(--ct-ok);
+    background: color-mix(in srgb, var(--ct-ok) 15%, transparent);
   }
   .ctx-badge.warn {
-    color: var(--vscode-charts-yellow);
-    background: color-mix(in srgb, var(--vscode-charts-yellow) 15%, transparent);
+    color: var(--ct-warn);
+    background: color-mix(in srgb, var(--ct-warn) 15%, transparent);
   }
   .ctx-badge.danger {
-    color: var(--vscode-charts-red);
-    background: color-mix(in srgb, var(--vscode-charts-red) 15%, transparent);
+    color: var(--ct-danger);
+    background: color-mix(in srgb, var(--ct-danger) 15%, transparent);
   }
   .ctx-bar-row {
     display: flex;
@@ -211,21 +211,21 @@
   .ctx-bar {
     flex: 1;
     height: 4px;
-    background: var(--vscode-panel-border);
+    background: var(--ct-border);
     border-radius: 2px;
     overflow: hidden;
   }
   .ctx-fill { height: 100%; transition: width 200ms ease; }
-  .ctx-fill.ok { background: var(--vscode-charts-green); }
-  .ctx-fill.warn { background: var(--vscode-charts-yellow); }
-  .ctx-fill.danger { background: var(--vscode-charts-red); }
+  .ctx-fill.ok { background: var(--ct-ok); }
+  .ctx-fill.warn { background: var(--ct-warn); }
+  .ctx-fill.danger { background: var(--ct-danger); }
   .ctx-count {
     font-size: 0.8em;
-    color: var(--vscode-descriptionForeground);
+    color: var(--ct-muted);
     white-space: nowrap;
   }
   .model {
-    color: var(--vscode-descriptionForeground);
+    color: var(--ct-muted);
     font-size: 0.9em;
     margin-left: 0.3rem;
   }
@@ -242,9 +242,9 @@
     font-size: 0.85em;
     font-weight: 600;
   }
-  .cache-badge.good { color: var(--vscode-charts-green); background: color-mix(in srgb, var(--vscode-charts-green) 15%, transparent); }
-  .cache-badge.mid { color: var(--vscode-charts-yellow); background: color-mix(in srgb, var(--vscode-charts-yellow) 15%, transparent); }
-  .cache-badge.low { color: var(--vscode-charts-red); background: color-mix(in srgb, var(--vscode-charts-red) 15%, transparent); }
+  .cache-badge.good { color: var(--ct-ok); background: color-mix(in srgb, var(--ct-ok) 15%, transparent); }
+  .cache-badge.mid { color: var(--ct-warn); background: color-mix(in srgb, var(--ct-warn) 15%, transparent); }
+  .cache-badge.low { color: var(--ct-danger); background: color-mix(in srgb, var(--ct-danger) 15%, transparent); }
   .cache-stack {
     display: flex;
     height: 7px;
@@ -253,14 +253,14 @@
     margin-bottom: 0.25rem;
   }
   .cache-stack .seg { height: 100%; }
-  .cache-stack .seg.read { background: var(--vscode-charts-green); }
-  .cache-stack .seg.create { background: var(--vscode-charts-blue); }
-  .cache-stack .seg.new { background: var(--vscode-descriptionForeground); }
+  .cache-stack .seg.read { background: var(--ct-ok); }
+  .cache-stack .seg.create { background: var(--ct-info); }
+  .cache-stack .seg.new { background: var(--ct-muted); }
   .cache-legend {
     display: flex;
     gap: 0.6rem;
     font-size: 0.75em;
-    color: var(--vscode-descriptionForeground);
+    color: var(--ct-muted);
     margin-bottom: 0.4rem;
     flex-wrap: wrap;
   }
@@ -272,9 +272,9 @@
     margin-right: 3px;
     vertical-align: middle;
   }
-  .cdot.read { background: var(--vscode-charts-green); }
-  .cdot.create { background: var(--vscode-charts-blue); }
-  .cdot.new { background: var(--vscode-descriptionForeground); }
+  .cdot.read { background: var(--ct-ok); }
+  .cdot.create { background: var(--ct-info); }
+  .cdot.new { background: var(--ct-muted); }
   /* Uma grade só para o bloco (rótulo, barra, %, reset): as linhas entram nela
      por display: contents, então as barras dos limites começam e terminam no
      mesmo ponto e dá para comparar um com o outro. */
@@ -294,7 +294,7 @@
   .limits-label { font-size: 0.9em; }
   .limits-read, .limit-reset {
     font-size: 0.8em;
-    color: var(--vscode-descriptionForeground);
+    color: var(--ct-muted);
     white-space: nowrap;
   }
   .limit-row { display: contents; }
@@ -307,12 +307,12 @@
     gap: 0.4rem;
     margin-top: 0.35rem;
     font-size: 0.75em;
-    color: var(--vscode-descriptionForeground);
+    color: var(--ct-muted);
   }
   .bridge-action {
     background: transparent;
     border: none;
-    color: var(--vscode-textLink-foreground, var(--accent));
+    color: var(--ct-link);
     font: inherit;
     padding: 0;
     cursor: pointer;

@@ -120,7 +120,7 @@
 
 <style>
   .project {
-    border: 1px solid var(--vscode-panel-border);
+    border: 1px solid var(--ct-border);
     border-radius: var(--radius);
     margin: 0 var(--sp-1) var(--sp-2);
     font-size: 0.85em;
@@ -138,7 +138,7 @@
     cursor: pointer;
     text-align: left;
   }
-  .header:hover { background: var(--vscode-list-hoverBackground); }
+  .header:hover { background: var(--ct-hover); }
   .chevron {
     display: inline-flex;
     align-items: center;
@@ -151,18 +151,18 @@
     text-transform: uppercase;
     font-size: 0.8em;
     letter-spacing: 0.5px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--ct-muted);
   }
   .count {
     font-size: 0.85em;
-    color: var(--vscode-descriptionForeground);
+    color: var(--ct-muted);
     font-variant-numeric: tabular-nums;
   }
   .body { padding: 0 var(--sp-2) 0.4rem; }
   .table-head { display: flex; justify-content: flex-end; margin: 0.1rem 0; }
   .toggle {
     background: transparent;
-    border: 1px solid var(--vscode-panel-border);
+    border: 1px solid var(--ct-border);
     color: inherit;
     font: inherit;
     font-size: 0.9em;
@@ -170,10 +170,10 @@
     border-radius: 4px;
     cursor: pointer;
   }
-  .toggle:hover { background: var(--vscode-list-hoverBackground); }
+  .toggle:hover { background: var(--ct-hover); }
   .note {
     padding: 0.2rem 0 0.3rem;
-    color: var(--vscode-descriptionForeground);
+    color: var(--ct-muted);
     font-style: italic;
   }
   table { width: 100%; border-collapse: collapse; }
@@ -181,11 +181,11 @@
   th.name, td.name { text-align: left; }
   thead th {
     font-weight: 600;
-    color: var(--vscode-descriptionForeground);
-    border-bottom: 1px solid var(--vscode-panel-border);
+    color: var(--ct-muted);
+    border-bottom: 1px solid var(--ct-border);
   }
   tfoot td {
-    border-top: 1px solid var(--vscode-panel-border);
+    border-top: 1px solid var(--ct-border);
     font-weight: 600;
   }
   .cache-head {
@@ -201,9 +201,9 @@
     font-size: 0.85em;
     font-weight: 600;
   }
-  .cache-badge.good { color: var(--vscode-charts-green); background: color-mix(in srgb, var(--vscode-charts-green) 15%, transparent); }
-  .cache-badge.mid { color: var(--vscode-charts-yellow); background: color-mix(in srgb, var(--vscode-charts-yellow) 15%, transparent); }
-  .cache-badge.low { color: var(--vscode-charts-red); background: color-mix(in srgb, var(--vscode-charts-red) 15%, transparent); }
+  .cache-badge.good { color: var(--ct-ok); background: color-mix(in srgb, var(--ct-ok) 15%, transparent); }
+  .cache-badge.mid { color: var(--ct-warn); background: color-mix(in srgb, var(--ct-warn) 15%, transparent); }
+  .cache-badge.low { color: var(--ct-danger); background: color-mix(in srgb, var(--ct-danger) 15%, transparent); }
   .cache-stack {
     display: flex;
     height: 7px;
@@ -212,7 +212,7 @@
     margin-bottom: 0.35rem;
   }
   .cache-stack .seg { height: 100%; }
-  .cache-stack .seg.read { background: var(--vscode-charts-green); }
-  .cache-stack .seg.create { background: var(--vscode-charts-blue); }
-  .cache-stack .seg.new { background: var(--vscode-descriptionForeground); }
+  .cache-stack .seg.read { background: var(--ct-ok); }
+  .cache-stack .seg.create { background: var(--ct-info); }
+  .cache-stack .seg.new { background: var(--ct-muted); }
 </style>
