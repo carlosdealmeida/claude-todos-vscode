@@ -1192,11 +1192,14 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
     API: [#105934](https://github.com/anthropics/claude-code/issues/105934), [#105919](https://github.com/anthropics/claude-code/issues/105919), [#106198](https://github.com/anthropics/claude-code/issues/106198). Sem efeito na ponte, que não desenha nem spawna: [#106737](https://github.com/anthropics/claude-code/issues/106737), [#103593](https://github.com/anthropics/claude-code/issues/103593), [#103771](https://github.com/anthropics/claude-code/issues/103771).
 
 
-### 26. Temas do painel 🚧 fase 1 pronta no branch `feat/temas`, release v0.21.0 aguardando teste manual
+### 26. Temas do painel 🚧 fase 1 na v0.21.0, fases 2 e 3 pendentes
 
 Cinco temas selecionáveis, cada um em claro e escuro, nos três hosts: Clássico (padrão, sem nenhuma
 mudança visual), Papel, Painel, Terminal e Mission Control. Sai em três versões: v0.21.0 (fundação,
 Clássico e Papel), v0.22.0 (Painel e Terminal) e v0.23.0 (Mission Control e seletor na demo do site).
+
+A v0.21.0 passou no teste manual do VS Code. O plugin JetBrains saiu sem ser aberto em um IDE real,
+por decisão de 2026-11-03: a validação ficou com os testes Kotlin e o feedback de quem usa.
 
 Spec: [docs/specs/2026-11-02-temas-design.md](specs/2026-11-02-temas-design.md).
 Plano: [docs/plans/2026-11-02-temas.md](plans/2026-11-02-temas.md).

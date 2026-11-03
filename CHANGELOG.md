@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-11-03
+
 ### Added
 - **Panel themes.** Pick a look with `Claude Todos: Choose Theme` (live preview, Esc reverts) or the `claudeTodos.theme` setting; in JetBrains, use the new Theme… button on the tool window title. This release ships **Classic** (the current look, still the default, unchanged) and **Paper** (calm and spaced, a single accent color, in light and dark). High contrast always uses Classic.
 
