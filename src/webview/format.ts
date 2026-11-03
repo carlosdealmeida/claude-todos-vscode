@@ -1,4 +1,4 @@
-import type { Todo, AgentUsage, PendingQuestion, BridgeStatus } from '../types';
+import type { Todo, TodoStatus, AgentUsage, PendingQuestion, BridgeStatus } from '../types';
 import type { MessageKey } from '../i18n/messages';
 import type { Locale } from '../i18n/locale';
 
@@ -260,4 +260,9 @@ export function bridgeTextKey(status: BridgeStatus): MessageKey {
     case 'next-session': return 'usage.bridge.nextSession';
     case 'silent': return 'usage.bridge.silent';
   }
+}
+
+// Status em texto, para temas com glyphs: 'text'.
+export function statusGlyph(status: TodoStatus): string {
+  return status === 'completed' ? '[x]' : status === 'in_progress' ? '[~]' : '[ ]';
 }
