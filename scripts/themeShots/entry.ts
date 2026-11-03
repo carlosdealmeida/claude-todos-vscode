@@ -8,7 +8,7 @@ import '../../src/webview/app.css';
 import '../../site/src/demo/theme.css';
 import type { WebviewBridge } from '../../src/webview/bridge';
 import type { ExtensionMessage } from '../../src/types';
-import { caseSnapshot, type ShotCase, type ShotScript } from './cases';
+import { LEAK_SENTINEL, caseSnapshot, type ShotCase, type ShotScript } from './cases';
 
 const params = new URLSearchParams(location.search);
 const mode = params.get('mode') === 'light' ? 'light' : 'dark';
@@ -20,6 +20,19 @@ const shot = script as unknown as ShotScript;
 // data-theme que o theme.css do site usa para trocar as --vscode-*.
 document.documentElement.dataset.theme = mode;
 document.body.classList.add(mode === 'light' ? 'vscode-light' : 'vscode-dark');
+
+// O VS Code injeta uma camada de CSS em toda webview (pre/index.html). Aqui ela
+// vai com uma cor-sentinela, que o run.mts procura: fora do Classico, o tema nao
+// pode deixar passar a cor do editor. No Classico ela nao entra, porque la a cor
+// do editor e o comportamento certo.
+if (theme !== 'classic') {
+  const layer = document.createElement('style');
+  layer.textContent = `@layer vscode-default {
+    html { scrollbar-color: ${LEAK_SENTINEL} ${LEAK_SENTINEL}; }
+    code { color: ${LEAK_SENTINEL}; }
+  }`;
+  document.head.prepend(layer);
+}
 
 let handler: ((m: ExtensionMessage) => void) | null = null;
 const send = (m: ExtensionMessage) => handler?.(m);

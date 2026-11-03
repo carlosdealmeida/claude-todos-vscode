@@ -62,4 +62,10 @@
   background-attachment: local;
   color: var(--ct-fg);
   font-family: var(--ct-font);
+  /* A mesma camada do VS Code tambem pinta a barra de rolagem e o <code>. */
+  scrollbar-color: var(--ct-muted) var(--ct-bg);
+}
+
+:root[data-ct-theme]:not([data-ct-theme="classic"]) .ct-root code {
+  color: inherit;
 }

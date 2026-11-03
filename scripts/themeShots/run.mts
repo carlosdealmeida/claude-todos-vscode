@@ -12,7 +12,7 @@ import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { SHOT_CASES, shotTime, type ShotScript } from './cases.ts';
+import { LEAK_SENTINEL, SHOT_CASES, shotTime, type ShotScript } from './cases.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
 const args = process.argv.slice(2);
@@ -83,6 +83,14 @@ for (const theme of themes) {
           return same;
         });
         if (!inherited) failures.push(`${file}: texto herdado nao usa --ct-fg/--ct-font`);
+        const leaks = await page.evaluate((sentinel) => {
+          const main = document.querySelector('main')!;
+          const found: string[] = [];
+          if (getComputedStyle(main).scrollbarColor.includes(sentinel)) found.push('scrollbar');
+          main.querySelectorAll('code').forEach((c) => { if (getComputedStyle(c).color === sentinel) found.push('code'); });
+          return found;
+        }, LEAK_SENTINEL);
+        if (leaks.length) failures.push(`${file}: cor do editor vazou em ${leaks.join(', ')}`);
       }
       await page.close();
       if (compare) {

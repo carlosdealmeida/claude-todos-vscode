@@ -7,7 +7,10 @@ export interface ShotScript {
   projectUsage: ProjectUsage;
 }
 
-export const SHOT_CASES = ['live', 'full', 'alert', 'project', 'empty', 'awaiting', 'taskToolsOff', 'error'] as const;
+// Cor que nenhum tema usa: se ela aparecer no painel, a cor do editor vazou.
+export const LEAK_SENTINEL = 'rgb(255, 0, 255)';
+
+export const SHOT_CASES =['live', 'full', 'alert', 'project', 'empty', 'awaiting', 'taskToolsOff', 'error'] as const;
 export type ShotCase = (typeof SHOT_CASES)[number];
 
 // O frame mais tardio com uma task em andamento: cobre os tres status.
