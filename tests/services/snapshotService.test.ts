@@ -50,6 +50,30 @@ const newModelUsage = {
 const resolverA = { resolveCandidates: () => [{ cwd: '/p', sessionId: 'a', terminalPid: null, startedAt: 1 }] };
 
 describe('SnapshotService', () => {
+  // O transcript muda de pasta quando a sessão entra num worktree, e o registro
+  // antigo da raiz continua no bridge apontando para o lugar de onde ele saiu.
+  describe('sessão com mais de um registro', () => {
+    const records = [
+      { cwd: '/p/.claude/worktrees/x', sessionId: 's', terminalPid: null, startedAt: 2 },
+      { cwd: '/p', sessionId: 's', terminalPid: null, startedAt: 1 },
+    ];
+    const parserAt = (transcriptCwd: string) => ({
+      ...makeParser({ mtimes: {} }),
+      transcriptActivityAt: (_sessionId: string, cwd: string) => (cwd === transcriptCwd ? 1000 : null),
+    });
+
+    it('usa o registro cujo transcript existe, mesmo que não seja o primeiro', () => {
+      const svc = new SnapshotService({ resolveCandidates: () => records } as any, parserAt('/p') as any, usageStub as any);
+      expect(svc.listSessions().map(s => s.cwd)).toEqual(['/p']);
+    });
+
+    it('não repete a sessão quando dois registros acham o transcript', () => {
+      const parser = { ...makeParser({ mtimes: {} }), transcriptActivityAt: () => 1000 };
+      const svc = new SnapshotService({ resolveCandidates: () => records } as any, parser as any, usageStub as any);
+      expect(svc.listSessions().map(s => s.cwd)).toEqual(['/p/.claude/worktrees/x']);
+    });
+  });
+
   it('returns null when no session has a transcript', () => {
     const resolver = {
       resolveCandidates: () => [

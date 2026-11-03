@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { BridgeRecord } from '../types';
 import { atomicWriteFileSync } from './atomicWrite';
+import { belongsToWorkspace } from './workspaceFolders';
 
 export class BridgeFile {
   constructor(private readonly filePath: string) {}
@@ -30,13 +31,8 @@ export class BridgeFile {
   }
 
   allForCwd(cwd: string): BridgeRecord[] {
-    // path.normalize unifica separadores ('C:/x' vs 'c:\x') — hosts como o
-    // IntelliJ mandam basePath com '/', o hook grava a cwd nativa do SO.
-    const eq = (a: string, b: string) => process.platform === 'win32'
-      ? path.normalize(a).toLowerCase() === path.normalize(b).toLowerCase()
-      : a === b;
     return this.readAll()
-      .filter(r => eq(r.cwd, cwd))
+      .filter(r => belongsToWorkspace(r.cwd, cwd))
       .sort((a, b) => b.startedAt - a.startedAt);
   }
 
