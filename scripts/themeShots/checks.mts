@@ -100,6 +100,32 @@ async function asciiBarKeepsProportion(context: BrowserContext, open: Open): Pro
   return failures;
 }
 
+// Mission Control: medidores no topo, um LED por agente, e o clique abre o card.
+async function missionShowsInstruments(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'mission', 'live', 'dark');
+  await page.setViewportSize({ width: 360, height: 560 });
+  const failures: string[] = [];
+  const tiles = await page.locator('.gauges .g').count();
+  if (tiles < 3) failures.push(`mission: ${tiles} medidores, esperava ao menos 3`);
+  const leds = await page.locator('.led-row').count();
+  if (leds !== 4) failures.push(`mission: ${leds} linhas de LED, esperava 4`);
+  if (await page.locator('.usage, table').count() === 0) failures.push('mission: tabela de uso sumiu');
+  if (leds > 0) {
+    await page.locator('.led-row', { hasText: 'explorador-a' }).click();
+    await page.waitForTimeout(800);
+    const opened = await page.evaluate(() => {
+      const title = [...document.querySelectorAll('section.agent .title')].find((t) => t.textContent === 'explorador-a')!;
+      const section = title.closest('section')!;
+      const card = section.getBoundingClientRect();
+      const main = document.querySelector('main')!.getBoundingClientRect();
+      return section.querySelectorAll('li').length > 0 && card.top >= main.top && card.bottom <= main.bottom;
+    });
+    if (!opened) failures.push('mission: clique no LED nao mostrou o card aberto');
+  }
+  await page.close();
+  return failures;
+}
+
 // Nenhum tema esconde informacao: em painel estreito, o que nao cabe no cabecalho do
 // card desce de linha, em vez de ser cortado pelo overflow do card.
 async function cardHeaderFits(context: BrowserContext, theme: string, open: Open): Promise<string[]> {
@@ -125,5 +151,6 @@ export async function behaviorChecks(context: BrowserContext, themes: readonly s
     failures.push(...await ringShowsWholeCard(context, open), ...await ringHasTypeIcon(context, open), ...await panelUsageIsBlue(context, open));
   }
   if (themes.includes('terminal')) failures.push(...await asciiBarKeepsProportion(context, open));
+  if (themes.includes('mission')) failures.push(...await missionShowsInstruments(context, open));
   return failures;
 }

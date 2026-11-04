@@ -1,0 +1,67 @@
+/* Mission Control: instrumentacao densa. */
+:root[data-ct-theme="mission"] {
+  --sp-1: 0.2rem;
+  --sp-2: 0.4rem;
+  --sp-3: 0.6rem;
+  --radius: 4px;
+}
+
+:root[data-ct-theme="mission"][data-ct-mode="dark"] {
+  --ct-bg: #0a0f1a;
+  --ct-fg: #d6e2f5;
+  --ct-muted: #8494ad;
+  --ct-border: #1e2a40;
+  --ct-hover: #121b2e;
+  --ct-header-bg: #0f1626;
+  --ct-code-bg: #121b2e;
+  --ct-error: #f87171;
+  --ct-link: #3fd0e0;
+  --ct-badge-bg: #1e2a40;
+  --ct-badge-fg: #d6e2f5;
+  --ct-btn-bg: #3fd0e0;
+  --ct-btn-fg: #0a0f1a;
+  --ct-btn-hover: #6adbe8;
+  --ct-accent: #3fd0e0;
+  --ct-ok: #4ade80;
+  --ct-done: #4ade80;
+  --ct-run: #3fd0e0;
+  --ct-info: #3fd0e0;
+  --ct-warn: #ffb547;
+  --ct-danger: #f87171;
+  --ct-agent-active: #3fd0e0;
+  --ct-track: #1e2a40;
+  --ct-tone-explore: #4ade80;
+  --ct-tone-plan: #ffb547;
+  --ct-tone-general: #3fd0e0;
+  --ct-tone-neutral: #8494ad;
+}
+
+:root[data-ct-theme="mission"][data-ct-mode="light"] {
+  --ct-bg: #eef1f5;
+  --ct-fg: #1b2433;
+  --ct-muted: #4f5b6d;
+  --ct-border: #d2d9e3;
+  --ct-hover: #e2e7ee;
+  --ct-header-bg: #ffffff;
+  --ct-code-bg: #e2e7ee;
+  --ct-error: #b42318;
+  --ct-link: #0b7385;
+  --ct-badge-bg: #1b2433;
+  --ct-badge-fg: #ffffff;
+  --ct-btn-bg: #0b7385;
+  --ct-btn-fg: #ffffff;
+  --ct-btn-hover: #095e6d;
+  --ct-accent: #0b7385;
+  --ct-ok: #1a7a42;
+  --ct-done: #1a7a42;
+  --ct-run: #0b7385;
+  --ct-info: #0b7385;
+  --ct-warn: #a35700;
+  --ct-danger: #b42318;
+  --ct-agent-active: #0b7385;
+  --ct-track: #dbe1ea;
+  --ct-tone-explore: #1a7a42;
+  --ct-tone-plan: #a35700;
+  --ct-tone-general: #0b7385;
+  --ct-tone-neutral: #4f5b6d;
+}
