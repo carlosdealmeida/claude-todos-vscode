@@ -1,6 +1,37 @@
 import { describe, it, expect } from 'vitest';
-import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey, statusGlyph, ringDash, agentIcon } from '../../src/webview/format';
+import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey, statusGlyph, ringDash, agentIcon, usageHeadline, todoSegments } from '../../src/webview/format';
 import type { Todo, TodoStatus, AgentUsage, PendingQuestion } from '../../src/types';
+
+describe('usageHeadline', () => {
+  it('contexto, dois maiores modelos e cache', () => {
+    const h = usageHeadline({
+      byModel: [
+        { model: 'claude-sonnet-4-5', input: 10, output: 5, cache: 0 },
+        { model: 'claude-opus-4-7', input: 100, output: 50, cache: 10 },
+        { model: 'claude-haiku-4-5', input: 1, output: 1, cache: 0 },
+      ],
+      byAgent: [],
+      context: { tokens: 142_000, limit: 200_000 },
+      cache: { input: 15, read: 85, creation: 0 },
+    });
+    expect(h.ctxPct).toBeCloseTo(0.71);
+    expect(h.models.map((m) => m.model)).toEqual(['claude-opus-4-7', 'claude-sonnet-4-5']);
+    expect(h.models[0].total).toBe(160);
+    expect(h.cacheRate).toBeCloseTo(0.85);
+  });
+  it('sem contexto e sem cache', () => {
+    const h = usageHeadline({ byModel: [], byAgent: [] });
+    expect(h.ctxPct).toBeNull();
+    expect(h.cacheRate).toBeNull();
+  });
+});
+
+describe('todoSegments', () => {
+  it('um segmento por tarefa, na ordem', () => {
+    expect(todoSegments([{ status: 'completed' }, { status: 'in_progress' }, { status: 'pending' }] as never))
+      .toEqual(['done', 'run', 'pend']);
+  });
+});
 
 describe('ringDash', () => {
   const C = 2 * Math.PI * 18;
