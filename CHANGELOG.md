@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-11-03
+
 ### Added
 - **Two new panel themes.** **Panel** uses your editor's blue by role, solid for usage and bright for what's running now, and adds a strip of agent rings, with an icon for each agent type: click a ring to open that agent's card. **Terminal** is monospace, with text status and ASCII bars, in amber phosphor (dark) or continuous form paper (light).
 
