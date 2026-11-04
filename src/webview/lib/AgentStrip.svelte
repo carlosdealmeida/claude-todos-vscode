@@ -1,11 +1,11 @@
 <script lang="ts">
   import type { AgentTodos } from '../../types';
-  import { agentIcon, ringDash } from '../format';
+  import { agentIcon, ringDash, todoSegments } from '../format';
   import { todosStore } from '../stores.svelte';
   import { isHistory } from '../tree';
   import Icon from './Icon.svelte';
 
-  let { agents }: { agents: AgentTodos[] } = $props();
+  let { agents, variant }: { agents: AgentTodos[]; variant: 'rings' | 'leds' } = $props();
   const R = 18;
   const C = 2 * Math.PI * R;
 
@@ -19,9 +19,20 @@
   );
 </script>
 
-{#if items.length > 1}
-  <nav class="strip" aria-label={todosStore.t('app.agents')}>
+<!-- Um anel sozinho nao acrescenta nada ao card logo abaixo; LEDs sao o placar do
+     Mission Control e aparecem mesmo com um agente so. -->
+{#if variant === 'leds' || items.length > 1}
+  <nav class="strip" class:leds={variant === 'leds'} aria-label={todosStore.t('app.agents')}>
     {#each items as it (it.a.agentId)}
+      {#if variant === 'leds'}
+      <button class="led-row" class:running={it.running} onclick={() => todosStore.focusAgent(it.a.agentId)}
+        aria-label={todosStore.t('agentStrip.label', { name: it.a.name, done: it.done, total: it.total })}>
+        <span class="led" class:on={it.running} aria-hidden="true"></span>
+        <span class="name">{it.a.name}</span>
+        <span class="segs" aria-hidden="true">{#each todoSegments(it.a.todos) as s, i (i)}<i class={s}></i>{/each}</span>
+        <span class="frac">{it.done}/{it.total}</span>
+      </button>
+      {:else}
       <button
         class="ring-btn"
         class:running={it.running}
@@ -40,6 +51,7 @@
         <span class="name">{it.a.name}</span>
         <span class="frac">{it.done}/{it.total}</span>
       </button>
+      {/if}
     {/each}
   </nav>
 {/if}
@@ -60,4 +72,17 @@
      numa so ficariam iguais, e o anel e o unico jeito de achar o agente aqui. */
   .name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; max-width: 100%; overflow: hidden; overflow-wrap: anywhere; line-height: 1.2; text-align: center; }
   .frac { font-variant-numeric: tabular-nums; font-size: 0.85em; }
+  .strip.leds { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--ct-border); border-radius: var(--radius); overflow: hidden; padding: 0; margin-bottom: var(--sp-2); }
+  .led-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) 4.5rem 2.5rem; gap: var(--sp-2); align-items: center; min-height: 32px; padding: 0 var(--sp-2); border: none; border-top: 1px solid var(--ct-border); background: none; color: var(--ct-fg); font: inherit; font-size: 0.9em; text-align: left; cursor: pointer; }
+  .led-row:first-child { border-top: none; }
+  .led-row:hover { background: var(--ct-hover); }
+  .led-row:focus-visible { outline: 1px solid var(--ct-accent); outline-offset: -1px; }
+  .led-row .name { display: block; text-align: left; white-space: nowrap; text-overflow: ellipsis; }
+  .led { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--ct-muted); }
+  .led.on { background: var(--ct-run); box-shadow: 0 0 6px var(--ct-run); }
+  .segs { display: flex; gap: 2px; }
+  .segs i { flex: 1; height: 8px; background: var(--ct-track); }
+  .segs i.done { background: var(--ct-ok); }
+  .segs i.run { background: var(--ct-run); }
+  .led-row .frac { font-family: var(--ct-mono); text-align: right; }
 </style>
