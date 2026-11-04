@@ -90,26 +90,31 @@ La clave `env` de `settings.json` se aplica a toda sesión de Claude Code, en cu
 | `claudeTodos.claudeDir` | `""` (detección automática vía `os.homedir()`) | Sobrescribe la ubicación de `~/.claude`. |
 | `claudeTodos.autoInstallHook` | `true` | Muestra el aviso de primer arranque pidiendo instalar los hooks. |
 | `claudeTodos.language` | `auto` | Idioma de la UI del panel (`auto` \| `en` \| `pt-br` \| `es` \| `zh-cn` \| `zh-tw`). |
-| `claudeTodos.theme` | `classic` | Tema del panel (`classic` \| `papel` \| `painel` \| `terminal`). En alto contraste siempre usa Clásico. |
+| `claudeTodos.theme` | `classic` | Tema del panel (`classic` \| `papel` \| `painel` \| `terminal` \| `mission`). En alto contraste siempre usa Clásico. |
 | `claudeTodos.notifications` | `true` | Toast cuando la sesión queda inactiva o completa todas las tareas (ventana sin foco). |
 | `claudeTodos.activeFolder` | `""` | Multi-root: carpeta del workspace a seguir; vacío = seguir la sesión más activa. |
 
 ### Temas
 
-El panel tiene cuatro temas, cada uno en claro y oscuro, según tu editor:
+El panel tiene cinco temas, cada uno en claro y oscuro, según tu editor:
 
 - **Clásico** (predeterminado): sigue el tema del editor, como siempre.
 - **Papel**: tranquilo y espaciado, con un solo color de acento.
 - **Panel**: el azul de tu editor por función, sólido para el consumo y vivo para lo que se está ejecutando, con una franja de anillos de agentes. Al hacer clic en un anillo se abre la tarjeta del agente.
 - **Terminal**: monoespaciado, con estado en texto y barras ASCII.
+- **Mission Control**: denso, con indicadores arriba y agentes en filas con luces de estado.
 
 En VS Code, ejecuta `Claude Todos: Choose Theme` para ver la vista previa en vivo (Esc cancela) o usa el ajuste `claudeTodos.theme`. En JetBrains, usa el botón Tema… en el título del panel. En alto contraste el panel siempre usa Clásico.
+
+<img src="screenshots/theme-classic-dark.png" width="320" alt="Tema Clásico, oscuro"> <img src="screenshots/theme-classic-light.png" width="320" alt="Tema Clásico, claro">
 
 <img src="screenshots/theme-papel-dark.png" width="320" alt="Panel con el tema Papel, oscuro"> <img src="screenshots/theme-papel-light.png" width="320" alt="Panel con el tema Papel, claro">
 
 <img src="screenshots/theme-painel-dark.png" width="320" alt="Tema Panel, oscuro"> <img src="screenshots/theme-painel-light.png" width="320" alt="Tema Panel, claro">
 
 <img src="screenshots/theme-terminal-dark.png" width="320" alt="Tema Terminal, oscuro"> <img src="screenshots/theme-terminal-light.png" width="320" alt="Tema Terminal, claro">
+
+<img src="screenshots/theme-mission-dark.png" width="320" alt="Tema Mission Control, oscuro"> <img src="screenshots/theme-mission-light.png" width="320" alt="Tema Mission Control, claro">
 
 ## Privacidad y flujo de datos
 
