@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import type { Locale } from '../../../src/i18n/locale';
+  import { createT } from '../../../src/i18n/t';
+  import { DEFAULT_UI_THEME, THEME_I18N, UI_THEME_IDS, type UiThemeId } from '../../../src/themes';
   import type { DemoWindow } from '../../../src/webview/bridge';
   import type { ExtensionMessage } from '../../../src/types';
   import type { DemoScript, FeatureId } from '../demo/types';
@@ -40,6 +42,7 @@
   let note = $state<string | null>(null);
   let playing = $state(false);
   let activeFeature = $state<FeatureId | null>(null);
+  let theme = $state<UiThemeId>(DEFAULT_UI_THEME);
 
   // Sentido inverso da navegacao: enquanto o roteiro toca, destaca a feature
   // cujo marcador foi o ultimo atingido.
@@ -68,6 +71,7 @@
       post(msg) { inner?.post(msg); },
       pushSnapshot(s) { inner?.pushSnapshot(s); },
       pushLocale(l) { inner?.pushLocale(l); },
+      pushAppearance(t) { inner?.pushAppearance(t); },
       setInner(next) {
         inner = next;
         // O handler foi capturado uma unica vez por stores.svelte.ts; cada
@@ -164,6 +168,7 @@
   }
 
   const strings = $derived(SITE_STRINGS[locale]);
+  const t = $derived(createT(locale));
 </script>
 
 <div class="panel">
@@ -172,6 +177,11 @@
       <span aria-hidden="true">{playing ? '⏸' : '▶'}</span>
     </button>
     {#if note}<span class="note">{note}</span>{/if}
+    <select class="theme" aria-label={strings.demoTheme} bind:value={theme} onchange={() => proxy?.pushAppearance(theme)}>
+      {#each UI_THEME_IDS as id (id)}
+        <option value={id}>{t(THEME_I18N[id].name)}</option>
+      {/each}
+    </select>
   </div>
   <div class="webview" bind:this={host}></div>
 </div>
@@ -192,5 +202,17 @@
     border-bottom: 1px solid var(--vscode-panel-border);
   }
   .note { color: var(--vscode-descriptionForeground); font-size: 12px; }
+  .theme {
+    margin-left: auto;
+    min-height: 28px;
+    max-width: 60%;
+    padding: 2px 4px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 4px;
+    background: var(--demo-editor-background);
+    color: var(--vscode-foreground);
+    font: inherit;
+    font-size: 12px;
+  }
   .webview { padding: 8px; min-height: 380px; }
 </style>

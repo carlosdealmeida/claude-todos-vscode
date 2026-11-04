@@ -24,6 +24,7 @@ export interface SiteStrings {
   // atual — reflete a acao que o clique vai executar.
   demoPlay: string;
   demoPause: string;
+  demoTheme: string;
   // aria-label do ThemeToggle.svelte, um por tema atual — reflete o tema
   // para o qual o clique vai trocar (o icone exibido ja segue essa logica:
   // sol quando o tema atual e escuro, lua quando e claro).
@@ -86,6 +87,7 @@ const en: SiteStrings = {
   },
   demoPlay: 'Play demo',
   demoPause: 'Pause demo',
+  demoTheme: 'Panel theme',
   themeToggleToLight: 'Switch to light theme',
   themeToggleToDark: 'Switch to dark theme',
   landingEyebrow: 'VS Code · JetBrains',
@@ -129,6 +131,7 @@ const ptBr: SiteStrings = {
   },
   demoPlay: 'Reproduzir demo',
   demoPause: 'Pausar demo',
+  demoTheme: 'Tema do painel',
   themeToggleToLight: 'Mudar para tema claro',
   themeToggleToDark: 'Mudar para tema escuro',
   landingEyebrow: 'VS Code · JetBrains',
@@ -172,6 +175,7 @@ const es: SiteStrings = {
   },
   demoPlay: 'Reproducir demo',
   demoPause: 'Pausar demo',
+  demoTheme: 'Tema del panel',
   themeToggleToLight: 'Cambiar a tema claro',
   themeToggleToDark: 'Cambiar a tema oscuro',
   landingEyebrow: 'VS Code · JetBrains',
@@ -218,6 +222,7 @@ const zhCn: SiteStrings = {
   },
   demoPlay: '播放演示',
   demoPause: '暂停演示',
+  demoTheme: '面板主题',
   themeToggleToLight: '切换到浅色主题',
   themeToggleToDark: '切换到深色主题',
   landingEyebrow: 'VS Code · JetBrains',
@@ -261,6 +266,7 @@ const zhTw: SiteStrings = {
   },
   demoPlay: '播放示範',
   demoPause: '暫停示範',
+  demoTheme: '面板主題',
   themeToggleToLight: '切換到淺色主題',
   themeToggleToDark: '切換到深色主題',
   landingEyebrow: 'VS Code · JetBrains',
