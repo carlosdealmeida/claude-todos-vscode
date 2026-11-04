@@ -45,8 +45,34 @@ describe.each(fs.readdirSync(DIR).filter((f) => f.endsWith('.json')))('relogio d
   });
 });
 
+// A demo vende um painel ao vivo: entre um frame e outro, a task em andamento conta
+// para a frente, em vez de voltar ao mesmo valor a cada frame.
+describe.each(fs.readdirSync(DIR).filter((f) => f.endsWith('.json')))('cronometro em %s', (file) => {
+  it('o inicio de uma task em andamento nunca anda para a frente, o que voltaria o cronometro', () => {
+    const script = load(file);
+    const last = new Map<string, number>();
+    for (const f of alignTaskClock(script.recordedAt, script.frames)) {
+      for (const a of f.snapshot.agents) {
+        for (const t of a.todos) {
+          if (t.status !== 'in_progress' || t.startedAt === undefined) continue;
+          const key = `${a.agentId}/${t.content}`;
+          const before = last.get(key);
+          if (before !== undefined) expect(t.startedAt, `${key} em ${f.atMs}`).toBeLessThanOrEqual(before);
+          last.set(key, t.startedAt);
+        }
+      }
+    }
+  });
+});
+
 describe('alignTaskClock', () => {
   const OLD = 1_000_000 - 14 * DAY;
+
+  it('entre dois frames sem task nova, o tempo corre', () => {
+    const [a, b] = alignTaskClock(1_000_000, [frame(5_000, OLD, OLD + 200, 999_000), frame(6_000, OLD, OLD + 200, 999_000)]);
+    expect(a.snapshot.agents[0].todos[0].completedAt).toBe(1_005_000);
+    expect(b.snapshot.agents[0].todos[0].completedAt).toBe(1_005_000);
+  });
 
   it('transcript antigo: a task mais nova do frame fica na hora do frame, com as duracoes intactas', () => {
     const [f] = alignTaskClock(1_000_000, [frame(5_000, OLD, OLD + 200, 999_000)]);

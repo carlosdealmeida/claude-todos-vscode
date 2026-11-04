@@ -8,11 +8,12 @@ import '../../src/webview/app.css';
 import '../../site/src/demo/theme.css';
 import type { WebviewBridge } from '../../src/webview/bridge';
 import type { ExtensionMessage } from '../../src/types';
-import { LEAK_SENTINEL, caseSnapshot, type ShotCase, type ShotScript } from './cases';
+import { LEAK_SENTINEL, caseSnapshot, narrowSnapshot, type ShotCase, type ShotScript } from './cases';
 
 const params = new URLSearchParams(location.search);
 const mode = params.get('mode') === 'light' ? 'light' : 'dark';
 const theme = params.get('theme') ?? 'classic';
+const narrow = params.get('case') === 'narrow';
 const shotCase = (params.get('case') ?? 'live') as ShotCase;
 const shot = script as unknown as ShotScript;
 
@@ -47,7 +48,7 @@ const bridge: WebviewBridge = {
     send({ type: 'locale', locale: 'pt-br' });
     send({ type: 'appearance', theme: theme as never });
     if (shotCase === 'error') send({ type: 'error', message: 'sidecar terminated' });
-    else send({ type: 'snapshot', snapshot: caseSnapshot(shotCase, shot) });
+    else send({ type: 'snapshot', snapshot: narrow ? narrowSnapshot(shot) : caseSnapshot(shotCase, shot) });
   },
 };
 (window as unknown as { __claudeTodosDemo: WebviewBridge }).__claudeTodosDemo = bridge;

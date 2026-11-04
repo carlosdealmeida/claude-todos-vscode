@@ -26,6 +26,7 @@
     {#each items as it (it.a.agentId)}
       {#if variant === 'leds'}
       <button class="led-row" class:running={it.running} onclick={() => todosStore.focusAgent(it.a.agentId)}
+        title={it.a.name}
         aria-label={todosStore.t('agentStrip.label', { name: it.a.name, done: it.done, total: it.total })}>
         <span class="led" class:on={it.running} aria-hidden="true"></span>
         <span class="name">{it.a.name}</span>

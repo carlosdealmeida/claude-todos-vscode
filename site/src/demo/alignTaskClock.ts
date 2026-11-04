@@ -6,12 +6,16 @@ const STALE_MS = 3_600_000;
 
 // A gravacao reproduz um transcript antigo: updatedAt fica na hora da gravacao, mas
 // os carimbos das tasks continuam na data do transcript, e o visitante leria "333h".
-// Cada frame e alinhado por conta propria porque a gravacao comprime o tempo: um
-// deslocamento unico poria tasks no futuro, com duracao negativa. Puro.
+// Um deslocamento unico nao serve porque a gravacao comprime o tempo: poria tasks no
+// futuro, com duracao negativa. Ele acompanha o roteiro e so diminui: quando surge uma
+// task mais nova do que cabe, encurta o bastante para ela nao passar da hora do frame;
+// fora isso fica parado e o cronometro corre. Recalcular a cada frame cancelaria o
+// tempo passado, e o painel voltaria ao mesmo valor a cada frame. Puro.
 export function alignTaskClock<F extends { atMs: number; snapshot: SessionSnapshot }>(
   recordedAt: number,
   frames: readonly F[],
 ): F[] {
+  let delta = Infinity;
   return frames.map((frame) => {
     const stamps = frame.snapshot.agents.flatMap((a) => [
       ...(a.todosUpdatedAt !== undefined ? [a.todosUpdatedAt] : []),
@@ -21,7 +25,7 @@ export function alignTaskClock<F extends { atMs: number; snapshot: SessionSnapsh
     const at = recordedAt + frame.atMs;
     const newest = Math.max(...stamps);
     if (at - newest <= STALE_MS) return frame;
-    const delta = at - newest;
+    delta = Math.min(delta, at - newest);
     return {
       ...frame,
       snapshot: {

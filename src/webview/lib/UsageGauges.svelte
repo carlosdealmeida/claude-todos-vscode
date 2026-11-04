@@ -6,20 +6,18 @@
   let { usage }: { usage: SessionUsage } = $props();
   let h = $derived(usageHeadline(usage));
   let top = $derived(Math.max(1, ...h.models.map((m) => m.total)));
-  type Tile = { key: string; label: string; big: string; unit: string; pct: number; tone: string };
+  type Tile = { key: string; label: string; big: string; unit: string; pct: number; tone: string; title?: string };
   let tiles = $derived<Tile[]>([
     ...(h.ctxPct !== null ? [{ key: 'ctx', label: todosStore.t('gauge.ctx'), big: String(Math.round(h.ctxPct * 100)), unit: '%', pct: h.ctxPct, tone: contextLevel(h.ctxPct) }] : []),
-    ...h.models.map((m) => ({ key: m.model, label: shortModel(m.model).toUpperCase(), big: formatCompact(m.total), unit: '', pct: m.total / top, tone: 'info' })),
+    ...h.models.map((m) => ({ key: m.model, label: shortModel(m.model).toUpperCase(), big: formatCompact(m.total), unit: '', pct: m.total / top, tone: 'info', title: m.model })),
     ...(h.cacheRate !== null ? [{ key: 'cache', label: todosStore.t('gauge.cache'), big: String(Math.round(h.cacheRate * 100)), unit: '%', pct: h.cacheRate, tone: cacheLevel(h.cacheRate) }] : []),
   ]);
 </script>
 
 {#if tiles.length > 0}
-  <!-- A grade vai direto no style: cssTokens.test.ts nao reconhece uma definicao
-       --n: logo depois de aspas e reprovaria o var(--n). -->
-  <div class="gauges" style="grid-template-columns: repeat({tiles.length}, minmax(0, 1fr))">
+  <div class="gauges">
     {#each tiles as t (t.key)}
-      <div class="g {t.tone}">
+      <div class="g {t.tone}" title={t.title}>
         <div class="gl">{t.label}</div>
         <div class="gv">{t.big}<small>{t.unit}</small></div>
         <div class="gb" aria-hidden="true"><span style="width: {Math.round(t.pct * 100)}%"></span></div>
@@ -29,8 +27,10 @@
 {/if}
 
 <style>
-  .gauges { display: grid; gap: 1px; background: var(--ct-border); border: 1px solid var(--ct-border); border-radius: var(--radius); overflow: hidden; margin-bottom: var(--sp-2); }
-  .g { background: var(--ct-header-bg); padding: var(--sp-2); min-width: 0; }
+  /* Flex com quebra: em sidebar estreita os blocos descem de linha, e o valor nunca
+     passa da largura do bloco. flex-grow preenche a linha, sem deixar buraco. */
+  .gauges { display: flex; flex-wrap: wrap; gap: 1px; background: var(--ct-border); border: 1px solid var(--ct-border); border-radius: var(--radius); overflow: hidden; margin-bottom: var(--sp-2); }
+  .g { flex: 1 1 5.5rem; background: var(--ct-header-bg); padding: var(--sp-2); min-width: 0; }
   .gl { font-size: 0.68em; font-weight: 700; letter-spacing: 0.12em; color: var(--ct-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .gv { font-family: var(--ct-mono); font-size: 1.25em; font-weight: 600; font-variant-numeric: tabular-nums; margin: 2px 0 4px; }
   .gv small { font-size: 0.6em; color: var(--ct-muted); font-weight: 400; }

@@ -201,6 +201,31 @@ async function spinnerRespectsMotion(context: BrowserContext, open: Open): Promi
   return failures;
 }
 
+// Mission em sidebar estreita: o valor do medidor nao pode passar do bloco, e o que
+// e cortado (nome do agente, modelo) precisa poder ser lido por inteiro.
+async function missionFitsNarrow(context: BrowserContext, open: Open): Promise<string[]> {
+  const failures: string[] = [];
+  for (const width of [360, 300, 240, 200]) {
+    const page = await open(context, 'mission', 'narrow', 'dark');
+    await page.evaluate((w) => { document.body.style.width = `${w}px`; }, width);
+    const r = await page.evaluate(() => ({
+      tiles: document.querySelectorAll('.gauges .g').length,
+      over: [...document.querySelectorAll('.gauges .g')].filter((g) => {
+        const v = g.querySelector('.gv')!;
+        return v.scrollWidth > v.clientWidth + 0.5 || v.getBoundingClientRect().right > g.getBoundingClientRect().right + 0.5;
+      }).map((g) => g.querySelector('.gv')!.textContent),
+      modelTitles: [...document.querySelectorAll('.gauges .g[title]')].map((g) => g.getAttribute('title')),
+      ledTitles: [...document.querySelectorAll('.led-row')].map((l) => l.getAttribute('title')),
+    }));
+    await page.close();
+    if (r.tiles !== 4) failures.push(`mission/${width}px: ${r.tiles} medidores, esperava 4`);
+    if (r.over.length) failures.push(`mission/${width}px: valor passa do medidor: ${r.over.join(', ')}`);
+    if (r.modelTitles.join() !== 'claude-opus-5-5,claude-opus-4-7') failures.push(`mission/${width}px: titulos dos modelos: ${r.modelTitles.join()}`);
+    if (!r.ledTitles.includes('revisor-de-longo-alcance-1')) failures.push(`mission/${width}px: linha de LED sem o nome inteiro: ${r.ledTitles.join()}`);
+  }
+  return failures;
+}
+
 // Nenhum tema esconde informacao: em painel estreito, o que nao cabe no cabecalho do
 // card desce de linha, em vez de ser cortado pelo overflow do card.
 async function cardHeaderFits(context: BrowserContext, theme: string, open: Open): Promise<string[]> {
@@ -229,6 +254,6 @@ export async function behaviorChecks(context: BrowserContext, themes: readonly s
     failures.push(...await clickMovesFocus(context, 'painel', '.ring-btn', open));
   }
   if (themes.includes('terminal')) failures.push(...await asciiBarKeepsProportion(context, open), ...await textStatusIsLabelled(context, open));
-  if (themes.includes('mission')) failures.push(...await missionShowsInstruments(context, open), ...await clickMovesFocus(context, 'mission', '.led-row', open));
+  if (themes.includes('mission')) failures.push(...await missionShowsInstruments(context, open), ...await clickMovesFocus(context, 'mission', '.led-row', open), ...await missionFitsNarrow(context, open));
   return failures;
 }
