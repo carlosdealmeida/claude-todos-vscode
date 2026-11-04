@@ -1,5 +1,6 @@
 import type { SessionSnapshot } from '../../../src/types';
 import type { DemoScript, FeatureId } from './types';
+import { alignTaskClock } from './alignTaskClock';
 import { reanchor } from './reanchor';
 
 const TICK_MS = 250;
@@ -29,7 +30,8 @@ export function frameAt(script: DemoScript, tMs: number): SessionSnapshot | null
   return found;
 }
 
-export function createPlayer(script: DemoScript, opts: PlayerOptions): Player {
+export function createPlayer(recorded: DemoScript, opts: PlayerOptions): Player {
+  const script = { ...recorded, frames: alignTaskClock(recorded.recordedAt, recorded.frames) };
   let tMs = 0;
   let playing = false;
 

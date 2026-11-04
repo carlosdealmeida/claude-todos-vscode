@@ -6,7 +6,7 @@ function shift(value: number | undefined, deltaMs: number): number | undefined {
   return value === undefined ? undefined : value + deltaMs;
 }
 
-function shiftTodo(todo: Todo, deltaMs: number): Todo {
+export function shiftTodo(todo: Todo, deltaMs: number): Todo {
   const out: Todo = { ...todo };
   if (todo.startedAt !== undefined) out.startedAt = todo.startedAt + deltaMs;
   if (todo.completedAt !== undefined) out.completedAt = todo.completedAt + deltaMs;
