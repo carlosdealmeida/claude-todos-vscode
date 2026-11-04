@@ -1,6 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey, statusGlyph, ringDash, agentIcon, usageHeadline, todoSegments } from '../../src/webview/format';
+import { formatCompact, shortModel, modelBadge, contextLevel, cacheLevel, formatDuration, summarizeTiming, completedTaskDurations, agentTotalTokens, agentTypeTone, listStaleness, pendingSummary, limitLabelKey, formatResetTime, bridgeTextKey, statusGlyph, ringDash, agentIcon, usageHeadline, todoSegments, activeBadgeKey } from '../../src/webview/format';
 import type { Todo, TodoStatus, AgentUsage, PendingQuestion } from '../../src/types';
+import { createT } from '../../src/i18n/t';
+
+describe('activeBadgeKey', () => {
+  it.each([
+    ['pt-br', 1, '1 ativa'], ['pt-br', 2, '2 ativas'],
+    ['es', 1, '1 activa'], ['es', 3, '3 activas'],
+    ['en', 1, '1 active'], ['en', 2, '2 active'],
+  ] as const)('%s, %d -> %s', (locale, count, text) => {
+    expect(createT(locale)(activeBadgeKey(count), { count })).toBe(text);
+  });
+});
 
 describe('usageHeadline', () => {
   it('contexto, dois maiores modelos e cache', () => {

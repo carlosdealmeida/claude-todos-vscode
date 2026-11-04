@@ -3,7 +3,7 @@
   import type { AgentTodos } from '../../types';
   import TodoItem from './TodoItem.svelte';
   import Icon from './Icon.svelte';
-  import { summarizeTiming, formatDuration, completedTaskDurations, formatCompact, agentTypeTone, listStaleness, modelBadge, shortModel } from '../format';
+  import { summarizeTiming, formatDuration, completedTaskDurations, formatCompact, agentTypeTone, listStaleness, modelBadge, shortModel, activeBadgeKey } from '../format';
   import { clock } from '../clock.svelte';
   import { todosStore } from '../stores.svelte';
 
@@ -54,6 +54,8 @@
   $effect(() => {
     if (todosStore.focus !== agent.agentId) return;
     todosStore.focus = null;
+    // Quem veio pelo teclado continua de onde parou, sem percorrer a faixa de novo.
+    sectionEl?.querySelector<HTMLElement>('.header')?.focus({ preventScroll: true });
     if (expanded) {
       scrollToCard();
     } else {
@@ -79,7 +81,7 @@
     {/if}
     <span class="counts">
       <span class="frac">{counts.completed}/{counts.total}</span>
-      {#if counts.inProgress > 0}<span class="badge">{todosStore.t('agent.activeBadge', { count: counts.inProgress })}</span>{/if}
+      {#if counts.inProgress > 0}<span class="badge">{todosStore.t(activeBadgeKey(counts.inProgress), { count: counts.inProgress })}</span>{/if}
     </span>
   </button>
 

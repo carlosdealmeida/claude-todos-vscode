@@ -276,6 +276,11 @@ export function bridgeTextKey(status: BridgeStatus): MessageKey {
   }
 }
 
+// pt-BR e es flexionam: "1 ativa", "2 ativas".
+export function activeBadgeKey(count: number): MessageKey {
+  return count === 1 ? 'agent.activeBadge.one' : 'agent.activeBadge';
+}
+
 // Status em texto, para temas com glyphs: 'text'.
 export function statusGlyph(status: TodoStatus): string {
   return status === 'completed' ? '[x]' : status === 'in_progress' ? '[~]' : '[ ]';

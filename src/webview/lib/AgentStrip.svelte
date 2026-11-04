@@ -66,7 +66,9 @@
   svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
   .type { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
   .track { fill: none; stroke: var(--ct-track); stroke-width: 3; }
-  .arc { fill: none; stroke: var(--ct-run); stroke-width: 3; stroke-linecap: round; }
+  .arc { fill: none; stroke: var(--ct-muted); stroke-width: 3; stroke-linecap: round; }
+  /* Vivo = rodando agora: um anel parado nao pode ser o elemento mais chamativo. */
+  .ring-btn.running .arc { stroke: var(--ct-run); }
   .live { position: absolute; top: calc(var(--sp-2) + 1.9rem); left: calc(50% + 0.75rem); width: 9px; height: 9px; border-radius: 50%; background: var(--ct-run); box-shadow: 0 0 0 2px var(--ct-surface); }
   /* Duas linhas: nomes com o mesmo comeco (explorador-a, explorador-b) truncados
      numa so ficariam iguais, e o anel e o unico jeito de achar o agente aqui. */

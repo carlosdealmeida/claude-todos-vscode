@@ -126,6 +126,81 @@ async function missionShowsInstruments(context: BrowserContext, open: Open): Pro
   return failures;
 }
 
+// "Vivo = rodando agora": anel parado nao usa o azul vivo.
+async function idleRingIsMuted(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'painel', 'full', 'dark');
+  const r = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    document.documentElement.append(probe);
+    const [muted, run] = ['var(--ct-muted)', 'var(--ct-run)'].map((value) => {
+      probe.style.color = value;
+      return getComputedStyle(probe).color;
+    });
+    probe.remove();
+    const [idle, live] = ['.ring-btn:not(.running) .arc', '.ring-btn.running .arc'].map((sel) =>
+      [...document.querySelectorAll(sel)].map((a) => getComputedStyle(a).stroke));
+    return { muted, run, idle, live };
+  });
+  await page.close();
+  const failures: string[] = [];
+  if (r.idle.length === 0 || r.idle.some((s) => s !== r.muted)) failures.push(`painel: anel parado em ${r.idle.join(', ')}, esperava ${r.muted}`);
+  if (r.live.length === 0 || r.live.some((s) => s !== r.run)) failures.push(`painel: anel rodando em ${r.live.join(', ')}, esperava ${r.run}`);
+  return failures;
+}
+
+// Tema de editor que zera focusBorder (Vitesse, Material) nao pode apagar o hover
+// nem a faixa do agente ativo.
+async function panelSurvivesNoFocusBorder(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'painel', 'live', 'dark');
+  const r = await page.evaluate(() => {
+    document.documentElement.style.setProperty('--vscode-focusBorder', '#00000000');
+    const probe = document.createElement('span');
+    probe.style.backgroundColor = 'var(--ct-hover)';
+    document.documentElement.append(probe);
+    const hover = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return { hover, stripe: getComputedStyle(document.querySelector('section.agent.active')!).boxShadow };
+  });
+  await page.close();
+  const invisible = (c: string) => /rgba\(0, 0, 0, 0\)|\/ 0\)|, 0\)/.test(c);
+  const failures: string[] = [];
+  if (invisible(r.hover)) failures.push(`painel sem focusBorder: hover invisivel (${r.hover})`);
+  if (invisible(r.stripe)) failures.push(`painel sem focusBorder: faixa do agente ativo invisivel (${r.stripe})`);
+  return failures;
+}
+
+// Quem navega por teclado continua de onde parou: o foco vai para o card aberto.
+async function clickMovesFocus(context: BrowserContext, theme: string, selector: string, open: Open): Promise<string[]> {
+  const page = await open(context, theme, 'live', 'dark');
+  await page.locator(selector, { hasText: 'explorador-a' }).click();
+  await page.waitForTimeout(800);
+  const title = await page.evaluate(() => document.activeElement?.closest('section.agent')?.querySelector('.title')?.textContent ?? null);
+  await page.close();
+  return title === 'explorador-a' ? [] : [`${theme}: depois do clique o foco esta em ${title}, esperava o card de explorador-a`];
+}
+
+// aria-label em <span> sem role e ignorado por leitor de tela.
+async function textStatusIsLabelled(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'terminal', 'live', 'dark');
+  const r = await page.locator('.glyph').evaluateAll((els) => ({ total: els.length, ok: els.filter((e) => e.getAttribute('role') === 'img' && e.getAttribute('aria-label')).length }));
+  await page.close();
+  return r.total > 0 && r.total === r.ok ? [] : [`terminal: ${r.ok} de ${r.total} status em texto com role=img`];
+}
+
+// O contexto do harness e reducedMotion: 'reduce'. O spinner e SMIL, que nem a media
+// query nem o CSS param: ele so pode girar quando a pessoa aceita movimento.
+async function spinnerRespectsMotion(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'classic', 'live', 'dark');
+  const failures: string[] = [];
+  const reduced = await page.locator('animateTransform').count();
+  if (reduced !== 0) failures.push(`spinner: ${reduced} animacoes com movimento reduzido`);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.waitForTimeout(200);
+  if (await page.locator('animateTransform').count() === 0) failures.push('spinner: sem animacao quando o movimento e permitido');
+  await page.close();
+  return failures;
+}
+
 // Nenhum tema esconde informacao: em painel estreito, o que nao cabe no cabecalho do
 // card desce de linha, em vez de ser cortado pelo overflow do card.
 async function cardHeaderFits(context: BrowserContext, theme: string, open: Open): Promise<string[]> {
@@ -147,10 +222,13 @@ async function cardHeaderFits(context: BrowserContext, theme: string, open: Open
 export async function behaviorChecks(context: BrowserContext, themes: readonly string[], open: Open): Promise<string[]> {
   const failures: string[] = [];
   for (const theme of themes) failures.push(...await cardHeaderFits(context, theme, open));
+  if (themes.includes('classic')) failures.push(...await spinnerRespectsMotion(context, open));
   if (themes.includes('painel')) {
     failures.push(...await ringShowsWholeCard(context, open), ...await ringHasTypeIcon(context, open), ...await panelUsageIsBlue(context, open));
+    failures.push(...await idleRingIsMuted(context, open), ...await panelSurvivesNoFocusBorder(context, open));
+    failures.push(...await clickMovesFocus(context, 'painel', '.ring-btn', open));
   }
-  if (themes.includes('terminal')) failures.push(...await asciiBarKeepsProportion(context, open));
-  if (themes.includes('mission')) failures.push(...await missionShowsInstruments(context, open));
+  if (themes.includes('terminal')) failures.push(...await asciiBarKeepsProportion(context, open), ...await textStatusIsLabelled(context, open));
+  if (themes.includes('mission')) failures.push(...await missionShowsInstruments(context, open), ...await clickMovesFocus(context, 'mission', '.led-row', open));
   return failures;
 }

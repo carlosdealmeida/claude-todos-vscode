@@ -14,12 +14,13 @@
   --ct-tone-plan: var(--vscode-textLink-foreground, var(--vscode-charts-blue));
   --ct-tone-general: var(--vscode-textLink-foreground, var(--vscode-charts-blue));
   --ct-accent: var(--vscode-focusBorder);
-  --ct-agent-active: var(--vscode-focusBorder);
+  /* Nao usa focusBorder: alguns temas o zeram, e a faixa do agente ativo sumiria. */
+  --ct-agent-active: var(--ct-run);
   --ct-info: var(--vscode-button-background);
   --ct-meter-ok: var(--vscode-button-background);
   --ct-meter-ok-text: var(--ct-run);
   --ct-track: color-mix(in srgb, var(--vscode-foreground) 14%, transparent);
   --ct-header-bg: color-mix(in srgb, var(--vscode-focusBorder) 7%, transparent);
-  --ct-hover: color-mix(in srgb, var(--vscode-focusBorder) 12%, transparent);
+  --ct-hover: color-mix(in srgb, var(--vscode-focusBorder) 12%, var(--vscode-list-hoverBackground));
   --radius: 8px;
 }

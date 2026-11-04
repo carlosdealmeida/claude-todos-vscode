@@ -22,7 +22,9 @@ describe('SessionNames', () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'names-test-'));
     file = path.join(dir, 'bridge', 'session-names.json');
   });
-  afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
+  // Com retry: no Windows, o antivirus ou o indexador podem segurar um arquivo recem
+  // criado, e o rmSync falharia de vez com ENOTEMPTY.
+  afterEach(() => fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }));
 
   it('get devolve undefined quando o arquivo nao existe', () => {
     expect(new SessionNames(file).get('s1')).toBeUndefined();

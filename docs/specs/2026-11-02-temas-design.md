@@ -71,7 +71,8 @@ via JCEF, demo do site):
 8. **O Painel deriva as cores do editor.** "Azul vivo" em texto = `--vscode-textLink-foreground`, porque a cor de
    "rodando agora" também pinta texto e o `focusBorder` de alguns temas não foi feito para isso. A reserva é
    `--vscode-charts-blue`: o `ThemeShim` não define `textLink`, e o `focusBorder` dele é a cor de foco do IDE, com 1,64:1
-   sobre o fundo no Darcula e no IntelliJ Light. Em bordas e tintas de fundo, `--vscode-focusBorder`. "Azul forte" =
+   sobre o fundo no Darcula e no IntelliJ Light. Em tintas de fundo, `--vscode-focusBorder`; a faixa do agente ativo usa
+   o azul vivo, porque alguns temas zeram o `focusBorder` e ela sumiria. "Azul forte" =
    `--vscode-button-background`, que pinta as barras de uso em nível normal por `--ct-meter-ok`; trilhas = `color-mix` do
    foreground com o fundo. Assim ele funciona com qualquer tema do editor (Dracula, One Dark, Light Modern) sem paleta
    própria, e o light não precisa de hex à parte.
