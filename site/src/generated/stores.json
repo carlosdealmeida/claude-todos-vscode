@@ -1,18 +1,18 @@
 {
-  "fetchedAt": "2026-11-03T12:00:14.384Z",
+  "fetchedAt": "2026-11-04T12:15:20.990Z",
   "stores": {
     "vscode": {
-      "version": "0.20.4",
+      "version": "0.22.0",
       "url": "https://marketplace.visualstudio.com/items?itemName=CarlosJunior1992.claude-todos",
       "rating": 5,
       "ratingCount": 1
     },
     "openvsx": {
-      "version": "0.20.4",
+      "version": "0.22.0",
       "url": "https://open-vsx.org/extension/CarlosJunior1992/claude-todos"
     },
     "jetbrains": {
-      "version": "0.20.4",
+      "version": "0.22.0",
       "url": "https://plugins.jetbrains.com/plugin/33074-claude-todos"
     }
   }
