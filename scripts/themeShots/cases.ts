@@ -54,6 +54,36 @@ export function narrowSnapshot(script: ShotScript): SessionSnapshot {
   };
 }
 
+// So para as checagens: listas longas, para a barra segmentada do Mission.
+export function manyTasksSnapshot(script: ShotScript): SessionSnapshot {
+  const base = pickFrame(script).snapshot;
+  const lengths = [40, 120, 17];
+  return {
+    ...base,
+    agents: base.agents.map((a, i) => {
+      const length = lengths[i];
+      if (length === undefined || a.todos.length === 0) return a;
+      const done = Math.floor(length / 4);
+      return {
+        ...a,
+        todos: Array.from({ length }, (_, n) => ({
+          ...a.todos[0],
+          status: n < done ? ('completed' as const) : n === done ? ('in_progress' as const) : ('pending' as const),
+        })),
+      };
+    }),
+  };
+}
+
+// So para as checagens: nenhum agente vivo, todos no historico.
+export function noLiveSnapshot(script: ShotScript): SessionSnapshot {
+  const base = pickFrame(script).snapshot;
+  return {
+    ...base,
+    agents: base.agents.filter((a) => !a.isMain).map((a) => ({ ...a, status: 'completed' as const, todos: [] })),
+  };
+}
+
 export function caseSnapshot(c: ShotCase, script: ShotScript): SessionSnapshot | null {
   const base = pickFrame(script).snapshot;
   const t = shotTime(script);

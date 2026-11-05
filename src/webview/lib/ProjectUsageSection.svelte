@@ -3,6 +3,7 @@
   import type { ModelUsage } from '../../types';
   import { formatCompact, shortModel, cacheLevel } from '../format';
   import { todosStore } from '../stores.svelte';
+  import { motion } from '../motion.svelte';
   import Icon from './Icon.svelte';
 
   let expanded = $state(false);
@@ -52,7 +53,7 @@
   </button>
 
   {#if expanded}
-    <div class="body" id="project-usage-body" transition:slide={{ duration: 180 }}>
+    <div class="body" id="project-usage-body" transition:slide={{ duration: motion.reduced ? 0 : 180 }}>
       {#if loading && usage === undefined}
         <p class="note">{todosStore.t('project.loading')}</p>
       {:else if !usage || usage.sessions === 0}
@@ -139,6 +140,7 @@
     text-align: left;
   }
   .header:hover { background: var(--ct-hover); }
+  .header:focus-visible { outline: 1px solid var(--ct-accent); outline-offset: -1px; }
   .chevron {
     display: inline-flex;
     align-items: center;

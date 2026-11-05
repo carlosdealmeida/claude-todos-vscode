@@ -6,6 +6,7 @@
   import { summarizeTiming, formatDuration, completedTaskDurations, formatCompact, agentTypeTone, listStaleness, modelBadge, shortModel, activeBadgeKey } from '../format';
   import { clock } from '../clock.svelte';
   import { todosStore } from '../stores.svelte';
+  import { motion } from '../motion.svelte';
 
   let { agent, defaultExpanded = true, history = false, tokens = null, hasRunningSubAgent = false, currentModel, usedModels = [], mainModel }:
     { agent: AgentTodos; defaultExpanded?: boolean; history?: boolean; tokens?: number | null; hasRunningSubAgent?: boolean; currentModel?: string; usedModels?: string[]; mainModel?: string } = $props();
@@ -46,7 +47,7 @@
   // as tarefas fora da tela. Nesse caso a rolagem espera o fim do slide.
   let scrollWhenOpen = false;
   function scrollToCard(): void {
-    sectionEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    sectionEl?.scrollIntoView({ block: 'nearest', behavior: motion.reduced ? 'auto' : 'smooth' });
   }
   // Zerar o pedido e obrigatorio: este effect roda de novo a cada snapshot,
   // porque a prop `agent` muda de identidade. Com o pedido ainda de pe, o card
@@ -94,7 +95,7 @@
 
   {#if expanded}
     {#if timing.elapsedMs > 0 || timing.hasEstimate}
-      <div class="timing" transition:slide={{ duration: 180 }}>
+      <div class="timing" transition:slide={{ duration: motion.reduced ? 0 : 180 }}>
         {#if timing.elapsedMs > 0}
           <div class="stat">
             <span class="stat-label"><Icon name="clock" size={11} /> {todosStore.t('agent.elapsed')}</span>
@@ -110,7 +111,7 @@
         {/if}
       </div>
     {/if}
-    <ul class="list" transition:slide={{ duration: 180 }} onintroend={() => { if (scrollWhenOpen) { scrollWhenOpen = false; scrollToCard(); } }}>
+    <ul class="list" transition:slide={{ duration: motion.reduced ? 0 : 180 }} onintroend={() => { if (scrollWhenOpen) { scrollWhenOpen = false; scrollToCard(); } }}>
       {#each agent.todos as todo, i (i)}
         <TodoItem {todo} completedMs={durations[i]} sessionId={agent.sessionId} agentId={agent.agentId} />
       {/each}
@@ -150,6 +151,8 @@
     text-align: left;
   }
   .header:hover { background: var(--ct-hover); }
+  /* Para dentro: o overflow do card corta um contorno do lado de fora. */
+  .header:focus-visible { outline: 1px solid var(--ct-accent); outline-offset: -1px; }
   .chevron {
     display: inline-flex;
     align-items: center;

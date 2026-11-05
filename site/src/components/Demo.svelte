@@ -4,10 +4,10 @@
   import { createT } from '../../../src/i18n/t';
   import { DEFAULT_UI_THEME, THEME_I18N, UI_THEME_IDS, type UiThemeId } from '../../../src/themes';
   import type { DemoWindow } from '../../../src/webview/bridge';
-  import type { ExtensionMessage } from '../../../src/types';
   import type { DemoScript, FeatureId } from '../demo/types';
   import { createPlayer, type Player } from '../demo/player';
   import { createDemoBridge, type DemoBridge } from '../demo/demoBridge';
+  import { createScenarioProxy, type ScenarioProxy } from '../demo/scenarioProxy';
   import { SITE_STRINGS } from '../i18n/site';
 
   let {
@@ -29,14 +29,7 @@
   } = $props();
 
   let host: HTMLDivElement;
-  // window.__claudeTodosDemo so pode ser atribuido uma vez: src/webview/
-  // stores.svelte.ts le essa variavel ao carregar o modulo (uma unica vez, no
-  // mount do App) e nunca mais relê window depois disso — o objeto capturado
-  // ali fica sendo o unico canal de post()/onMessage() pelo resto da pagina.
-  // Para trocar de roteiro sem remontar o App (armadilha conhecida deste
-  // plano), este proxy e o unico objeto que a pagina injeta em window; ele
-  // delega para o DemoBridge "de verdade" que muda a cada troca de cenario.
-  let proxy: (DemoBridge & { setInner(next: DemoBridge): void }) | null = null;
+  let proxy: ScenarioProxy | null = null;
   let player: Player | null = null;
   let bridge: DemoBridge | null = null;
   let note = $state<string | null>(null);
@@ -58,28 +51,6 @@
       found = marker.feature;
     }
     return found;
-  }
-
-  function createScenarioProxy(): DemoBridge & { setInner(next: DemoBridge): void } {
-    let inner: DemoBridge | null = null;
-    let handler: ((msg: ExtensionMessage) => void) | null = null;
-    return {
-      onMessage(next) {
-        handler = next;
-        inner?.onMessage(next);
-      },
-      post(msg) { inner?.post(msg); },
-      pushSnapshot(s) { inner?.pushSnapshot(s); },
-      pushLocale(l) { inner?.pushLocale(l); },
-      pushAppearance(t) { inner?.pushAppearance(t); },
-      setInner(next) {
-        inner = next;
-        // O handler foi capturado uma unica vez por stores.svelte.ts; cada
-        // bridge novo precisa recebe-lo de volta explicitamente, senao os
-        // snapshots do roteiro novo nunca chegam ao painel ja montado.
-        if (handler) inner.onMessage(handler);
-      },
-    };
   }
 
   // Destroi o player/bridge do roteiro anterior (se houver) e cria os do
@@ -177,7 +148,8 @@
       <span aria-hidden="true">{playing ? '⏸' : '▶'}</span>
     </button>
     {#if note}<span class="note">{note}</span>{/if}
-    <select class="theme" aria-label={strings.demoTheme} bind:value={theme} onchange={() => proxy?.pushAppearance(theme)}>
+    <!-- autocomplete: o Firefox restaura o select ao recarregar, e o painel volta ao Classico. -->
+    <select class="theme" aria-label={strings.demoTheme} autocomplete="off" bind:value={theme} onchange={() => proxy?.pushAppearance(theme)}>
       {#each UI_THEME_IDS as id (id)}
         <option value={id}>{t(THEME_I18N[id].name)}</option>
       {/each}
