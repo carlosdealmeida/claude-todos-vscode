@@ -5,7 +5,7 @@ import { relativeLuminance } from '../../src/webview/themes/mode';
 
 // Temas com paleta propria. Painel e Classico derivam do editor: o contraste
 // e o do tema do usuario, fora do alcance deste teste.
-const OWN_PALETTE = ['papel', 'terminal'];
+const OWN_PALETTE = ['papel', 'terminal', 'mission'];
 const THEMES = path.join(__dirname, '..', '..', 'src', 'webview', 'themes');
 
 function declarations(body: string): Record<string, string> {

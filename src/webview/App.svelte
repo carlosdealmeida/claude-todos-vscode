@@ -6,6 +6,7 @@
   import Icon from './lib/Icon.svelte';
   import AgentTree from './lib/AgentTree.svelte';
   import AgentStrip from './lib/AgentStrip.svelte';
+  import UsageGauges from './lib/UsageGauges.svelte';
   import PendingQuestions from './lib/PendingQuestions.svelte';
   import { buildTree, isHistory } from './tree';
 
@@ -41,13 +42,16 @@
     {#if snapshot.pendingQuestions}
       <PendingQuestions questions={snapshot.pendingQuestions} sessionId={snapshot.sessionId} />
     {/if}
+    {#if snapshot.usage && todosStore.traits.usageSummary === 'gauges'}
+      <UsageGauges usage={snapshot.usage} />
+    {/if}
     {#if snapshot.usage}
       <UsageTable usage={snapshot.usage} bridge={snapshot.bridge} />
     {/if}
     <ProjectUsageSection />
     {#if snapshot.agents.length > 0}
-      {#if todosStore.traits.agentStrip === 'rings'}
-        <AgentStrip agents={snapshot.agents} />
+      {#if todosStore.traits.agentStrip !== 'none'}
+        <AgentStrip agents={snapshot.agents} variant={todosStore.traits.agentStrip} />
       {/if}
       <div class="agents">
         {#each buildTree(snapshot.agents) as root (root.agent.agentId)}

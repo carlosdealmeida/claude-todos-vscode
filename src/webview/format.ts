@@ -1,4 +1,4 @@
-import type { Todo, TodoStatus, AgentUsage, PendingQuestion, BridgeStatus } from '../types';
+import type { Todo, TodoStatus, AgentUsage, PendingQuestion, BridgeStatus, SessionUsage } from '../types';
 import type { MessageKey } from '../i18n/messages';
 import type { Locale } from '../i18n/locale';
 
@@ -276,6 +276,11 @@ export function bridgeTextKey(status: BridgeStatus): MessageKey {
   }
 }
 
+// pt-BR e es flexionam: "1 ativa", "2 ativas".
+export function activeBadgeKey(count: number): MessageKey {
+  return count === 1 ? 'agent.activeBadge.one' : 'agent.activeBadge';
+}
+
 // Status em texto, para temas com glyphs: 'text'.
 export function statusGlyph(status: TodoStatus): string {
   return status === 'completed' ? '[x]' : status === 'in_progress' ? '[~]' : '[ ]';
@@ -286,4 +291,29 @@ export function statusGlyph(status: TodoStatus): string {
 export function ringDash(done: number, total: number, circumference: number): number {
   if (total <= 0 || done <= 0) return 4;
   return Math.max(4, Math.min(1, done / total) * circumference);
+}
+
+export interface UsageHeadline {
+  ctxPct: number | null;
+  models: { model: string; total: number }[];
+  cacheRate: number | null;
+}
+
+// Mesmas contas da UsageTable (ctxPct com teto 1, cacheRate = read / total).
+export function usageHeadline(usage: SessionUsage): UsageHeadline {
+  const ctx = usage.context;
+  const c = usage.cache;
+  const cacheTotal = c ? c.input + c.read + c.creation : 0;
+  return {
+    ctxPct: ctx ? Math.min(ctx.tokens / ctx.limit, 1) : null,
+    models: usage.byModel
+      .map((m) => ({ model: m.model, total: m.input + m.output + m.cache }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 2),
+    cacheRate: c && cacheTotal > 0 ? c.read / cacheTotal : null,
+  };
+}
+
+export function todoSegments(todos: Todo[]): ('done' | 'run' | 'pend')[] {
+  return todos.map((t) => (t.status === 'completed' ? 'done' : t.status === 'in_progress' ? 'run' : 'pend'));
 }

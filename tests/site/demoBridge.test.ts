@@ -74,6 +74,14 @@ describe('createDemoBridge', () => {
     expect(seen).toContainEqual({ type: 'locale', locale: 'es' });
   });
 
+  it('pushAppearance repassa o tema para a webview', () => {
+    const seen: ExtensionMessage[] = [];
+    const bridge = createDemoBridge({ script, player: fakePlayer(), locale: 'en', onOpenSource: vi.fn(), onPickSession: vi.fn() });
+    bridge.onMessage((m) => seen.push(m));
+    bridge.pushAppearance('terminal');
+    expect(seen).toContainEqual({ type: 'appearance', theme: 'terminal' });
+  });
+
   it('ignores post() messages sent through the panel-answer path before a handler is registered', () => {
     const bridge = createDemoBridge({ script, player: fakePlayer(), locale: 'en', onOpenSource: vi.fn(), onPickSession: vi.fn() });
     // projectUsage (like ready) goes through send() internally — this is the

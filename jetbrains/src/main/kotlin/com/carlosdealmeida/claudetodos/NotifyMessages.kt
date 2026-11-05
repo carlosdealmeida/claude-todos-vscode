@@ -14,7 +14,7 @@ object NotifyMessages {
         "bridgeMod.installed", "bridgeMod.uninstalled", "bridgeMod.failed",
         "todo.sourceMissing", "picker.auto", "picker.alive",
         "time.now", "time.minutesAgo", "time.hoursAgo", "time.daysAgo",
-        "theme.action", "theme.classic", "theme.papel", "theme.painel", "theme.terminal",
+        "theme.action", "theme.classic", "theme.papel", "theme.painel", "theme.terminal", "theme.mission",
     )
 
     // Expostos para o teste de paridade: get() faz fallback para en e por isso
@@ -61,6 +61,7 @@ object NotifyMessages {
             "theme.papel" to "Paper",
             "theme.painel" to "Panel",
             "theme.terminal" to "Terminal",
+            "theme.mission" to "Mission Control",
         ),
         "pt-br" to mapOf(
             "notify.idle" to "\"{title}\" — aguardando você",
@@ -100,6 +101,7 @@ object NotifyMessages {
             "theme.papel" to "Papel",
             "theme.painel" to "Painel",
             "theme.terminal" to "Terminal",
+            "theme.mission" to "Mission Control",
         ),
         "es" to mapOf(
             "notify.idle" to "\"{title}\" — esperándote",
@@ -139,6 +141,7 @@ object NotifyMessages {
             "theme.papel" to "Papel",
             "theme.painel" to "Panel",
             "theme.terminal" to "Terminal",
+            "theme.mission" to "Mission Control",
         ),
         "zh-cn" to mapOf(
             "notify.idle" to "“{title}” — 正在等待你",
@@ -178,6 +181,7 @@ object NotifyMessages {
             "theme.papel" to "纸张",
             "theme.painel" to "面板",
             "theme.terminal" to "终端",
+            "theme.mission" to "任务控制",
         ),
         "zh-tw" to mapOf(
             "notify.idle" to "「{title}」 — 正在等待你",
@@ -217,6 +221,7 @@ object NotifyMessages {
             "theme.papel" to "紙張",
             "theme.painel" to "面板",
             "theme.terminal" to "終端",
+            "theme.mission" to "任務控制",
         ),
     )
 

@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Mission Control theme.** Dense, with gauges up top and agents as rows with status lights: click a row to open that agent's card.
+- **Theme picker in the website demo.** Try all five themes on the page, without installing anything.
+
+### Changed
+- **In the Panel theme, an agent that isn't running no longer has a bright ring.** Bright blue now only means running.
+- **Clicking a ring moves keyboard focus to that agent's card**, so you can keep going from there.
+
+### Fixed
+- **"1 ativa" and "1 activa".** Portuguese and Spanish showed the plural for a single active task.
+- **The task spinner now respects the reduced motion setting.** It kept spinning for people who asked for less motion.
+- **The website demo no longer shows tasks running for hundreds of hours.**
+- **In the Panel theme, editor themes that clear the focus border no longer lose the hover color and the active agent's stripe.**
+- **Screen readers now announce task status in the Terminal theme.**
+- **Traditional Chinese now uses the same word for "agent" everywhere** in the rings strip and the README.
+
 ## [0.22.0] - 2026-11-03
 
 ### Added

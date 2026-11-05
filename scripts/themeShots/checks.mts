@@ -100,6 +100,132 @@ async function asciiBarKeepsProportion(context: BrowserContext, open: Open): Pro
   return failures;
 }
 
+// Mission Control: medidores no topo, um LED por agente, e o clique abre o card.
+async function missionShowsInstruments(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'mission', 'live', 'dark');
+  await page.setViewportSize({ width: 360, height: 560 });
+  const failures: string[] = [];
+  const tiles = await page.locator('.gauges .g').count();
+  if (tiles < 3) failures.push(`mission: ${tiles} medidores, esperava ao menos 3`);
+  const leds = await page.locator('.led-row').count();
+  if (leds !== 4) failures.push(`mission: ${leds} linhas de LED, esperava 4`);
+  if (await page.locator('.usage, table').count() === 0) failures.push('mission: tabela de uso sumiu');
+  if (leds > 0) {
+    await page.locator('.led-row', { hasText: 'explorador-a' }).click();
+    await page.waitForTimeout(800);
+    const opened = await page.evaluate(() => {
+      const title = [...document.querySelectorAll('section.agent .title')].find((t) => t.textContent === 'explorador-a')!;
+      const section = title.closest('section')!;
+      const card = section.getBoundingClientRect();
+      const main = document.querySelector('main')!.getBoundingClientRect();
+      return section.querySelectorAll('li').length > 0 && card.top >= main.top && card.bottom <= main.bottom;
+    });
+    if (!opened) failures.push('mission: clique no LED nao mostrou o card aberto');
+  }
+  await page.close();
+  return failures;
+}
+
+// "Vivo = rodando agora": anel parado nao usa o azul vivo.
+async function idleRingIsMuted(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'painel', 'full', 'dark');
+  const r = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    document.documentElement.append(probe);
+    const [muted, run] = ['var(--ct-muted)', 'var(--ct-run)'].map((value) => {
+      probe.style.color = value;
+      return getComputedStyle(probe).color;
+    });
+    probe.remove();
+    const [idle, live] = ['.ring-btn:not(.running) .arc', '.ring-btn.running .arc'].map((sel) =>
+      [...document.querySelectorAll(sel)].map((a) => getComputedStyle(a).stroke));
+    return { muted, run, idle, live };
+  });
+  await page.close();
+  const failures: string[] = [];
+  if (r.idle.length === 0 || r.idle.some((s) => s !== r.muted)) failures.push(`painel: anel parado em ${r.idle.join(', ')}, esperava ${r.muted}`);
+  if (r.live.length === 0 || r.live.some((s) => s !== r.run)) failures.push(`painel: anel rodando em ${r.live.join(', ')}, esperava ${r.run}`);
+  return failures;
+}
+
+// Tema de editor que zera focusBorder (Vitesse, Material) nao pode apagar o hover
+// nem a faixa do agente ativo.
+async function panelSurvivesNoFocusBorder(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'painel', 'live', 'dark');
+  const r = await page.evaluate(() => {
+    document.documentElement.style.setProperty('--vscode-focusBorder', '#00000000');
+    const probe = document.createElement('span');
+    probe.style.backgroundColor = 'var(--ct-hover)';
+    document.documentElement.append(probe);
+    const hover = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return { hover, stripe: getComputedStyle(document.querySelector('section.agent.active')!).boxShadow };
+  });
+  await page.close();
+  const invisible = (c: string) => /rgba\(0, 0, 0, 0\)|\/ 0\)|, 0\)/.test(c);
+  const failures: string[] = [];
+  if (invisible(r.hover)) failures.push(`painel sem focusBorder: hover invisivel (${r.hover})`);
+  if (invisible(r.stripe)) failures.push(`painel sem focusBorder: faixa do agente ativo invisivel (${r.stripe})`);
+  return failures;
+}
+
+// Quem navega por teclado continua de onde parou: o foco vai para o card aberto.
+async function clickMovesFocus(context: BrowserContext, theme: string, selector: string, open: Open): Promise<string[]> {
+  const page = await open(context, theme, 'live', 'dark');
+  await page.locator(selector, { hasText: 'explorador-a' }).click();
+  await page.waitForTimeout(800);
+  const title = await page.evaluate(() => document.activeElement?.closest('section.agent')?.querySelector('.title')?.textContent ?? null);
+  await page.close();
+  return title === 'explorador-a' ? [] : [`${theme}: depois do clique o foco esta em ${title}, esperava o card de explorador-a`];
+}
+
+// aria-label em <span> sem role e ignorado por leitor de tela.
+async function textStatusIsLabelled(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'terminal', 'live', 'dark');
+  const r = await page.locator('.glyph').evaluateAll((els) => ({ total: els.length, ok: els.filter((e) => e.getAttribute('role') === 'img' && e.getAttribute('aria-label')).length }));
+  await page.close();
+  return r.total > 0 && r.total === r.ok ? [] : [`terminal: ${r.ok} de ${r.total} status em texto com role=img`];
+}
+
+// O contexto do harness e reducedMotion: 'reduce'. O spinner e SMIL, que nem a media
+// query nem o CSS param: ele so pode girar quando a pessoa aceita movimento.
+async function spinnerRespectsMotion(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'classic', 'live', 'dark');
+  const failures: string[] = [];
+  const reduced = await page.locator('animateTransform').count();
+  if (reduced !== 0) failures.push(`spinner: ${reduced} animacoes com movimento reduzido`);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.waitForTimeout(200);
+  if (await page.locator('animateTransform').count() === 0) failures.push('spinner: sem animacao quando o movimento e permitido');
+  await page.close();
+  return failures;
+}
+
+// Mission em sidebar estreita: o valor do medidor nao pode passar do bloco, e o que
+// e cortado (nome do agente, modelo) precisa poder ser lido por inteiro.
+async function missionFitsNarrow(context: BrowserContext, open: Open): Promise<string[]> {
+  const failures: string[] = [];
+  for (const width of [360, 300, 240, 200]) {
+    const page = await open(context, 'mission', 'narrow', 'dark');
+    await page.evaluate((w) => { document.body.style.width = `${w}px`; }, width);
+    const r = await page.evaluate(() => ({
+      tiles: document.querySelectorAll('.gauges .g').length,
+      over: [...document.querySelectorAll('.gauges .g')].filter((g) => {
+        const v = g.querySelector('.gv')!;
+        return v.scrollWidth > v.clientWidth + 0.5 || v.getBoundingClientRect().right > g.getBoundingClientRect().right + 0.5;
+      }).map((g) => g.querySelector('.gv')!.textContent),
+      modelTitles: [...document.querySelectorAll('.gauges .g[title]')].map((g) => g.getAttribute('title')),
+      ledTitles: [...document.querySelectorAll('.led-row')].map((l) => l.getAttribute('title')),
+    }));
+    await page.close();
+    if (r.tiles !== 4) failures.push(`mission/${width}px: ${r.tiles} medidores, esperava 4`);
+    if (r.over.length) failures.push(`mission/${width}px: valor passa do medidor: ${r.over.join(', ')}`);
+    if (r.modelTitles.join() !== 'claude-opus-5-5,claude-opus-4-7') failures.push(`mission/${width}px: titulos dos modelos: ${r.modelTitles.join()}`);
+    if (!r.ledTitles.includes('revisor-de-longo-alcance-1')) failures.push(`mission/${width}px: linha de LED sem o nome inteiro: ${r.ledTitles.join()}`);
+  }
+  return failures;
+}
+
 // Nenhum tema esconde informacao: em painel estreito, o que nao cabe no cabecalho do
 // card desce de linha, em vez de ser cortado pelo overflow do card.
 async function cardHeaderFits(context: BrowserContext, theme: string, open: Open): Promise<string[]> {
@@ -121,9 +247,13 @@ async function cardHeaderFits(context: BrowserContext, theme: string, open: Open
 export async function behaviorChecks(context: BrowserContext, themes: readonly string[], open: Open): Promise<string[]> {
   const failures: string[] = [];
   for (const theme of themes) failures.push(...await cardHeaderFits(context, theme, open));
+  if (themes.includes('classic')) failures.push(...await spinnerRespectsMotion(context, open));
   if (themes.includes('painel')) {
     failures.push(...await ringShowsWholeCard(context, open), ...await ringHasTypeIcon(context, open), ...await panelUsageIsBlue(context, open));
+    failures.push(...await idleRingIsMuted(context, open), ...await panelSurvivesNoFocusBorder(context, open));
+    failures.push(...await clickMovesFocus(context, 'painel', '.ring-btn', open));
   }
-  if (themes.includes('terminal')) failures.push(...await asciiBarKeepsProportion(context, open));
+  if (themes.includes('terminal')) failures.push(...await asciiBarKeepsProportion(context, open), ...await textStatusIsLabelled(context, open));
+  if (themes.includes('mission')) failures.push(...await missionShowsInstruments(context, open), ...await clickMovesFocus(context, 'mission', '.led-row', open), ...await missionFitsNarrow(context, open));
   return failures;
 }

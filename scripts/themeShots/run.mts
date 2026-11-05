@@ -1,7 +1,7 @@
 // Uso:
 //   npm run shots                -> grava em shots/baseline/ so os <tema>-<caso>-<modo>.png que faltam
 //   npm run shots -- --compare   -> grava shots/current/ e compara com o baseline
-//   npm run shots -- --update --themes papel -> regrava o baseline de um tema (mudanca intencional)
+//   npm run shots -- --update --themes papel --cases full -> regrava o baseline do que mudou de proposito
 //   Filtros: --themes classic,papel --cases live,full
 // Sem --themes: o Classico e um tema por arquivo de src/webview/themes/. Tema
 // registrado que ainda nao tem .css fica de fora ate a task que o cria.
@@ -28,6 +28,13 @@ const themeFiles = fs.existsSync(themesDir)
 const themes = listArg('--themes', ['classic', ...themeFiles]);
 const cases = listArg('--cases', SHOT_CASES);
 const modes = ['dark', 'light'] as const;
+
+// Sem --cases, um tema inteiro seria regravado as cegas, inclusive o que nao era
+// para ter mudado. Rode --compare antes: ele lista o que mudou.
+if (update && !args.includes('--cases')) {
+  console.error('--update exige --cases: rode --compare e passe so os casos que mudaram de proposito');
+  process.exit(1);
+}
 
 // O Classico nao muda nunca. Se um dia mudar de proposito, apague o PNG a mao:
 // o proximo `npm run shots` grava o novo.

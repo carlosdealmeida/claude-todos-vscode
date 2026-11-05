@@ -35,6 +35,25 @@ function isoAfter(t: number, hours: number): string {
   return new Date(t + hours * 3_600_000).toISOString();
 }
 
+// So para as checagens de comportamento, fora das imagens: quatro medidores com
+// valores longos e nomes de agente com o mesmo comeco, em painel estreito.
+export function narrowSnapshot(script: ShotScript): SessionSnapshot {
+  const base = pickFrame(script).snapshot;
+  return {
+    ...base,
+    agents: base.agents.map((a, i) => (i === 0 ? a : { ...a, name: `revisor-de-longo-alcance-${i}` })),
+    usage: {
+      ...base.usage!,
+      context: { tokens: 130_000, limit: 200_000, source: 'mod' },
+      cache: { input: 30, read: 60, creation: 10 },
+      byModel: [
+        { model: 'claude-opus-5-5', input: 9_000_000, output: 5_300_000, cache: 900_000_000 },
+        { model: 'claude-opus-4-7', input: 4_000_000, output: 2_000_000, cache: 128_000_000 },
+      ],
+    },
+  };
+}
+
 export function caseSnapshot(c: ShotCase, script: ShotScript): SessionSnapshot | null {
   const base = pickFrame(script).snapshot;
   const t = shotTime(script);

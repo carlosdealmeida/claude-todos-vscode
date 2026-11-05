@@ -45,11 +45,15 @@ describe('registro de temas', () => {
 describe('traços', () => {
   it('classic e papel nao ligam nenhum traco: sao so tokens', () => {
     for (const id of ['classic', 'papel'] as const) {
-      expect(THEME_TRAITS[id]).toEqual({ glyphs: 'svg', meter: 'bar', agentStrip: 'none' });
+      expect(THEME_TRAITS[id]).toEqual({ glyphs: 'svg', meter: 'bar', agentStrip: 'none', usageSummary: 'none' });
     }
   });
   it('terminal usa texto e barra ASCII; painel usa aneis', () => {
-    expect(THEME_TRAITS.terminal).toEqual({ glyphs: 'text', meter: 'ascii', agentStrip: 'none' });
-    expect(THEME_TRAITS.painel).toEqual({ glyphs: 'svg', meter: 'bar', agentStrip: 'rings' });
+    expect(THEME_TRAITS.terminal).toEqual({ glyphs: 'text', meter: 'ascii', agentStrip: 'none', usageSummary: 'none' });
+    expect(THEME_TRAITS.painel).toEqual({ glyphs: 'svg', meter: 'bar', agentStrip: 'rings', usageSummary: 'none' });
+  });
+  it('mission: LEDs e medidores', () => {
+    expect(THEME_TRAITS.mission).toEqual({ glyphs: 'svg', meter: 'bar', agentStrip: 'leds', usageSummary: 'gauges' });
+    expect(THEME_TRAITS.classic.usageSummary).toBe('none');
   });
 });

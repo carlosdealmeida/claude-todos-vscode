@@ -227,13 +227,15 @@
             "classic",
             "papel",
             "painel",
-            "terminal"
+            "terminal",
+            "mission"
           ],
           "enumDescriptions": [
             "%config.theme.classic%",
             "%config.theme.papel%",
             "%config.theme.painel%",
-            "%config.theme.terminal%"
+            "%config.theme.terminal%",
+            "%config.theme.mission%"
           ],
           "default": "classic",
           "scope": "application",
