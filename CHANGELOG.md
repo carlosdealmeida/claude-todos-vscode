@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.23.1] - 2026-11-05
+
 ### Fixed
 - **Keyboard focus on card headers is now visible.** In every theme, the card clipped the outline around the header, so you couldn't tell where you were.
 - **The panel now fully respects reduced motion.** Opening a card and scrolling to it no longer animate, and VS Code's `workbench.reduceMotion` setting now counts, not just the system one.
