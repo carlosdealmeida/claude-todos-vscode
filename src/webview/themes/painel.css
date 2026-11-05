@@ -4,7 +4,9 @@
      --ct-run tambem pinta texto (TodoItem), e o focusBorder de alguns temas nao
      foi feito para isso. O ThemeShim nao define textLink, e o focusBorder dele e a
      cor de foco do IDE: a reserva e charts-blue, a mesma do --ct-run do Classico.
-   - azul vivo em borda e tinta de fundo (--vscode-focusBorder)
+   - tinta de fundo (--vscode-focusBorder): so aqui, porque alguns temas o zeram, e
+     um fundo sem tinta nao apaga nada. Contorno de foco e faixa do agente ativo
+     sumiriam com ele: usam o azul vivo.
    - azul forte (--vscode-button-background) = consumo / preenchimentos
    - verde/laranja/vermelho ficam reservados a sucesso/alerta/erro. */
 :root[data-ct-theme="painel"] {
@@ -13,8 +15,7 @@
   --ct-tone-explore: var(--vscode-textLink-foreground, var(--vscode-charts-blue));
   --ct-tone-plan: var(--vscode-textLink-foreground, var(--vscode-charts-blue));
   --ct-tone-general: var(--vscode-textLink-foreground, var(--vscode-charts-blue));
-  --ct-accent: var(--vscode-focusBorder);
-  /* Nao usa focusBorder: alguns temas o zeram, e a faixa do agente ativo sumiria. */
+  --ct-accent: var(--ct-run);
   --ct-agent-active: var(--ct-run);
   --ct-info: var(--vscode-button-background);
   --ct-meter-ok: var(--vscode-button-background);

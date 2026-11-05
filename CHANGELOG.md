@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **Keyboard focus on card headers is now visible.** In every theme, the card clipped the outline around the header, so you couldn't tell where you were.
+- **The panel now fully respects reduced motion.** Opening a card and scrolling to it no longer animate, and VS Code's `workbench.reduceMotion` setting now counts, not just the system one.
+- **In the Mission Control theme, the task bar stays readable with long lists.** With 30 or more tasks, its segments disappeared. Above 16 tasks it's now a continuous bar.
+- **In the Mission Control theme, the agent strip is gone when no agent is alive.** It used to leave an empty line.
+- **In the Panel theme, editor themes that clear the focus border no longer lose the focus outline.** The pin icon and the border of hovered buttons came back too.
+- **The website demo no longer ignores a theme picked before the panel loads.** The picker and the panel could show different themes.
+
 ## [0.23.0] - 2026-11-05
 
 ### Added

@@ -11,3 +11,13 @@ body { margin: 0; padding: 0; }
     transition-duration: 0.001ms !important;
   }
 }
+
+/* A mesma coisa para o `workbench.reduceMotion` do VS Code, que não muda a media
+   query: só põe esta classe no body da webview. */
+body.vscode-reduce-motion *,
+body.vscode-reduce-motion *::before,
+body.vscode-reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}

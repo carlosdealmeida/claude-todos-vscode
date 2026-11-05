@@ -36,8 +36,8 @@ if (update && !args.includes('--cases')) {
   process.exit(1);
 }
 
-// O Classico nao muda nunca. Se um dia mudar de proposito, apague o PNG a mao:
-// o proximo `npm run shots` grava o novo.
+// O Classico so muda por correcao explicita, como o singular de "1 ativa" na v0.23.0.
+// Nesse caso, apague o PNG a mao: o proximo `npm run shots` grava o novo.
 if (update && themes.includes('classic')) {
   console.error('--update nao aceita o Classico: passe --themes so com os outros temas');
   process.exit(1);
@@ -74,7 +74,7 @@ for (const theme of themes) {
       const page = await open(context, theme, shotCase, mode);
       if (shotCase === 'project') await page.locator('main .project .header').click();
       await page.evaluate(() => document.fonts.ready);
-      // transition:slide usa a Web Animations API, que o reducedMotion nao zera.
+      // Folga para a pagina assentar depois da carga e do clique no caso project.
       await page.waitForTimeout(400);
       // O spinner do StatusIcon e SMIL (animateTransform): nem o reducedMotion
       // nem o relogio congelado o param, e o angulo mudaria a cada imagem.
@@ -109,7 +109,9 @@ for (const theme of themes) {
         if (!fs.existsSync(base)) {
           failures.push(`${file}: sem baseline (rode npm run shots)`);
         } else if (!fs.readFileSync(base).equals(fs.readFileSync(path.join(outDir, file)))) {
-          const hint = theme === 'classic' ? 'o Classico nao pode mudar' : `se foi de proposito: --update --themes ${theme}`;
+          const hint = theme === 'classic'
+            ? 'o Classico so muda por correcao explicita: nesse caso, apague o PNG e rode npm run shots'
+            : `se foi de proposito: --update --themes ${theme} --cases ${shotCase}`;
           failures.push(`${file}: mudou, compare shots/baseline/ com shots/current/ (${hint})`);
         }
       }

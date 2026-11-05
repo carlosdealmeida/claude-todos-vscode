@@ -8,14 +8,15 @@ import '../../src/webview/app.css';
 import '../../site/src/demo/theme.css';
 import type { WebviewBridge } from '../../src/webview/bridge';
 import type { ExtensionMessage } from '../../src/types';
-import { LEAK_SENTINEL, caseSnapshot, narrowSnapshot, type ShotCase, type ShotScript } from './cases';
+import { LEAK_SENTINEL, caseSnapshot, manyTasksSnapshot, narrowSnapshot, noLiveSnapshot, type ShotCase, type ShotScript } from './cases';
 
 const params = new URLSearchParams(location.search);
 const mode = params.get('mode') === 'light' ? 'light' : 'dark';
 const theme = params.get('theme') ?? 'classic';
-const narrow = params.get('case') === 'narrow';
 const shotCase = (params.get('case') ?? 'live') as ShotCase;
 const shot = script as unknown as ShotScript;
+// Casos so das checagens de comportamento, fora das imagens.
+const checkOnly: Record<string, typeof narrowSnapshot> = { narrow: narrowSnapshot, many: manyTasksSnapshot, nolive: noLiveSnapshot };
 
 // Simula os dois sinais de modo: a classe que o VS Code poe no body e o
 // data-theme que o theme.css do site usa para trocar as --vscode-*.
@@ -48,7 +49,7 @@ const bridge: WebviewBridge = {
     send({ type: 'locale', locale: 'pt-br' });
     send({ type: 'appearance', theme: theme as never });
     if (shotCase === 'error') send({ type: 'error', message: 'sidecar terminated' });
-    else send({ type: 'snapshot', snapshot: narrow ? narrowSnapshot(shot) : caseSnapshot(shotCase, shot) });
+    else send({ type: 'snapshot', snapshot: checkOnly[shotCase]?.(shot) ?? caseSnapshot(shotCase, shot) });
   },
 };
 (window as unknown as { __claudeTodosDemo: WebviewBridge }).__claudeTodosDemo = bridge;

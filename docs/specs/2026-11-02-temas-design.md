@@ -71,8 +71,9 @@ via JCEF, demo do site):
 8. **O Painel deriva as cores do editor.** "Azul vivo" em texto = `--vscode-textLink-foreground`, porque a cor de
    "rodando agora" também pinta texto e o `focusBorder` de alguns temas não foi feito para isso. A reserva é
    `--vscode-charts-blue`: o `ThemeShim` não define `textLink`, e o `focusBorder` dele é a cor de foco do IDE, com 1,64:1
-   sobre o fundo no Darcula e no IntelliJ Light. Em tintas de fundo, `--vscode-focusBorder`; a faixa do agente ativo usa
-   o azul vivo, porque alguns temas zeram o `focusBorder` e ela sumiria. "Azul forte" =
+   sobre o fundo no Darcula e no IntelliJ Light. Em tintas de fundo, `--vscode-focusBorder`; a faixa do agente ativo e o
+   `--ct-accent`, que pinta o contorno de foco, usam o azul vivo, porque alguns temas zeram o `focusBorder` e eles
+   sumiriam. "Azul forte" =
    `--vscode-button-background`, que pinta as barras de uso em nível normal por `--ct-meter-ok`; trilhas = `color-mix` do
    foreground com o fundo. Assim ele funciona com qualquer tema do editor (Dracula, One Dark, Light Modern) sem paleta
    própria, e o light não precisa de hex à parte.
@@ -84,7 +85,8 @@ via JCEF, demo do site):
 10. **Regressão visual é provada por imagem, em todos os temas.** Antes de migrar qualquer token, um script gera
     screenshots do painel (Playwright + Chromium, dados fixos, dark e light) em vários estados: o frame real da demo e
     casos sintéticos com perguntas pendentes, limites de uso, rodapé da ponte, níveis de alerta, uso do projeto aberto e
-    estados vazios. Depois da migração, as imagens do Clássico precisam ser idênticas byte a byte, e isso nunca muda.
+    estados vazios. Depois da migração, as imagens do Clássico precisam ser idênticas byte a byte. Elas só mudam por
+    correção explícita e revista pixel a pixel, como o singular de "1 ativa" na v0.23.0, que regravou 8 imagens.
     Cada outro tema grava o próprio baseline na task que o cria e, a partir daí, também é comparado a cada mudança, com
     8 estados × 2 modos × 5 temas = 80 imagens no fim. Outro tema só muda de propósito, regravando o baseline dele. Hover
     e foco ficam fora da prova: para eles, a garantia é a migração mecânica da tabela de tokens.

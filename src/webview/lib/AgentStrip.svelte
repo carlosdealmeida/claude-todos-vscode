@@ -8,6 +8,8 @@
   let { agents, variant }: { agents: AgentTodos[]; variant: 'rings' | 'leds' } = $props();
   const R = 18;
   const C = 2 * Math.PI * R;
+  // Acima disto os espacos da barra de LED comeriam os segmentos: ela vira continua.
+  const DENSE_ABOVE = 16;
 
   // So os agentes vivos: o historico continua na arvore, mais abaixo.
   let items = $derived(
@@ -20,8 +22,8 @@
 </script>
 
 <!-- Um anel sozinho nao acrescenta nada ao card logo abaixo; LEDs sao o placar do
-     Mission Control e aparecem mesmo com um agente so. -->
-{#if variant === 'leds' || items.length > 1}
+     Mission Control e aparecem mesmo com um agente so, mas nao sem nenhum. -->
+{#if items.length > (variant === 'leds' ? 0 : 1)}
   <nav class="strip" class:leds={variant === 'leds'} aria-label={todosStore.t('app.agents')}>
     {#each items as it (it.a.agentId)}
       {#if variant === 'leds'}
@@ -30,7 +32,7 @@
         aria-label={todosStore.t('agentStrip.label', { name: it.a.name, done: it.done, total: it.total })}>
         <span class="led" class:on={it.running} aria-hidden="true"></span>
         <span class="name">{it.a.name}</span>
-        <span class="segs" aria-hidden="true">{#each todoSegments(it.a.todos) as s, i (i)}<i class={s}></i>{/each}</span>
+        <span class="segs" class:dense={it.total > DENSE_ABOVE} aria-hidden="true">{#each todoSegments(it.a.todos) as s, i (i)}<i class={s}></i>{/each}</span>
         <span class="frac">{it.done}/{it.total}</span>
       </button>
       {:else}
@@ -84,6 +86,7 @@
   .led { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--ct-muted); }
   .led.on { background: var(--ct-run); box-shadow: 0 0 6px var(--ct-run); }
   .segs { display: flex; gap: 2px; }
+  .segs.dense { gap: 0; }
   .segs i { flex: 1; height: 8px; background: var(--ct-track); }
   .segs i.done { background: var(--ct-ok); }
   .segs i.run { background: var(--ct-run); }

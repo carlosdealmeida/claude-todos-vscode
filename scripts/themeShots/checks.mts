@@ -158,13 +158,18 @@ async function panelSurvivesNoFocusBorder(context: BrowserContext, open: Open): 
     probe.style.backgroundColor = 'var(--ct-hover)';
     document.documentElement.append(probe);
     const hover = getComputedStyle(probe).backgroundColor;
+    probe.style.backgroundColor = 'var(--ct-accent)';
+    document.documentElement.append(probe);
+    const accent = getComputedStyle(probe).backgroundColor;
     probe.remove();
-    return { hover, stripe: getComputedStyle(document.querySelector('section.agent.active')!).boxShadow };
+    return { hover, accent, stripe: getComputedStyle(document.querySelector('section.agent.active')!).boxShadow };
   });
   await page.close();
   const invisible = (c: string) => /rgba\(0, 0, 0, 0\)|\/ 0\)|, 0\)/.test(c);
   const failures: string[] = [];
   if (invisible(r.hover)) failures.push(`painel sem focusBorder: hover invisivel (${r.hover})`);
+  // --ct-accent pinta o contorno de foco: sem ele, o teclado fica sem indicacao.
+  if (invisible(r.accent)) failures.push(`painel sem focusBorder: --ct-accent invisivel (${r.accent})`);
   if (invisible(r.stripe)) failures.push(`painel sem focusBorder: faixa do agente ativo invisivel (${r.stripe})`);
   return failures;
 }
@@ -244,10 +249,151 @@ async function cardHeaderFits(context: BrowserContext, theme: string, open: Open
   return failures;
 }
 
+// O card tem overflow: hidden: um contorno do lado de fora do cabecalho fica cortado,
+// e quem usa teclado nao ve onde esta. So o teclado liga o :focus-visible.
+async function headerFocusIsVisible(context: BrowserContext, theme: string, open: Open): Promise<string[]> {
+  const page = await open(context, theme, 'live', 'dark');
+  const seen = new Map<string, { style: string; offset: number; color: string }>();
+  for (let i = 0; i < 40 && seen.size < 2; i++) {
+    await page.keyboard.press('Tab');
+    const r = await page.evaluate(() => {
+      const el = document.activeElement!;
+      const kind = el.matches('section.agent > button.header') ? 'agente' : el.matches('.project .header') ? 'projeto' : null;
+      const s = getComputedStyle(el);
+      return kind ? { kind, style: s.outlineStyle, offset: parseFloat(s.outlineOffset), color: s.outlineColor } : null;
+    });
+    if (r) seen.set(r.kind, r);
+  }
+  await page.close();
+  const failures: string[] = [];
+  for (const kind of ['agente', 'projeto']) {
+    const r = seen.get(kind);
+    if (!r) failures.push(`${theme}: Tab nao chegou ao cabecalho de ${kind}`);
+    else if (r.style !== 'solid' || r.offset >= 0) failures.push(`${theme}: foco do cabecalho de ${kind} cortado pelo card (${r.style}, offset ${r.offset})`);
+  }
+  return failures;
+}
+
+// Abrir um card nao pode animar para quem pediu menos movimento. Animacao de
+// transition:slide e Web Animations, que a media query do app.css nao alcanca.
+async function slideAnimations(page: Page, selector: string): Promise<number> {
+  await page.locator(selector).first().click();
+  const n = await page.evaluate(() => document.getAnimations().filter((a) => a.constructor === Animation).length);
+  await page.waitForTimeout(300);
+  return n;
+}
+
+async function scrollBehaviorOnRingClick(page: Page): Promise<unknown[]> {
+  await page.evaluate(() => {
+    const w = window as unknown as { __scrolls: unknown[] };
+    w.__scrolls = [];
+    const orig = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (this: Element, o?: boolean | ScrollIntoViewOptions) {
+      w.__scrolls.push(typeof o === 'object' ? o.behavior : o);
+      orig.call(this, o);
+    };
+  });
+  await page.locator('.ring-btn', { hasText: 'explorador-a' }).click();
+  await page.waitForTimeout(500);
+  return page.evaluate(() => (window as unknown as { __scrolls: unknown[] }).__scrolls);
+}
+
+async function motionIsOff(page: Page, label: string): Promise<string[]> {
+  const failures: string[] = [];
+  if (await page.locator('animateTransform').count() !== 0) failures.push(`${label}: spinner girando`);
+  const pulse = await page.locator('.dot.active').first().evaluate((d) => parseFloat(getComputedStyle(d).animationDuration));
+  if (pulse > 0.01) failures.push(`${label}: ponto do agente pulsando (${pulse}s)`);
+  const slides = await slideAnimations(page, 'section.agent > button.header');
+  if (slides !== 0) failures.push(`${label}: ${slides} animacoes ao recolher o card`);
+  const scrolls = await scrollBehaviorOnRingClick(page);
+  if (scrolls.length === 0) failures.push(`${label}: clique no anel nao rolou ate o card`);
+  if (scrolls.includes('smooth')) failures.push(`${label}: rolagem suave`);
+  return failures;
+}
+
+// Os dois jeitos de pedir menos movimento: o do sistema, e o workbench.reduceMotion
+// do VS Code, que nao mexe na media query: so poe uma classe no body da webview.
+async function reducedMotionStopsEverything(context: BrowserContext, open: Open): Promise<string[]> {
+  const failures: string[] = [];
+  const bySystem = await open(context, 'painel', 'live', 'dark');
+  failures.push(...await motionIsOff(bySystem, 'movimento reduzido no sistema'));
+  await bySystem.close();
+
+  const byEditor = await open(context, 'painel', 'live', 'dark');
+  await byEditor.emulateMedia({ reducedMotion: 'no-preference' });
+  await byEditor.evaluate(() => document.body.classList.add('vscode-reduce-motion'));
+  await byEditor.waitForTimeout(200);
+  failures.push(...await motionIsOff(byEditor, 'workbench.reduceMotion'));
+  await byEditor.close();
+
+  const allowed = await open(context, 'painel', 'live', 'dark');
+  await allowed.emulateMedia({ reducedMotion: 'no-preference' });
+  await allowed.waitForTimeout(200);
+  if (await slideAnimations(allowed, 'section.agent > button.header') === 0) failures.push('movimento permitido: card recolheu sem animar');
+  if (!(await scrollBehaviorOnRingClick(allowed)).includes('smooth')) failures.push('movimento permitido: sem rolagem suave');
+  await allowed.close();
+
+  // Pagina nova: a de cima recolheu o card onde o spinner esta.
+  const toggled = await open(context, 'painel', 'live', 'dark');
+  await toggled.emulateMedia({ reducedMotion: 'no-preference' });
+  await toggled.waitForTimeout(200);
+  if (await toggled.locator('animateTransform').count() === 0) failures.push('movimento permitido: spinner parado');
+  await toggled.evaluate(() => document.body.classList.add('vscode-reduce-motion'));
+  await toggled.waitForTimeout(100);
+  if (await toggled.locator('animateTransform').count() !== 0) failures.push('ligar workbench.reduceMotion com o painel aberto nao parou o spinner');
+  await toggled.evaluate(() => document.body.classList.remove('vscode-reduce-motion'));
+  await toggled.waitForTimeout(100);
+  if (await toggled.locator('animateTransform').count() === 0) failures.push('desligar workbench.reduceMotion nao voltou o spinner');
+  await toggled.close();
+  return failures;
+}
+
+// Com muitas tasks a barra segmentada continua dizendo quanto falta: nenhum
+// segmento some, e a parte concluida tem a largura da fracao ao lado.
+async function missionBarKeepsProportion(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'mission', 'many', 'dark');
+  const rows = await page.locator('.led-row').evaluateAll((els) => els.map((row) => {
+    const bar = row.querySelector('.segs')!.getBoundingClientRect();
+    const segs = [...row.querySelectorAll('.segs i')];
+    const [done, total] = row.querySelector('.frac')!.textContent!.split('/').map(Number);
+    // Onde a parte concluida termina, para o espaco entre segmentos nao contar contra.
+    const lastDone = segs.filter((s) => s.classList.contains('done')).pop();
+    return {
+      name: row.querySelector('.name')!.textContent,
+      done,
+      total,
+      zero: segs.filter((s) => s.getBoundingClientRect().width <= 0).length,
+      got: lastDone ? ((lastDone.getBoundingClientRect().right - bar.left) / bar.width) * 100 : 0,
+    };
+  }));
+  await page.close();
+  const failures: string[] = [];
+  if (!rows.some((r) => r.total >= 30)) failures.push('mission: caso many sem linha com 30+ tasks');
+  for (const r of rows) {
+    const want = (r.done / r.total) * 100;
+    if (r.zero > 0) failures.push(`mission: ${r.name} com ${r.total} tasks tem ${r.zero} segmentos sem largura`);
+    if (Math.abs(r.got - want) > 3) failures.push(`mission: ${r.name} com ${r.done}/${r.total} pinta ${Math.round(r.got)}%, esperava ${Math.round(want)}%`);
+  }
+  return failures;
+}
+
+// Sem agente vivo nao ha o que mostrar na faixa: nem uma borda vazia.
+async function emptyStripIsGone(context: BrowserContext, open: Open): Promise<string[]> {
+  const page = await open(context, 'mission', 'nolive', 'dark');
+  const r = await page.evaluate(() => ({ strips: document.querySelectorAll('nav.strip').length, cards: document.querySelectorAll('section.agent').length }));
+  await page.close();
+  const failures: string[] = [];
+  if (r.cards === 0) failures.push('mission: caso nolive sem nenhum agente no historico');
+  if (r.strips !== 0) failures.push('mission: faixa de LED vazia sem nenhum agente vivo');
+  return failures;
+}
+
 export async function behaviorChecks(context: BrowserContext, themes: readonly string[], open: Open): Promise<string[]> {
   const failures: string[] = [];
-  for (const theme of themes) failures.push(...await cardHeaderFits(context, theme, open));
+  for (const theme of themes) failures.push(...await cardHeaderFits(context, theme, open), ...await headerFocusIsVisible(context, theme, open));
   if (themes.includes('classic')) failures.push(...await spinnerRespectsMotion(context, open));
+  if (themes.includes('painel')) failures.push(...await reducedMotionStopsEverything(context, open));
+  if (themes.includes('mission')) failures.push(...await missionBarKeepsProportion(context, open), ...await emptyStripIsGone(context, open));
   if (themes.includes('painel')) {
     failures.push(...await ringShowsWholeCard(context, open), ...await ringHasTypeIcon(context, open), ...await panelUsageIsBlue(context, open));
     failures.push(...await idleRingIsMuted(context, open), ...await panelSurvivesNoFocusBorder(context, open));
