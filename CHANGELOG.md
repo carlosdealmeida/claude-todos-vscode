@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-11-05
+
 ### Added
 - **Mission Control theme.** Dense, with gauges up top and agents as rows with status lights: click a row to open that agent's card.
 - **Theme picker in the website demo.** Try all five themes on the page, without installing anything.
