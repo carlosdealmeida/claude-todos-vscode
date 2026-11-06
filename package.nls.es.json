@@ -1,5 +1,5 @@
 {
-  "extension.description": "Lista de tareas en vivo de tus agentes Claude Code, con árbol de agentes, tokens y caché — acotada al workspace. Claude Code 2.1.233+: las herramientas de tareas vienen desactivadas por defecto; la extensión las activa con un clic.",
+  "extension.description": "Lista de tareas en vivo de tus agentes Claude Code, con árbol de agentes, tokens y caché — acotada a tu workspace. Claude Code 2.1.233+: las herramientas de tareas vienen desactivadas por defecto; la extensión las activa con un clic.",
   "view.todos.name": "Tareas",
   "command.openPanel.title": "Claude Todos: Abrir en el Editor",
   "command.installHook.title": "Claude Todos: Instalar Hook de Sesión",

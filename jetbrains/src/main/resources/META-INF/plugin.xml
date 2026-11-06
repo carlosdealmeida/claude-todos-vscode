@@ -17,7 +17,7 @@
     和 7 天用量面板 —— 全部从 Claude Code 已经写入的对话记录中读取。
     Claude Todos VS Code 扩展的配套插件。
     <br/><br/>
-    Claude Code 2.1.233 起在新模型上默认关闭任务列表工具。插件会在你打开项目时提示一键开启；
+    Claude Code 2.1.233 起在新模型上默认关闭任务列表工具。插件会在你打开项目时提示开启；
     你也可以自行在 ~/.claude/settings.json 中设置 CLAUDE_CODE_ENABLE_TODO_TOOLS=1（详见
     <a href="https://github.com/carlosdealmeida/claude-todos-vscode/blob/master/README.zh-cn.md">README</a>）。
     面板的其余功能不受影响。

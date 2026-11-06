@@ -8,7 +8,7 @@
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**A lista de tarefas dos seus agentes Claude Code, ao vivo** — com árvore de agentes, tempos, tokens e cache, restrito ao workspace aberto na janela atual do VSCode. Tudo 100% local: duas janelas em projetos diferentes nunca veem os dados uma da outra.
+**A lista de tarefas dos seus agentes Claude Code, ao vivo** — com árvore de agentes, tempos, tokens e cache, restrita ao workspace aberto na janela atual do VSCode. Tudo 100% local: duas janelas em projetos diferentes nunca veem os dados uma da outra.
 
 ![Painel Claude Todos: agente principal e sub-agents com as tasks avançando de pending → in_progress → completed ao vivo, com tempos por task](screenshots/claude-todos-demo.gif)
 
