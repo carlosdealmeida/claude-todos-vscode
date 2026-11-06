@@ -236,14 +236,17 @@ export class TodosParser {
     agents: AgentTodos[];
     awaitingInput: AwaitingInput | null;
     pendingQuestions: PendingQuestion[];
+    // Algum agente da sessão (main ou sub-agent, casado ou não) chamou
+    // TodoWrite/TaskCreate/TaskUpdate.
+    listToolUsed: boolean;
   } {
     const transcriptPath = this.transcriptPath(sessionId, cwd);
-    if (!transcriptPath) return { agents: [], awaitingInput: null, pendingQuestions: [] };
+    if (!transcriptPath) return { agents: [], awaitingInput: null, pendingQuestions: [], listToolUsed: false };
 
     const mainLines = this.readLines(transcriptPath);
     const agents: AgentTodos[] = [];
 
-    const main = this.readLastTodosFromLines(mainLines, true);
+    const { parsed: main, listToolUsed: mainUsed } = this.readLastTodosFromLines(mainLines, true);
     if (main) {
       const stat = fs.statSync(transcriptPath);
       agents.push({
@@ -257,12 +260,14 @@ export class TodosParser {
       });
     }
 
-    agents.push(...this.listSubAgents(sessionId, cwd, mainLines, opts.alive === true, opts.aliveSince, opts.extraLifecycle));
+    const subs = this.listSubAgents(sessionId, cwd, mainLines, opts.alive === true, opts.aliveSince, opts.extraLifecycle);
+    agents.push(...subs.agents);
     const waits = scanPendingWaits(mainLines, true);
     return {
       agents,
       awaitingInput: waits.awaitingInput,
       pendingQuestions: waits.pendingQuestions,
+      listToolUsed: mainUsed || subs.listToolUsed,
     };
   }
 
@@ -314,17 +319,18 @@ export class TodosParser {
     sessionAlive: boolean,
     aliveSince: number | undefined,
     extraLifecycle: Map<string, LifecycleEntry> | undefined,
-  ): AgentTodos[] {
+  ): { agents: AgentTodos[]; listToolUsed: boolean } {
+    const none = { agents: [], listToolUsed: false };
     const dir = this.subAgentsDir(sessionId, cwd);
-    if (!dir) return [];
+    if (!dir) return none;
 
     let files: string[];
     try {
       files = fs.readdirSync(dir).filter(f => f.startsWith('agent-') && f.endsWith('.jsonl'));
     } catch {
-      return [];
+      return none;
     }
-    if (files.length === 0) return [];
+    if (files.length === 0) return none;
 
     // Pass 1 — lê cada arquivo uma única vez: prompt, todos, meta e os
     // dispatches de Agent feitos DENTRO daquele transcript (para aninhados).
@@ -339,12 +345,14 @@ export class TodosParser {
       lifecycle: Map<string, LifecycleEntry>;
     }
     const infos: FileInfo[] = [];
+    let listToolUsed = false;
     for (const file of files) {
       const filePath = path.join(dir, file);
       const lines = this.readLines(filePath);
       let updatedAt = 0;
       try { updatedAt = fs.statSync(filePath).mtimeMs; } catch { /* ignore */ }
-      const parsed = this.readLastTodosFromLines(lines, false);
+      const { parsed, listToolUsed: used } = this.readLastTodosFromLines(lines, false);
+      if (used) listToolUsed = true;
       infos.push({
         agentId: file.slice('agent-'.length, -'.jsonl'.length),
         prompt: this.firstUserPrompt(lines),
@@ -462,7 +470,7 @@ export class TodosParser {
       if (a.agent.updatedAt !== b.agent.updatedAt) return b.agent.updatedAt - a.agent.updatedAt;
       return a.ordinal - b.ordinal;
     });
-    return pending.map(p => p.agent);
+    return { agents: pending.map(p => p.agent), listToolUsed };
   }
 
   // Varre um transcript e devolve os disparos do tool Agent: toolUseId ->
@@ -568,12 +576,22 @@ export class TodosParser {
   //   - legacy `TodoWrite`: a single event carrying the full snapshot.
   //   - new `TaskCreate` / `TaskUpdate` (enabled by `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`):
   //     an event stream — TaskCreate adds one task, TaskUpdate mutates a task by id.
+  // `listToolUsed`: o transcript chamou alguma ferramenta de lista (mesmo
+  // critério do detectSchema, mesmo sem snapshot válido).
   private readLastTodosFromLines(
     lines: string[],
     skipSidechain: boolean,
-  ): { todos: Todo[]; updatedAt?: number } | null {
-    if (lines.length === 0) return null;
+  ): { parsed: { todos: Todo[]; updatedAt?: number } | null; listToolUsed: boolean } {
+    if (lines.length === 0) return { parsed: null, listToolUsed: false };
     const schema = this.detectSchema(lines, skipSidechain);
+    return { parsed: this.readTodosForSchema(lines, skipSidechain, schema), listToolUsed: schema !== null };
+  }
+
+  private readTodosForSchema(
+    lines: string[],
+    skipSidechain: boolean,
+    schema: 'TodoWrite' | 'Task' | null,
+  ): { todos: Todo[]; updatedAt?: number } | null {
     if (schema === 'TodoWrite') {
       const snap = this.readLastTodoWriteSnapshot(lines, skipSidechain);
       if (!snap) return null;

@@ -150,6 +150,23 @@ describe('SessionCore', () => {
     expect(core.buildSnapshot()?.taskToolsOff).toBeUndefined();
   });
 
+  it('snapshot marks taskToolsOff even with a matched sub-agent that never called a list tool', () => {
+    writeSessionOn('2.1.261', 'claude-fable-5-1');
+    const projDir = path.join(claudeDir, 'projects', encodeCwdToProjectDir(CWD));
+    fs.appendFileSync(path.join(projDir, `${SID}.jsonl`), '\n' + JSON.stringify({
+      type: 'assistant',
+      message: { content: [{ type: 'tool_use', name: 'Agent', id: 'tu1', input: { description: 'Revisor', prompt: 'revise' } }] },
+    }));
+    const subDir = path.join(projDir, SID, 'subagents');
+    fs.mkdirSync(subDir, { recursive: true });
+    fs.writeFileSync(path.join(subDir, 'agent-a1.jsonl'), JSON.stringify(
+      { type: 'user', isSidechain: true, agentId: 'a1', message: { role: 'user', content: 'revise' } }));
+    fs.writeFileSync(path.join(subDir, 'agent-a1.meta.json'), JSON.stringify({ toolUseId: 'tu1', description: 'Revisor' }));
+    const snap = make().buildSnapshot();
+    expect(snap?.agents.length).toBeGreaterThan(0);
+    expect(snap?.taskToolsOff).toBe(true);
+  });
+
   it('snapshot does not mark taskToolsOff before the cut or on a legacy model', () => {
     writeSessionOn('2.1.232', 'claude-fable-5-1');
     expect(make().buildSnapshot()?.taskToolsOff).toBeUndefined();
