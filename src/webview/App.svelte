@@ -8,6 +8,7 @@
   import AgentStrip from './lib/AgentStrip.svelte';
   import UsageGauges from './lib/UsageGauges.svelte';
   import PendingQuestions from './lib/PendingQuestions.svelte';
+  import TaskToolsBanner from './lib/TaskToolsBanner.svelte';
   import { buildTree, isHistory } from './tree';
 
   let snapshot = $derived(todosStore.snapshot);
@@ -41,6 +42,9 @@
     </header>
     {#if snapshot.pendingQuestions}
       <PendingQuestions questions={snapshot.pendingQuestions} sessionId={snapshot.sessionId} />
+    {/if}
+    {#if snapshot.taskToolsOff && snapshot.agents.length > 0}
+      <TaskToolsBanner />
     {/if}
     {#if snapshot.usage && todosStore.traits.usageSummary === 'gauges'}
       <UsageGauges usage={snapshot.usage} />
