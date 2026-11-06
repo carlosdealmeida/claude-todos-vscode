@@ -470,12 +470,14 @@ de tokens do 0.3.0).
 
 ### 8. Visão global de histórico entre todos os projetos
 - **Issue:** [#49095](https://github.com/anthropics/claude-code/issues/49095) (`NOT_PLANNED`) — labels `platform:vscode`, `area:ide`
-- **Status:** 🔍 a investigar / ⚠️ **conflito de posicionamento a decidir**
+- **Status:** 🔍 a investigar · backlog comum, sem bloqueio (posicionamento decidido em 2026-11-05: observability pura, só se houver pedido; [spec](specs/2026-11-05-posicionamento-e-ativacao-design.md))
 - **Ideia:** aba/comando "Todos os projetos" agregando `~/.claude/projects/*/*.jsonl` com
   título, nome do projeto, timestamp e contagem de mensagens; busca/filtro.
 - **Tensão:** vai **contra o princípio de escopo-por-workspace** que é o nosso diferencial de
   privacidade (duas janelas nunca veem os todos uma da outra). Se entrar, tem que ser opt-in
-  explícito e bem isolado. Decidir posicionamento antes de planejar.
+  explícito e bem isolado. ~~Decidir posicionamento antes de planejar.~~ *(Superado em
+  2026-11-05: posicionamento decidido, a lista de tarefas é o coração; ver R2 passo 3 e a
+  [spec](specs/2026-11-05-posicionamento-e-ativacao-design.md).)*
 - **Reforço (varredura 2026-08-10):** a demanda por organização multi-projeto segue —
   [#82641](https://github.com/anthropics/claude-code/issues/82641) grouping/labels de sessão
   no painel, mais um cluster grande de grouping no sidebar do desktop
@@ -487,7 +489,8 @@ de tokens do 0.3.0).
 - **Reforço (varredura 2026-09-05):** [#90030](https://github.com/anthropics/claude-code/issues/90030) pede agrupar sessões por projeto na lista do
   Code web/mobile; [#86259](https://github.com/anthropics/claude-code/issues/86259) mostrar o cwd de cada sessão no sidebar do desktop. A dor continua
   sendo "em qual projeto está isto?" — que o escopo por workspace resolve por construção. A
-  decisão de posicionamento segue pendente (agora com o gatilho do R2).
+  decisão de posicionamento segue pendente (agora com o gatilho do R2). *(Superado em
+  2026-11-05: decidida; ver o Status acima.)*
 
 ### 9. Multi-root: escolher a pasta ativa ✅ ENTREGUE (0.13.0)
 - **Issues:** [#58044](https://github.com/anthropics/claude-code/issues/58044) sem como selecionar a pasta ativa · [#36949](https://github.com/anthropics/claude-code/issues/36949) setting `workingDirectory` · [#12808](https://github.com/anthropics/claude-code/issues/12808) (20c) "sempre começa na primeira pasta" · [#18814](https://github.com/anthropics/claude-code/issues/18814) (`NOT_PLANNED`)
@@ -522,7 +525,11 @@ de tokens do 0.3.0).
 Diferente das seções acima (derivadas de issues), estes itens vêm de análise de produto: o
 ecossistema está migrando de "um agente com todos" para **orquestração** (sub-agents em
 background, workflows, agent teams), e os dados disso **já estão no disco** no formato que o
-parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"**.
+parser lê. ~~Posicionamento-alvo: **"observability para seus agentes Claude Code"**.~~
+*(Superado em 2026-11-05: a lista de tarefas é o coração do Claude Todos e a observability é o
+contexto em volta dela; ver R2 passo 3 e a
+[spec](specs/2026-11-05-posicionamento-e-ativacao-design.md). As apostas abaixo continuam
+valendo como backlog.)*
 
 > **Fila de brainstorming — zerada em 2026-07-27.** Os dois itens que estavam no topo da fila
 > decidida em 2026-07-27 foram entregues no mesmo dia: 1º **22-ext** (perguntas pendentes **no
@@ -532,7 +539,8 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 > dado nenhum, e 61 dos 63 configs de team são auto-criados sem membros reais (detalhes no
 > item); não reabrir sem um dos dois sinais listados lá. O que **sobra** fora da fila é só o
 > item **23** (background tasks no painel), que continua bloqueado por depender de uma decisão
-> de posicionamento (junto com o item 8) ainda não tomada — não reabrir sem essa decisão. Itens
+> de posicionamento (junto com o item 8) ainda não tomada — não reabrir sem essa decisão
+> *(superado em 2026-11-05: decisão tomada, ver a atualização abaixo)*. Itens
 > 13, 14 e 15 saíram da fila por entrega (0.9.0, 0.10.0, 0.10.0).
 >
 > **Atualização 2026-08-10:** a varredura desta data promoveu o **R5** (contabilidade de
@@ -563,6 +571,13 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 > (item 25) e depois o posicionamento.
 > **2026-10-06:** spike feito e ponte de dados v1 entregue (item 25); o próximo é o
 > posicionamento.
+>
+> **Atualização 2026-11-05:** posicionamento **decidido** (R2 passo 3): a lista de tarefas é o
+> coração; a tese de "observability" com a lista opt-in cai. Os itens 8 e 23 saem do bloqueio e
+> viram backlog comum; 25(b) segue parado; `update_plan` fica em backlog, prioridade baixa. O foco
+> passa a ser a **ativação** (oferecer ligar a flag). Spec
+> [docs/specs/2026-11-05-posicionamento-e-ativacao-design.md](specs/2026-11-05-posicionamento-e-ativacao-design.md),
+> plano [docs/plans/2026-11-06-posicionamento-e-ativacao.md](plans/2026-11-06-posicionamento-e-ativacao.md).
 >
 > Filas anteriores, para histórico: 2026-07-25 → 1º 17 · 2º 5(a)+(c) · 3º 23. Manhã de
 > 2026-07-27 → 1º 17 · 2º 22-ext · 3º 5(a)+(c) (17 caiu na verificação de disco da mesma tarde).
@@ -907,7 +922,7 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   disparava com sub-agents em background ainda rodando. O nosso notifier provavelmente tem o
   mesmo defeito — ver **R6**.
 
-### 23. Background tasks (shells) no painel 🔍 a investigar / posicionamento
+### 23. Background tasks (shells) no painel 🔍 a investigar · backlog comum
 - **Issues (varredura 2026-07-16):** [#75863](https://github.com/anthropics/claude-code/issues/75863)
   (`platform:vscode`, `area:agent-view`) pede painel de "Background Tasks" no VS Code (paridade
   com o desktop) · cluster grande de bugs do painel nativo travado em "Running"
@@ -922,7 +937,9 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   (tool_use Bash + task-notifications), ao lado dos sub-agents na árvore. O painel nativo
   erra o estado com frequência; nosso modelo derivado-do-transcript tende a acertar.
 - **Tensão:** amplia o escopo de "todos + agentes" para "tudo que roda" — avaliar se reforça
-  ou dilui o posicionamento observability. Decidir antes de planejar.
+  ou dilui o posicionamento observability. ~~Decidir antes de planejar.~~ *(Superado em
+  2026-11-05: posicionamento decidido, a lista é o coração; ver a atualização 2026-11-05 abaixo e
+  a [spec](specs/2026-11-05-posicionamento-e-ativacao-design.md).)*
 - **🔥 Reforço forte (varredura 2026-07-25):** o tema explodiu em ~9 dias.
   [#79006](https://github.com/anthropics/claude-code/issues/79006) enuncia a dor inteira —
   "background tasks são **invisíveis**: sem campo no statusline, sem badge de UI" ·
@@ -968,6 +985,9 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   Code**; só valeria como paridade no JetBrains ou para sessões do terminal. Reavaliar junto da
   decisão de posicionamento (R2 passo 3), não antes. Antes de qualquer UI nova de background,
   corrigir o estado dos sub-agents assíncronos (**R6**), que é a base de dados disso.
+- **Atualização 2026-11-05:** a decisão de posicionamento saiu (a lista é o coração; ver R2 passo 3)
+  e o item **deixou de estar bloqueado**: é backlog comum, sem prioridade, só se houver pedido.
+  [Spec](specs/2026-11-05-posicionamento-e-ativacao-design.md).
 
 ### 25. Mods (function hooks) — nova superfície de extensão do Claude Code · ✅ ponte de dados v1 entregue (publicada na 0.20.0)
 - **Origem:** varredura 2026-10-04. A 2.1.287 lançou **Claude Mods** (*"plugins may now modify
@@ -1066,6 +1086,8 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   (posicionamento): o painel próprio segue sendo o único lugar com JetBrains, dashboard e
   histórico; um mod seria complemento, ou concorrente do próprio painel. Também vale para
   terceiros: o **agent-flow** citado acima pode chegar ao painel do VS Code do mesmo jeito.
+- **Decisão 2026-11-05 (ideia b):** continua ⏸️. O terminal já tem `Ctrl+T`; o diferencial está no
+  painel do editor (a lista como coração, ver R2 passo 3). [Spec](specs/2026-11-05-posicionamento-e-ativacao-design.md).
 - **APIs novas que interessam à ponte (2.1.289 a 2.1.300):** `$.agent.list()` com os estados
   `idle` e `waiting` (2.1.289; poderia alimentar o "esperando permissão" que ficou fora da v1);
   `agentType` no payload do `subagentStatusLine` (2.1.293); `$.ui.notify` (2.1.295); `turn.start`
@@ -1330,10 +1352,11 @@ na 2.1.314): segue como relato de terceiro, sem ação.
      Mensagem com a correção a um clique: botão que grava `env.CLAUDE_CODE_ENABLE_TODO_TOOLS`
      no `settings.json` do usuário (opt-in explícito, mostrando o que vai mudar) ou instrução
      copiável. Sem isso, o item 10 ("Sessão ativa — aguardando tasks") vira mentira.
-     **Lacunas conhecidas (revisão final do branch, 2026-09-05):** (a) a dica **não aparece em
-     sessões que já dispararam sub-agents** — o parser lista todo `agent-*.jsonl` mesmo sem
-     tasks, então `agents.length > 0` e o ramo do estado vazio não roda; o painel mostra a
-     árvore com listas vazias e sem explicação. (b) A flag lida do **ambiente do processo do
+     **Lacunas conhecidas (revisão final do branch, 2026-09-05):** (a) ✅ **corrigida em
+     2026-11-06** — a dica não aparecia em sessões que já dispararam sub-agents (o parser lista
+     todo `agent-*.jsonl` mesmo sem tasks, então `agents.length > 0` e o ramo do estado vazio
+     não rodava); agora uma faixa fina no topo do painel avisa nesses casos (spec/plano do
+     passo 3). (b) **Fica como está** (decisão 2026-11-05; o botão de ativar resolve). A flag lida do **ambiente do processo do
      IDE** pode divergir do shell do usuário (VS Code aberto pela GUI sem o `export` do rc):
      falso positivo que o próprio botão corrige. Candidatas à próxima iteração do estado vazio
      ou ao passo 3 (posicionamento).
@@ -1354,10 +1377,19 @@ na 2.1.314): segue como relato de terceiro, sem ação.
        link para a seção do README. A página do JetBrains Marketplace **não** mostra o README;
        só vale com release do plugin (`changeNotes` no `build.gradle.kts` aponta para o GitHub
        Releases — as notas do release também devem citar a flag).
-     - [ ] **Descrição curta do marketplace / Open VSX** (`extension.description` nos 5
-       `package.nls*.json`): avaliar se cabe uma menção sem estourar o limite de caracteres da
-       listagem; se não couber, deixar só no README (que é a página da extensão nas duas lojas).
-  3. **Decidir posicionamento:** a mudança **acelera** a tese da seção "Apostas de produto" —
+     - [x] **Descrição curta do marketplace / Open VSX** ✅ 2026-11-06 (`extension.description`
+       nos 5 `package.nls*.json`, mais a `<description>` do `plugin.xml`): abre pela lista ao vivo
+       e cita a 2.1.233 com a ativação em um clique.
+  3. **Decidir posicionamento:** ✅ **decidido em 2026-11-05** —
+     [spec](specs/2026-11-05-posicionamento-e-ativacao-design.md), plano
+     [docs/plans/2026-11-06-posicionamento-e-ativacao.md](plans/2026-11-06-posicionamento-e-ativacao.md).
+     **A lista de tarefas é o coração do Claude Todos**; a árvore, os tokens e as notificações são
+     o contexto em volta dela. A tese abaixo (reposicionar para "observability" e rebaixar a lista a
+     opt-in) **cai**, e o reposicionamento do item 18 (0.14.0) é **desfeito em parte**: a vitrine
+     volta a abrir pela lista. O problema real é de **ativação**: sucesso = quem instala liga a flag
+     nos primeiros minutos. Entregue: notificação para ligar na ativação (VS Code) e ao abrir o
+     projeto (JetBrains), faixa no painel enquanto a flag estiver desligada, descrição das lojas e
+     READMEs abrindo pela lista. Texto original da tese: a mudança **acelera** a tese da seção "Apostas de produto" —
      o ecossistema foi de "um agente com todos" para orquestração, e o que sobra sem a flag é
      exatamente o que já fazemos de observability (agentes, tokens, notificações, perguntas).
      Avaliar reposicionar o pitch (não necessariamente o nome) para "observability" com a lista
@@ -1417,6 +1449,8 @@ na 2.1.314): segue como relato de terceiro, sem ação.
   sinal de que a lista está virando recurso de cada superfície. Entra na decisão do passo 3.
   Dado local: `TodoWrite` segue no disco (1.040 chamadas em 30 dias, 40 na 2.1.314) só porque
   `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` está ligado nesta máquina; `TaskCreate` teve **0**.
+- **Decisão 2026-11-05:** `update_plan` vai para o backlog comum, prioridade baixa. Encaixa na tese
+  (a lista é o coração), mas quem usa o desktop já vê a lista lá.
 
 ### R3. Integridade do transcript — a fonte de dados está ficando menos confiável ⚠️ monitorar
 - **Origem:** varredura 2026-07-25. Cluster grande e novo de perda/corrupção do `.jsonl`:

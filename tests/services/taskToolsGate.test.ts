@@ -4,8 +4,17 @@ import * as os from 'os';
 import * as path from 'path';
 import {
   TASK_TOOLS_ENV, TaskToolsFlagReader, combineFlagStates, evaluateTaskTools,
-  flagStateOf, modelLosesTaskTools, parseVersion, versionAtLeast,
+  flagStateOf, modelLosesTaskTools, parseVersion, shouldOfferTaskTools, versionAtLeast,
 } from '../../src/services/taskToolsGate';
+
+describe('shouldOfferTaskTools', () => {
+  it('offers the task tools only when the flag is absent and the prompt was not dismissed', () => {
+    expect(shouldOfferTaskTools('absent', false)).toBe(true);
+    expect(shouldOfferTaskTools('absent', true)).toBe(false);
+    expect(shouldOfferTaskTools('on', false)).toBe(false);
+    expect(shouldOfferTaskTools('off', false)).toBe(false);
+  });
+});
 
 describe('versionAtLeast', () => {
   it('parses major.minor.patch and ignores suffixes', () => {

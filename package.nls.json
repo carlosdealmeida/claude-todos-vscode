@@ -1,5 +1,5 @@
 {
-  "extension.description": "Live observability for your Claude Code agents: tasks, agent tree, tokens and cache — scoped to the current workspace",
+  "extension.description": "Live task list for your Claude Code agents, with agent tree, tokens and cache — scoped to your workspace. Claude Code 2.1.233+: task tools are off by default; the extension turns them on in one click.",
   "view.todos.name": "Todos",
   "command.openPanel.title": "Claude Todos: Open in Editor",
   "command.installHook.title": "Claude Todos: Install Session Hook",

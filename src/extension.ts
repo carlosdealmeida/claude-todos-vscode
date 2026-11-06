@@ -15,6 +15,8 @@ import { sessionPickDescription } from './services/sessionPicker';
 import { UI_THEME_IDS, THEME_I18N, type UiThemeId } from './themes';
 import { readUiTheme } from './themeSetting';
 import { acceptTheme } from './themePick';
+import { runActivationPrompts, type HookPromptOutcome } from './activationPrompts';
+import { shouldOfferTaskTools } from './services/taskToolsGate';
 
 const HOOK_EVENTS = DEFAULT_HOOK_EVENTS;
 // Retenção dos registros do bridge. Sessões saem do picker quando o transcript
@@ -279,7 +281,31 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
   );
 
-  void maybePromptInstallHook(context, hookInstaller, hookCommand);
+  const promptTaskTools = async (afterHook: boolean): Promise<void> => {
+    const t = createT(resolveLocale());
+    const choice = await vscode.window.showInformationMessage(
+      t(afterHook ? 'taskTools.promptAfterHook' : 'taskTools.promptMessage'),
+      t('taskTools.enable'),
+      t('hook.notNow'),
+      t('hook.dontAskAgain'),
+    );
+    if (choice === t('taskTools.enable')) {
+      await enableTaskTools();
+    } else if (choice === t('hook.dontAskAgain')) {
+      await context.globalState.update('taskToolsPromptDismissed', true);
+    }
+  };
+  void runActivationPrompts({
+    promptHook: () => maybePromptInstallHook(context, hookInstaller, hookCommand),
+    confirmHookInstalled: () => {
+      vscode.window.showInformationMessage(createT(resolveLocale())('hook.installedAuto'));
+    },
+    shouldOfferTaskTools: () => shouldOfferTaskTools(
+      core.taskToolsFlagState(),
+      context.globalState.get<boolean>('taskToolsPromptDismissed') === true,
+    ),
+    promptTaskTools,
+  });
   context.subscriptions.push({ dispose: stopNotifyTimer });
   observeSession();
 }
@@ -370,15 +396,15 @@ async function maybePromptInstallHook(
   context: vscode.ExtensionContext,
   installer: HookInstaller,
   command: string,
-): Promise<void> {
+): Promise<HookPromptOutcome> {
   const autoPrompt = vscode.workspace.getConfiguration('claudeTodos').get<boolean>('autoInstallHook', true);
-  if (!autoPrompt) return;
+  if (!autoPrompt) return 'not-needed';
   try {
-    if (installer.areAllInstalled(HOOK_EVENTS, command)) return;
+    if (installer.areAllInstalled(HOOK_EVENTS, command)) return 'not-needed';
   } catch {
-    return; // settings.json inválido: não dá para saber; o comando manual mostra o erro
+    return 'not-needed'; // settings.json inválido: não dá para saber; o comando manual mostra o erro
   }
-  if (context.globalState.get<boolean>('hookPromptDismissed')) return;
+  if (context.globalState.get<boolean>('hookPromptDismissed')) return 'not-needed';
 
   const t = createT(resolveLocale());
   const choice = await vscode.window.showInformationMessage(
@@ -391,13 +417,17 @@ async function maybePromptInstallHook(
   if (choice === t('hook.install')) {
     try {
       installer.installAll(HOOK_EVENTS, command);
-      vscode.window.showInformationMessage(t('hook.installedAuto'));
+      return 'installed';
     } catch (err) {
       vscode.window.showErrorMessage(t('hook.installFailed', { error: String(err) }));
+      return 'install-failed';
     }
-  } else if (choice === t('hook.dontAskAgain')) {
-    await context.globalState.update('hookPromptDismissed', true);
   }
+  if (choice === t('hook.dontAskAgain')) {
+    await context.globalState.update('hookPromptDismissed', true);
+    return 'dismissed';
+  }
+  return 'not-now'; // "Agora não" ou notificação fechada no X
 }
 
 async function promptInstallHook(

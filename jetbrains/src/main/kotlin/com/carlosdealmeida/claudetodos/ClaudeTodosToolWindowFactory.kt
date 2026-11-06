@@ -3,6 +3,7 @@ package com.carlosdealmeida.claudetodos
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -14,6 +15,7 @@ import com.intellij.ui.jcef.JBCefApp
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.ui.JBUI
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicReference
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
 
@@ -143,6 +145,10 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
         val observeTimer = javax.swing.Timer(10_000) { router.observe() }.apply { start() }
         com.intellij.openapi.util.Disposer.register(toolWindow.disposable) { observeTimer.stop() }
 
+        // Conclusao do clique em Instalar (libera a fila de convites). Se o sidecar morrer antes
+        // de responder, onDead libera, senao nenhum convite sairia mais nesta sessao.
+        val pendingInstallFinish = AtomicReference<(() -> Unit)?>(null)
+
         panel.load(onMessage = router::onWebviewMessage)
         // Desvio autorizado (review da Task 6): start() pode lançar de forma síncrona se o
         // spawn do processo falhar (ex.: node removido do PATH entre o find() e o start()).
@@ -157,6 +163,7 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
                     onDead = {
                         SwingUtilities.invokeLater {
                             panel.post(SIDECAR_DEAD_MSG)
+                            pendingInstallFinish.getAndSet(null)?.invoke()
                         }
                     },
                 )
@@ -176,13 +183,34 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
                 val hookPath = HookSetup.ensureHookScript()
                 router.requestHookStatus(hookPath) { installed ->
                     if (!installed) SwingUtilities.invokeLater {
-                        bridge.promptHookInstall(onInstall = {
-                            router.installHook(hookPath) { ok ->
-                                SwingUtilities.invokeLater {
-                                    if (ok) bridge.confirmHookInstalled() else bridge.hookInstallFailed("install failed")
+                        project.service<ClaudeTodosPrompts>().queue.enqueue { done ->
+                            bridge.promptHookInstall(onInstall = { finish ->
+                                pendingInstallFinish.set(finish)
+                                router.installHook(hookPath) { ok ->
+                                    // Lido aqui, fora da EDT: a flag e a dispensa decidem se o
+                                    // convite da flag vem em seguida e ocupa o lugar da confirmacao.
+                                    val offer = ok && TaskToolsPrompt.offerNow(project)
+                                    SwingUtilities.invokeLater {
+                                        val release = pendingInstallFinish.getAndSet(null) ?: return@invokeLater
+                                        try {
+                                            if (project.isDisposed) return@invokeLater
+                                            if (!ok) {
+                                                bridge.hookInstallFailed("install failed")
+                                                return@invokeLater
+                                            }
+                                            when (project.service<ClaudeTodosPrompts>().taskTools.onHookInstalled(offer)) {
+                                                HookFollowUp.CONFIRM -> bridge.confirmHookInstalled()
+                                                // Enfileira antes de liberar: e o proximo da fila.
+                                                HookFollowUp.ENQUEUE_PROMPT -> TaskToolsPrompt.enqueue(project, bridge, locale)
+                                                HookFollowUp.PROMPT_ALREADY_QUEUED -> Unit
+                                            }
+                                        } finally {
+                                            release()
+                                        }
+                                    }
                                 }
-                            }
-                        })
+                            }, onDone = done)
+                        }
                     }
                 }
             }.onFailure { e ->
@@ -196,6 +224,8 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
             })
         ApplicationManager.getApplication().messageBus.connect(toolWindow.disposable)
             .subscribe(ThemeChoiceListener.TOPIC, ThemeChoiceListener { id -> router.pushAppearance(id) })
+        project.messageBus.connect(toolWindow.disposable)
+            .subscribe(TaskToolsListener.TOPIC, TaskToolsListener { router.requestSnapshot() })
 
         toolWindow.contentManager.addContent(factory.createContent(panel.component, "", false))
     }

@@ -54,6 +54,12 @@ class MessageRouterTest {
         assertEquals("getSnapshot", parse(toSidecar.single())["cmd"]!!.jsonPrimitive.content)
     }
 
+    @Test fun `requestSnapshot asks the sidecar for a snapshot`() {
+        router.requestSnapshot()
+        assertEquals("getSnapshot", parse(toSidecar.single())["cmd"]!!.jsonPrimitive.content)
+        assertTrue(toWebview.isEmpty())
+    }
+
     @Test fun `pushAppearance sends the chosen theme to the webview`() {
         router.pushAppearance("classic")
         assertEquals("appearance", parse(toWebview.single())["type"]!!.jsonPrimitive.content)

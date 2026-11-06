@@ -174,6 +174,9 @@ class MessageRouter(
     /** Host-iniciado: pede ao sidecar que reavalie kinds/awaitingInput e empurre `notification`. */
     fun observe() { sendToSidecar("""{"cmd":"observe"}""") }
 
+    /** Host-iniciado: a flag mudou fora do painel (notificacao da startup activity). */
+    fun requestSnapshot() { sendToSidecar("""{"cmd":"getSnapshot"}""") }
+
     fun requestHookStatus(scriptPath: String, onResult: (Boolean) -> Unit) {
         val id = "hs-${nextId.getAndIncrement()}"
         pending[id] = { ev -> onResult(ev["installed"]?.jsonPrimitive?.booleanOrNull ?: false) }

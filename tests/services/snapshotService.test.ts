@@ -26,6 +26,7 @@ function makeParser(opts: {
       agents: agentsFor(sessionId),
       awaitingInput: opts.awaitingInput ?? null,
       pendingQuestions: opts.pendingQuestions ?? [],
+      listToolUsed: true,
     }),
   };
 }
@@ -37,7 +38,7 @@ function makeParserNoAgents(mtimes: Record<string, number | null>) {
     transcriptActivityAt: (sessionId: string, _cwd: string) => mtimes[sessionId] ?? null,
     readSessionTitle: (_sessionId: string, _cwd: string) => null,
     listForSession: (_sessionId: string) => [],
-    listSessionDetail: (_sessionId: string) => ({ agents: [], awaitingInput: null, pendingQuestions: [] }),
+    listSessionDetail: (_sessionId: string) => ({ agents: [], awaitingInput: null, pendingQuestions: [], listToolUsed: false }),
   };
 }
 
@@ -169,7 +170,7 @@ describe('SnapshotService', () => {
       transcriptActivityAt: () => 1000,
       readSessionTitle: () => null,
       listForSession: () => [], // no TodoWrite yet → no agents
-      listSessionDetail: () => ({ agents: [], awaitingInput: null, pendingQuestions: [] }),
+      listSessionDetail: () => ({ agents: [], awaitingInput: null, pendingQuestions: [], listToolUsed: false }),
     };
     let receivedAgents: any[] | undefined;
     const usage = {
@@ -198,7 +199,7 @@ describe('SnapshotService', () => {
       transcriptActivityAt: () => 1000,
       readSessionTitle: () => null,
       listForSession: () => [sub],
-      listSessionDetail: () => ({ agents: [sub], awaitingInput: null, pendingQuestions: [] }),
+      listSessionDetail: () => ({ agents: [sub], awaitingInput: null, pendingQuestions: [], listToolUsed: false }),
     };
     let received: any[] | undefined;
     const usage = {
@@ -476,7 +477,16 @@ describe('SnapshotService', () => {
     }
   });
 
-  it('does not mark taskToolsOff once the session has task agents', () => {
+  it('marks taskToolsOff with sub-agents that never called a list tool', () => {
+    const sub = { sessionId: 'a', agentId: 'x', name: 'x', isMain: false, todos: [], updatedAt: 0 };
+    const parser = { ...makeParserNoAgents({ a: 100 }),
+      listSessionDetail: () => ({ agents: [sub], awaitingInput: null, pendingQuestions: [], listToolUsed: false }) };
+    const svc = new SnapshotService(resolverA as any, parser as any, newModelUsage as any,
+      () => new Map(), undefined, () => 0, { read: () => 'absent' as const });
+    expect(svc.build()?.taskToolsOff).toBe(true);
+  });
+
+  it('does not mark taskToolsOff once any agent called a list tool', () => {
     const svc = new SnapshotService(
       resolverA as any, makeParser({ mtimes: { a: 100 } }) as any, newModelUsage as any,
       () => new Map(), undefined, () => 0, { read: () => 'absent' as const },

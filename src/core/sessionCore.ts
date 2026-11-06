@@ -13,7 +13,7 @@ import { HookInstaller, DEFAULT_HOOK_EVENTS } from '../services/hookInstaller';
 import { readLiveSessions } from '../services/liveSessions';
 import { SessionNames } from '../services/sessionNames';
 import { ClaudeSettingsFile } from '../services/claudeSettings';
-import { TaskToolsFlagReader, TASK_TOOLS_ENV } from '../services/taskToolsGate';
+import { TaskToolsFlagReader, TASK_TOOLS_ENV, combineFlagStates, type FlagState } from '../services/taskToolsGate';
 import { BridgeLiveReader } from '../services/bridgeLive';
 import { BridgeModInstaller } from '../services/bridgeModInstaller';
 import type { SessionSnapshot, SessionSummary, ProjectUsage, AwaitingInput } from '../types';
@@ -121,6 +121,15 @@ export class SessionCore {
     const changed = this.settingsFile.setEnv(TASK_TOOLS_ENV, '1');
     this.taskToolsFlags.invalidate();
     return { changed, path: this.settingsFile.path };
+  }
+
+  // Estado da flag em todas as fontes que importam na ativação: ambiente, settings
+  // do usuário e os settings de cada pasta aberta. Leitura tolerante, nunca lança.
+  taskToolsFlagState(): FlagState {
+    return combineFlagStates([
+      this.taskToolsFlags.read(null),
+      ...this.workspaceCwds().map(cwd => this.taskToolsFlags.read(cwd)),
+    ]);
   }
 
   resolveTodoSource(sessionId: string, agentId: string, line: number): { filePath: string; line: number } | null {

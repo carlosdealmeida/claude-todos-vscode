@@ -54,6 +54,12 @@ export function combineFlagStates(states: FlagState[]): FlagState {
   return 'absent';
 }
 
+// A notificação de ativação só sai com a flag ausente (off explícito é decisão do
+// usuário) e sem a dispensa gravada.
+export function shouldOfferTaskTools(flag: FlagState, dismissed: boolean): boolean {
+  return flag === 'absent' && !dismissed;
+}
+
 export interface TaskToolsSignals {
   version?: string;
   model?: string;

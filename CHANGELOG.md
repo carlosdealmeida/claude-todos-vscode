@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **You are now offered the task list as soon as you install.** VS Code asks when the window opens and JetBrains when a project opens, even if you never open the panel; one click turns the Claude Code task tools on. While they are off, a slim banner at the top of the panel says so and offers the same button.
+
+### Changed
+- **The store descriptions and the READMEs now lead with the task list.** The task list is what the panel is for; the agent tree, tokens and cache come with it.
+
+### Fixed
+- **The "task tools are off" hint now shows in sessions that launched sub-agents.** Before, it disappeared as soon as a sub-agent ran, leaving an empty task list with no explanation.
+
 ## [0.23.1] - 2026-11-05
 
 ### Fixed

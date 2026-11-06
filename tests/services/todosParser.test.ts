@@ -224,6 +224,31 @@ describe('TodosParser', () => {
 
   it('returns empty when no transcript file exists', () => {
     expect(parser.listForSession('nope', CWD)).toEqual([]);
+    expect(parser.listSessionDetail('nope', CWD)).toEqual({
+      agents: [], awaitingInput: null, pendingQuestions: [], listToolUsed: false,
+    });
+  });
+
+  it('listToolUsed is false when no agent ever called a list tool', () => {
+    writeTranscript('s1', CWD, [{ type: 'user', message: { content: 'oi' } }]);
+    writeSubAgent('s1', CWD, 'a1', 'faz algo', null);
+    expect(parser.listSessionDetail('s1', CWD).listToolUsed).toBe(false);
+  });
+
+  it('listToolUsed is true when only a sub-agent called TodoWrite, even with an empty list', () => {
+    writeTranscript('s1', CWD, [{ type: 'user', message: { content: 'oi' } }]);
+    writeSubAgent('s1', CWD, 'a1', 'faz algo', []);
+    expect(parser.listSessionDetail('s1', CWD).listToolUsed).toBe(true);
+  });
+
+  it('listToolUsed is true when the main used the Task schema', () => {
+    writeTranscript('s1', CWD, [taskCreateToolUse('tc1', 'Fazer', 'Fazendo')]);
+    expect(parser.listSessionDetail('s1', CWD).listToolUsed).toBe(true);
+  });
+
+  it('listToolUsed ignores TodoWrite on main sidechain lines', () => {
+    writeTranscript('s1', CWD, [todoWriteEntry([], { isSidechain: true })]);
+    expect(parser.listSessionDetail('s1', CWD).listToolUsed).toBe(false);
   });
 
   it('returns the last TodoWrite event from main thread', () => {

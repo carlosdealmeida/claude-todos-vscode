@@ -120,10 +120,10 @@ export class SnapshotService {
       modStatus?.installed === true,
     );
     const bridgeState = this.bridgeStatus(modStatus, bridgeFile, liveSession);
-    // R2: só no ramo sem agentes com tasks. Versão e modelo vêm da última entrada
+    // R2: só enquanto nenhum agente da sessão chamou uma ferramenta de lista. Versão e modelo vêm da última entrada
     // com usage do main; a flag, das quatro fontes (memo por mtime no leitor).
     const main = usage.byAgent.find(a => a.isMain);
-    const taskToolsOff = agents.length === 0 && this.taskToolsFlags !== undefined
+    const taskToolsOff = !detail.listToolUsed && this.taskToolsFlags !== undefined
       && evaluateTaskTools({
         version: main?.currentVersion,
         model: main?.currentModel,

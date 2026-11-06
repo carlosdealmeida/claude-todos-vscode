@@ -114,7 +114,8 @@ export interface SessionSnapshot {
   awaitingInput?: AwaitingInput;
   pendingQuestions?: PendingQuestion[];
   // R2: true quando o Claude Code (>= 2.1.233) está com TodoWrite/TaskCreate
-  // desligados para o modelo da sessão e a flag não foi ligada em nenhuma fonte.
+  // desligados para o modelo da sessão, a flag não foi ligada em nenhuma fonte e
+  // nenhum agente da sessão chamou TodoWrite/TaskCreate/TaskUpdate.
   taskToolsOff?: true;
   // Ponte de dados (item 25): presente quando o host injeta a ponte.
   bridge?: BridgeStatus;
