@@ -475,7 +475,9 @@ de tokens do 0.3.0).
   título, nome do projeto, timestamp e contagem de mensagens; busca/filtro.
 - **Tensão:** vai **contra o princípio de escopo-por-workspace** que é o nosso diferencial de
   privacidade (duas janelas nunca veem os todos uma da outra). Se entrar, tem que ser opt-in
-  explícito e bem isolado. Decidir posicionamento antes de planejar.
+  explícito e bem isolado. ~~Decidir posicionamento antes de planejar.~~ *(Superado em
+  2026-11-05: posicionamento decidido, a lista de tarefas é o coração; ver R2 passo 3 e a
+  [spec](specs/2026-11-05-posicionamento-e-ativacao-design.md).)*
 - **Reforço (varredura 2026-08-10):** a demanda por organização multi-projeto segue —
   [#82641](https://github.com/anthropics/claude-code/issues/82641) grouping/labels de sessão
   no painel, mais um cluster grande de grouping no sidebar do desktop
@@ -487,7 +489,8 @@ de tokens do 0.3.0).
 - **Reforço (varredura 2026-09-05):** [#90030](https://github.com/anthropics/claude-code/issues/90030) pede agrupar sessões por projeto na lista do
   Code web/mobile; [#86259](https://github.com/anthropics/claude-code/issues/86259) mostrar o cwd de cada sessão no sidebar do desktop. A dor continua
   sendo "em qual projeto está isto?" — que o escopo por workspace resolve por construção. A
-  decisão de posicionamento segue pendente (agora com o gatilho do R2).
+  decisão de posicionamento segue pendente (agora com o gatilho do R2). *(Superado em
+  2026-11-05: decidida; ver o Status acima.)*
 
 ### 9. Multi-root: escolher a pasta ativa ✅ ENTREGUE (0.13.0)
 - **Issues:** [#58044](https://github.com/anthropics/claude-code/issues/58044) sem como selecionar a pasta ativa · [#36949](https://github.com/anthropics/claude-code/issues/36949) setting `workingDirectory` · [#12808](https://github.com/anthropics/claude-code/issues/12808) (20c) "sempre começa na primeira pasta" · [#18814](https://github.com/anthropics/claude-code/issues/18814) (`NOT_PLANNED`)
@@ -522,7 +525,11 @@ de tokens do 0.3.0).
 Diferente das seções acima (derivadas de issues), estes itens vêm de análise de produto: o
 ecossistema está migrando de "um agente com todos" para **orquestração** (sub-agents em
 background, workflows, agent teams), e os dados disso **já estão no disco** no formato que o
-parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"**.
+parser lê. ~~Posicionamento-alvo: **"observability para seus agentes Claude Code"**.~~
+*(Superado em 2026-11-05: a lista de tarefas é o coração do Claude Todos e a observability é o
+contexto em volta dela; ver R2 passo 3 e a
+[spec](specs/2026-11-05-posicionamento-e-ativacao-design.md). As apostas abaixo continuam
+valendo como backlog.)*
 
 > **Fila de brainstorming — zerada em 2026-07-27.** Os dois itens que estavam no topo da fila
 > decidida em 2026-07-27 foram entregues no mesmo dia: 1º **22-ext** (perguntas pendentes **no
@@ -532,7 +539,8 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
 > dado nenhum, e 61 dos 63 configs de team são auto-criados sem membros reais (detalhes no
 > item); não reabrir sem um dos dois sinais listados lá. O que **sobra** fora da fila é só o
 > item **23** (background tasks no painel), que continua bloqueado por depender de uma decisão
-> de posicionamento (junto com o item 8) ainda não tomada — não reabrir sem essa decisão. Itens
+> de posicionamento (junto com o item 8) ainda não tomada — não reabrir sem essa decisão
+> *(superado em 2026-11-05: decisão tomada, ver a atualização abaixo)*. Itens
 > 13, 14 e 15 saíram da fila por entrega (0.9.0, 0.10.0, 0.10.0).
 >
 > **Atualização 2026-08-10:** a varredura desta data promoveu o **R5** (contabilidade de
@@ -929,7 +937,9 @@ parser lê. Posicionamento-alvo: **"observability para seus agentes Claude Code"
   (tool_use Bash + task-notifications), ao lado dos sub-agents na árvore. O painel nativo
   erra o estado com frequência; nosso modelo derivado-do-transcript tende a acertar.
 - **Tensão:** amplia o escopo de "todos + agentes" para "tudo que roda" — avaliar se reforça
-  ou dilui o posicionamento observability. Decidir antes de planejar.
+  ou dilui o posicionamento observability. ~~Decidir antes de planejar.~~ *(Superado em
+  2026-11-05: posicionamento decidido, a lista é o coração; ver a atualização 2026-11-05 abaixo e
+  a [spec](specs/2026-11-05-posicionamento-e-ativacao-design.md).)*
 - **🔥 Reforço forte (varredura 2026-07-25):** o tema explodiu em ~9 dias.
   [#79006](https://github.com/anthropics/claude-code/issues/79006) enuncia a dor inteira —
   "background tasks são **invisíveis**: sem campo no statusline, sem badge de UI" ·
