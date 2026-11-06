@@ -24,10 +24,15 @@ class PromptQueue {
         run(show)
     }
 
+    // Um show que lanca libera a fila antes de relancar: senao ninguem mais aparece.
     private fun run(show: (done: () -> Unit) -> Unit) {
         val released = AtomicBoolean(false)
-        show {
-            if (released.compareAndSet(false, true)) next()?.let { run(it) }
+        val done = { if (released.compareAndSet(false, true)) next()?.let { run(it) } }
+        try {
+            show(done)
+        } catch (e: Throwable) {
+            done()
+            throw e
         }
     }
 
