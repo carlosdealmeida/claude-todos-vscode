@@ -45,6 +45,7 @@ describe('runActivationPrompts', () => {
     const d = deps({ promptHook: () => new Promise(() => {}) });
     void runActivationPrompts(d);
     await new Promise(r => setTimeout(r, 0));
+    expect(d.shouldOfferTaskTools).not.toHaveBeenCalled();
     expect(d.promptTaskTools).not.toHaveBeenCalled();
   });
 
