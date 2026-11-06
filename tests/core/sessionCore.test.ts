@@ -142,6 +142,52 @@ describe('SessionCore', () => {
     expect(fs.readFileSync(path.join(claudeDir, 'settings.json'), 'utf-8')).toBe('{ broken');
   });
 
+  describe('taskToolsFlagState', () => {
+    let dirA: string;
+    let dirB: string;
+    const makeTwo = (): SessionCore =>
+      track(new SessionCore({ claudeDir, workspaceCwds: () => [dirA, dirB], now: () => 1_000_000 }));
+    const writeJson = (file: string, data: unknown): void => {
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, typeof data === 'string' ? data : JSON.stringify(data));
+    };
+
+    beforeEach(() => {
+      dirA = fs.mkdtempSync(path.join(os.tmpdir(), 'core-ws-a-'));
+      dirB = fs.mkdtempSync(path.join(os.tmpdir(), 'core-ws-b-'));
+    });
+    afterEach(() => {
+      fs.rmSync(dirA, { recursive: true, force: true });
+      fs.rmSync(dirB, { recursive: true, force: true });
+    });
+
+    it('is absent when nothing is written', () => {
+      expect(makeTwo().taskToolsFlagState()).toBe('absent');
+    });
+
+    it('is on when only the second workspace folder has it in settings.local.json', () => {
+      writeJson(path.join(dirB, '.claude', 'settings.local.json'), { env: { CLAUDE_CODE_ENABLE_TODO_TOOLS: '1' } });
+      expect(makeTwo().taskToolsFlagState()).toBe('on');
+    });
+
+    it('is off when the user settings say 0', () => {
+      writeJson(path.join(claudeDir, 'settings.json'), { env: { CLAUDE_CODE_ENABLE_TODO_TOOLS: '0' } });
+      expect(makeTwo().taskToolsFlagState()).toBe('off');
+    });
+
+    it('is absent, without throwing, when the user settings are broken', () => {
+      writeJson(path.join(claudeDir, 'settings.json'), '{ broken');
+      expect(makeTwo().taskToolsFlagState()).toBe('absent');
+    });
+
+    it('is on after enableTaskTools()', () => {
+      const core = makeTwo();
+      expect(core.taskToolsFlagState()).toBe('absent');
+      core.enableTaskTools();
+      expect(core.taskToolsFlagState()).toBe('on');
+    });
+  });
+
   it('snapshot marks taskToolsOff for a 2.1.233+ session on a new model, and clears it after enabling', () => {
     writeSessionOn('2.1.261', 'claude-fable-5-1');
     const core = make();
