@@ -43,16 +43,32 @@ class NotificationBridge(
             .notify(project)
     }
 
-    fun promptHookInstall(onInstall: () -> Unit) {
-        if (props.getBoolean("claudeTodos.hookPromptDismissed", false)) return
-        NotificationGroupManager.getInstance().getNotificationGroup("claude-todos-sticky")
+    // onDone libera a fila de convites quando a notificacao expira (clique numa acao).
+    // Fechar no X nao expira: o proximo convite espera.
+    fun promptHookInstall(onInstall: () -> Unit, onDone: () -> Unit) {
+        if (props.getBoolean("claudeTodos.hookPromptDismissed", false)) { onDone(); return }
+        val notification = NotificationGroupManager.getInstance().getNotificationGroup("claude-todos-sticky")
             .createNotification(NotifyMessages.get(locale, "hook.promptMessage"), NotificationType.INFORMATION)
             .addAction(NotificationAction.createSimpleExpiring(NotifyMessages.get(locale, "hook.install")) { onInstall() })
             .addAction(NotificationAction.createSimpleExpiring(NotifyMessages.get(locale, "hook.notNow")) {})
             .addAction(NotificationAction.createSimpleExpiring(NotifyMessages.get(locale, "hook.dontAskAgain")) {
                 props.setValue("claudeTodos.hookPromptDismissed", true)
             })
-            .notify(project)
+        notification.whenExpired { onDone() }
+        notification.notify(project)
+    }
+
+    fun promptTaskTools(onEnable: () -> Unit, onDone: () -> Unit) {
+        if (props.getBoolean("claudeTodos.taskToolsPromptDismissed", false)) { onDone(); return }
+        val notification = NotificationGroupManager.getInstance().getNotificationGroup("claude-todos-sticky")
+            .createNotification(NotifyMessages.get(locale, "taskTools.promptMessage"), NotificationType.INFORMATION)
+            .addAction(NotificationAction.createSimpleExpiring(NotifyMessages.get(locale, "taskTools.enable")) { onEnable() })
+            .addAction(NotificationAction.createSimpleExpiring(NotifyMessages.get(locale, "hook.notNow")) {})
+            .addAction(NotificationAction.createSimpleExpiring(NotifyMessages.get(locale, "hook.dontAskAgain")) {
+                props.setValue("claudeTodos.taskToolsPromptDismissed", true)
+            })
+        notification.whenExpired { onDone() }
+        notification.notify(project)
     }
 
     fun confirmHookInstalled() {

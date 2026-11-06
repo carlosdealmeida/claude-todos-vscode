@@ -3,6 +3,7 @@ package com.carlosdealmeida.claudetodos
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -176,13 +177,15 @@ class ClaudeTodosToolWindowFactory : ToolWindowFactory, DumbAware {
                 val hookPath = HookSetup.ensureHookScript()
                 router.requestHookStatus(hookPath) { installed ->
                     if (!installed) SwingUtilities.invokeLater {
-                        bridge.promptHookInstall(onInstall = {
-                            router.installHook(hookPath) { ok ->
-                                SwingUtilities.invokeLater {
-                                    if (ok) bridge.confirmHookInstalled() else bridge.hookInstallFailed("install failed")
+                        project.service<ClaudeTodosPrompts>().queue.enqueue { done ->
+                            bridge.promptHookInstall(onInstall = {
+                                router.installHook(hookPath) { ok ->
+                                    SwingUtilities.invokeLater {
+                                        if (ok) bridge.confirmHookInstalled() else bridge.hookInstallFailed("install failed")
+                                    }
                                 }
-                            }
-                        })
+                            }, onDone = done)
+                        }
                     }
                 }
             }.onFailure { e ->
