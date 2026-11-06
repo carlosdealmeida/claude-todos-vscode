@@ -8,16 +8,16 @@
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Observability para seus agentes Claude Code** — tasks, árvore de agentes, tempos, tokens e cache ao vivo, restrito ao workspace aberto na janela atual do VSCode. Tudo 100% local: duas janelas em projetos diferentes nunca veem os dados uma da outra.
+**A lista de tarefas dos seus agentes Claude Code, ao vivo** — com árvore de agentes, tempos, tokens e cache, restrito ao workspace aberto na janela atual do VSCode. Tudo 100% local: duas janelas em projetos diferentes nunca veem os dados uma da outra.
 
 ![Painel Claude Todos: agente principal e sub-agents com as tasks avançando de pending → in_progress → completed ao vivo, com tempos por task](screenshots/claude-todos-demo.gif)
 
-> ⚠️ **Claude Code 2.1.233 ou mais recente?** Nos modelos novos, as ferramentas de tasks (`TodoWrite`, `TaskCreate`) vêm **desligadas por padrão** e a lista deste painel fica vazia até você reativá-las — veja [Instalação](#instalação).
+> ⚠️ **Claude Code 2.1.233 ou mais recente?** Nos modelos novos, as ferramentas de tasks (`TodoWrite`, `TaskCreate`) vêm **desligadas por padrão** e a lista deste painel fica vazia até você reativá-las — veja [Instalação](#instalação). A extensão oferece ligar com um clique ao ser instalada e mostra uma faixa no painel enquanto estiverem desligadas.
 
 ## O que você vê
 
-- **Árvore de agentes ao vivo ("mission control")** — main → sub-agents → agentes aninhados, com badge de tipo (Explore, Plan, general-purpose…), status e tokens por agente.
 - **Tasks em tempo real** — cada item transiciona `pending → in_progress → completed` conforme o agente trabalha; clicar numa task abre o transcript na linha da última mudança de status. Se o orquestrador para de atualizar a lista enquanto sub-agents seguem rodando, o painel sinaliza a defasagem.
+- **Árvore de agentes ao vivo ("mission control")** — main → sub-agents → agentes aninhados, com badge de tipo (Explore, Plan, general-purpose…), status e tokens por agente.
 - **Tempos por task** — duração de cada task concluída, tempo ao vivo da task em andamento e estimativa (rotulada como estimativa) do restante.
 - **Tokens, contexto e cache** — tabela por modelo ou por agente, indicador da janela de contexto com semáforo e eficiência de cache (reaproveitado × criado × novo).
 - **Dashboard "Últimos 7 dias"** — uso agregado do projeto, por modelo e por tipo de agente.

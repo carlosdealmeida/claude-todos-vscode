@@ -8,16 +8,16 @@
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Observability for your Claude Code agents** — tasks, agent tree, timings, tokens and cache, live, scoped to the workspace open in the current VSCode window. Everything is 100% local: two windows on different projects never see each other's data.
+**The task list for your Claude Code agents, live** — with agent tree, timings, tokens and cache, scoped to the workspace open in the current VSCode window. Everything is 100% local: two windows on different projects never see each other's data.
 
 ![Claude Todos panel: main agent and sub-agents with tasks advancing from pending → in_progress → completed live, with per-task timings](screenshots/claude-todos-demo.gif)
 
-> ⚠️ **On Claude Code 2.1.233 or newer?** On the new models, the task tools (`TodoWrite`, `TaskCreate`) ship **turned off by default**, and this panel's task list stays empty until you turn them back on — see [Install](#install).
+> ⚠️ **On Claude Code 2.1.233 or newer?** On the new models, the task tools (`TodoWrite`, `TaskCreate`) ship **turned off by default**, and this panel's task list stays empty until you turn them back on — see [Install](#install). The extension offers to turn them on in one click when you install it, and shows a banner in the panel while they are off.
 
 ## What you get
 
-- **Live agent tree ("mission control")** — main → sub-agents → nested agents, with an agent-type badge (Explore, Plan, general-purpose…), status and per-agent tokens.
 - **Tasks in real time** — each item transitions `pending → in_progress → completed` as the agent works; clicking a task opens the transcript at the line of its last status change. If the orchestrator stops updating its list while sub-agents keep running, the panel flags the staleness.
+- **Live agent tree ("mission control")** — main → sub-agents → nested agents, with an agent-type badge (Explore, Plan, general-purpose…), status and per-agent tokens.
 - **Per-task timings** — duration of every completed task, live timer on the one in progress, and a (labeled) estimate of the remainder.
 - **Tokens, context and cache** — table by model or by agent, context-window indicator with a traffic light, and cache efficiency (reused × created × new).
 - **"Last 7 days" dashboard** — aggregated project usage, by model and by agent type.

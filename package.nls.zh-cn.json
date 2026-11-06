@@ -1,5 +1,5 @@
 {
-  "extension.description": "实时观测你的 Claude Code 智能体：任务、智能体树、令牌与缓存 — 仅限当前工作区",
+  "extension.description": "实时显示你的 Claude Code 智能体的任务列表，含智能体树、令牌与缓存 — 仅限当前工作区。Claude Code 2.1.233+：任务工具默认关闭；扩展可一键开启。",
   "view.todos.name": "待办事项",
   "command.openPanel.title": "Claude Todos: Open in Editor",
   "command.installHook.title": "Claude Todos: Install Session Hook",

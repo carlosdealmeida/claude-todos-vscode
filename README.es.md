@@ -8,16 +8,16 @@
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Observability para tus agentes Claude Code** — tareas, árbol de agentes, tiempos, tokens y caché en vivo, acotado al workspace abierto en la ventana actual de VSCode. Todo 100% local: dos ventanas en proyectos distintos nunca ven los datos de la otra.
+**La lista de tareas de tus agentes Claude Code, en vivo** — con árbol de agentes, tiempos, tokens y caché, acotada al workspace abierto en la ventana actual de VSCode. Todo 100% local: dos ventanas en proyectos distintos nunca ven los datos de la otra.
 
 ![Panel Claude Todos: agente principal y sub-agentes con las tareas avanzando de pending → in_progress → completed en vivo, con tiempos por tarea](screenshots/claude-todos-demo.gif)
 
-> ⚠️ **¿Usas Claude Code 2.1.233 o más reciente?** En los modelos nuevos, las herramientas de tareas (`TodoWrite`, `TaskCreate`) vienen **desactivadas por defecto** y la lista de este panel queda vacía hasta que las reactives — mira [Instalación](#instalación).
+> ⚠️ **¿Usas Claude Code 2.1.233 o más reciente?** En los modelos nuevos, las herramientas de tareas (`TodoWrite`, `TaskCreate`) vienen **desactivadas por defecto** y la lista de este panel queda vacía hasta que las reactives — mira [Instalación](#instalación). La extensión ofrece activarlas con un clic al instalarse y muestra una franja en el panel mientras estén desactivadas.
 
 ## Qué obtienes
 
-- **Árbol de agentes en vivo ("mission control")** — main → subagentes → agentes anidados, con badge de tipo (Explore, Plan, general-purpose…), estado y tokens por agente.
 - **Tareas en tiempo real** — cada ítem transiciona `pending → in_progress → completed` conforme el agente trabaja; hacer clic en una tarea abre el transcript en la línea de su último cambio de estado. Si el orquestador deja de actualizar su lista mientras los subagentes siguen corriendo, el panel señala el desfase.
+- **Árbol de agentes en vivo ("mission control")** — main → subagentes → agentes anidados, con badge de tipo (Explore, Plan, general-purpose…), estado y tokens por agente.
 - **Tiempos por tarea** — duración de cada tarea completada, cronómetro en vivo de la tarea en curso y una estimación (etiquetada) del resto.
 - **Tokens, contexto y caché** — tabla por modelo o por agente, indicador de la ventana de contexto con semáforo y eficiencia de caché (reutilizado × creado × nuevo).
 - **Dashboard "Últimos 7 días"** — uso agregado del proyecto, por modelo y por tipo de agente.

@@ -10,16 +10,16 @@
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**為你的 Claude Code 智慧體提供可觀測性** — 任務、智慧體樹、耗時、權杖和快取，即時呈現，且僅限於目前 VSCode 視窗開啟的工作區。一切都是 100% 本機的：不同專案的兩個視窗永遠不會看到彼此的資料。
+**你的 Claude Code 智慧體的任務清單，即時呈現** — 含智慧體樹、耗時、權杖和快取，且僅限於目前 VSCode 視窗開啟的工作區。一切都是 100% 本機的：不同專案的兩個視窗永遠不會看到彼此的資料。
 
 ![Claude Todos 面板：主智慧體和子智慧體的任務即時從 pending → in_progress → completed 推進，並顯示每個任務的耗時](screenshots/claude-todos-demo.gif)
 
-> ⚠️ **正在使用 Claude Code 2.1.233 或更新版本？** 在新模型上，任務工具（`TodoWrite`、`TaskCreate`）**預設關閉**，本面板的任務清單會一直是空的，直到你重新開啟它們 — 見[安裝](#安裝)。
+> ⚠️ **正在使用 Claude Code 2.1.233 或更新版本？** 在新模型上，任務工具（`TodoWrite`、`TaskCreate`）**預設關閉**，本面板的任務清單會一直是空的，直到你重新開啟它們 — 見[安裝](#安裝)。擴充功能在安裝後會提示一鍵開啟，並在它們關閉期間於面板頂部顯示一條橫幅。
 
 ## 你能獲得什麼
 
-- **即時智慧體樹（「任務指揮中心」）** — 主智慧體 → 子智慧體 → 巢狀智慧體，附帶智慧體類型徽章（Explore、Plan、general-purpose…）、狀態和每個智慧體的權杖數。
 - **即時任務** — 每個項目隨著智慧體工作從 `pending → in_progress → completed` 轉變；點擊一個任務會在對話記錄中開啟其最後一次狀態變化所在的行。如果協調者在子智慧體仍在執行時停止更新任務清單，面板會標記出這種滯後。
+- **即時智慧體樹（「任務指揮中心」）** — 主智慧體 → 子智慧體 → 巢狀智慧體，附帶智慧體類型徽章（Explore、Plan、general-purpose…）、狀態和每個智慧體的權杖數。
 - **每個任務的耗時** — 每個已完成任務的持續時間、進行中任務的即時計時器，以及剩餘部分的（已標註的）預估。
 - **權杖、上下文和快取** — 依模型或依智慧體的表格、附紅綠燈提示的上下文視窗指示器，以及快取效率（重複使用 × 建立 × 新增）。
 - **「最近 7 天」儀表板** — 依模型和依智慧體類型彙總的專案使用情況。

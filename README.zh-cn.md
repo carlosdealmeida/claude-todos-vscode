@@ -10,16 +10,16 @@
 [![CI](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/carlosdealmeida/claude-todos-vscode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**为你的 Claude Code 智能体提供可观测性** — 任务、智能体树、耗时、令牌和缓存，实时呈现，且仅限于当前 VSCode 窗口打开的工作区。一切都是 100% 本地的：不同项目的两个窗口永远不会看到彼此的数据。
+**你的 Claude Code 智能体的任务列表，实时呈现** — 含智能体树、耗时、令牌和缓存，且仅限于当前 VSCode 窗口打开的工作区。一切都是 100% 本地的：不同项目的两个窗口永远不会看到彼此的数据。
 
 ![Claude Todos 面板：主智能体和子智能体的任务实时从 pending → in_progress → completed 推进，并显示每个任务的耗时](screenshots/claude-todos-demo.gif)
 
-> ⚠️ **正在使用 Claude Code 2.1.233 或更新版本？** 在新模型上，任务工具（`TodoWrite`、`TaskCreate`）**默认关闭**，本面板的任务列表会一直为空，直到你重新开启它们 — 见[安装](#安装)。
+> ⚠️ **正在使用 Claude Code 2.1.233 或更新版本？** 在新模型上，任务工具（`TodoWrite`、`TaskCreate`）**默认关闭**，本面板的任务列表会一直为空，直到你重新开启它们 — 见[安装](#安装)。扩展在安装后会提示一键开启，并在它们关闭期间于面板顶部显示一条横幅。
 
 ## 你能获得什么
 
-- **实时智能体树（“任务指挥中心”）** — 主智能体 → 子智能体 → 嵌套智能体，附带智能体类型徽章（Explore、Plan、general-purpose…）、状态和每个智能体的令牌数。
 - **实时任务** — 每个项目随着智能体工作从 `pending → in_progress → completed` 转变；点击一个任务会在对话记录中打开其最后一次状态变化所在的行。如果编排者在子智能体仍在运行时停止更新任务列表，面板会标记出这种滞后。
+- **实时智能体树（“任务指挥中心”）** — 主智能体 → 子智能体 → 嵌套智能体，附带智能体类型徽章（Explore、Plan、general-purpose…）、状态和每个智能体的令牌数。
 - **每个任务的耗时** — 每个已完成任务的持续时间、进行中任务的实时计时器，以及剩余部分的（已标注的）预估。
 - **令牌、上下文和缓存** — 按模型或按智能体的表格、带红绿灯提示的上下文窗口指示器，以及缓存效率（复用 × 创建 × 新增）。
 - **“最近 7 天”仪表盘** — 按模型和按智能体类型汇总的项目使用情况。
