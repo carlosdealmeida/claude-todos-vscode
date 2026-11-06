@@ -43,29 +43,35 @@ class NotificationBridge(
             .notify(project)
     }
 
-    // onDone libera a fila de convites quando a notificacao expira (clique numa acao).
+    // onDone libera a fila de convites quando a notificacao expira. Instalar/Ativar so expira
+    // quando o trabalho do clique chama `finish` (InviteGate); os outros botoes, na hora.
     // Fechar no X nao expira: o proximo convite espera.
-    fun promptHookInstall(onInstall: () -> Unit, onDone: () -> Unit) {
-        if (props.getBoolean("claudeTodos.hookPromptDismissed", false)) { onDone(); return }
-        val notification = NotificationGroupManager.getInstance().getNotificationGroup("claude-todos-sticky")
-            .createNotification(NotifyMessages.get(locale, "hook.promptMessage"), NotificationType.INFORMATION)
-            .addAction(NotificationAction.createSimpleExpiring(NotifyMessages.get(locale, "hook.install")) { onInstall() })
-            .addAction(NotificationAction.createSimpleExpiring(NotifyMessages.get(locale, "hook.notNow")) {})
-            .addAction(NotificationAction.createSimpleExpiring(NotifyMessages.get(locale, "hook.dontAskAgain")) {
-                props.setValue("claudeTodos.hookPromptDismissed", true)
-            })
-        notification.whenExpired { onDone() }
-        notification.notify(project)
+    fun promptHookInstall(onInstall: (finish: () -> Unit) -> Unit, onDone: () -> Unit) {
+        if (props.getBoolean(HOOK_DISMISSED, false)) { onDone(); return }
+        invite("hook.promptMessage", "hook.install", HOOK_DISMISSED, onInstall, onDone)
     }
 
-    fun promptTaskTools(onEnable: () -> Unit, onDone: () -> Unit) {
-        if (props.getBoolean("claudeTodos.taskToolsPromptDismissed", false)) { onDone(); return }
+    fun promptTaskTools(afterHook: Boolean, onEnable: (finish: () -> Unit) -> Unit, onDone: () -> Unit) {
+        if (props.getBoolean(TASK_TOOLS_DISMISSED, false)) { onDone(); return }
+        val messageKey = if (afterHook) "taskTools.promptAfterHook" else "taskTools.promptMessage"
+        invite(messageKey, "taskTools.enable", TASK_TOOLS_DISMISSED, onEnable, onDone)
+    }
+
+    private fun invite(
+        messageKey: String,
+        primaryKey: String,
+        dismissKey: String,
+        onPrimary: (finish: () -> Unit) -> Unit,
+        onDone: () -> Unit,
+    ) {
         val notification = NotificationGroupManager.getInstance().getNotificationGroup("claude-todos-sticky")
-            .createNotification(NotifyMessages.get(locale, "taskTools.promptMessage"), NotificationType.INFORMATION)
-            .addAction(NotificationAction.createSimpleExpiring(NotifyMessages.get(locale, "taskTools.enable")) { onEnable() })
-            .addAction(NotificationAction.createSimpleExpiring(NotifyMessages.get(locale, "hook.notNow")) {})
-            .addAction(NotificationAction.createSimpleExpiring(NotifyMessages.get(locale, "hook.dontAskAgain")) {
-                props.setValue("claudeTodos.taskToolsPromptDismissed", true)
+            .createNotification(NotifyMessages.get(locale, messageKey), NotificationType.INFORMATION)
+        val gate = InviteGate(hide = notification::hideBalloon, expire = notification::expire)
+        notification
+            .addAction(NotificationAction.create(NotifyMessages.get(locale, primaryKey)) { _, _ -> gate.primary(onPrimary) })
+            .addAction(NotificationAction.create(NotifyMessages.get(locale, "hook.notNow")) { _, _ -> gate.secondary {} })
+            .addAction(NotificationAction.create(NotifyMessages.get(locale, "hook.dontAskAgain")) { _, _ ->
+                gate.secondary { props.setValue(dismissKey, true) }
             })
         notification.whenExpired { onDone() }
         notification.notify(project)
@@ -81,5 +87,10 @@ class NotificationBridge(
         NotificationGroupManager.getInstance().getNotificationGroup("claude-todos")
             .createNotification(NotifyMessages.get(locale, "hook.installFailed", "error" to error), NotificationType.ERROR)
             .notify(project)
+    }
+
+    companion object {
+        const val HOOK_DISMISSED = "claudeTodos.hookPromptDismissed"
+        const val TASK_TOOLS_DISMISSED = "claudeTodos.taskToolsPromptDismissed"
     }
 }

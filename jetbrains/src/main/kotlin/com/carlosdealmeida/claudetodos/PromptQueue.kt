@@ -47,4 +47,5 @@ class PromptQueue {
 @Service(Service.Level.PROJECT)
 class ClaudeTodosPrompts {
     val queue = PromptQueue()
+    val taskTools = TaskToolsPromptSlot()
 }
