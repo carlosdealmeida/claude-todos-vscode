@@ -9,7 +9,7 @@
     "preview": "astro preview"
   },
   "devDependencies": {
-    "@astrojs/svelte": "^9.0.1",
+    "@astrojs/svelte": "^9.1.2",
     "astro": "^7.3.8",
     "svelte": "^5.55.9",
     "typescript": "^5.9.3"
